@@ -379,6 +379,26 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                   </div>
                 </div>
 
+                {/* ── Bloco de Explicação de Benchmarks ── */}
+                <div className="mt-8 bg-dark-bg/40 border border-dark-border/40 rounded-xl p-5 space-y-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs font-bold text-dark-textSecondary uppercase tracking-widest">Base de Dados & Benchmarks</span>
+                  </div>
+                  <p className="text-xs text-dark-textSecondary leading-relaxed">
+                    O modelo calcula a <strong className="text-dark-textPrimary">Taxa de Desconto (k)</strong> baseado no modelo CAPM utilizando os seguintes referenciais (que podem ser travados 🔒 para usar a sua própria base de pesquisa):
+                  </p>
+                  <ul className="text-xs text-dark-textSecondary space-y-2 pl-4 list-disc marker:text-brand-purple">
+                    <li>
+                      <strong className="text-dark-textPrimary">Rf (Taxa Livre de Risco):</strong> Representa o retorno sem risco (ex: Tesouro Direto, taxa Selic ou título do Tesouro IPCA+ de longo prazo).
+                    </li>
+                    <li>
+                      <strong className="text-dark-textPrimary">Rm (Retorno do Mercado):</strong> Representa o retorno esperado médio da bolsa (ex: crescimento histórico do Ibovespa ou S&P 500).
+                    </li>
+                    <li>
+                      <strong className="text-dark-textPrimary">Destravamento:</strong> Você pode ajustar e <strong className="text-brand-danger">travar (🔒)</strong> esses índices nos blocos acima para garantir que sua pesquisa de CDI/IPCA não seja sobrescrita pelos cenários automáticos (Otimista/Pessimista).
+                    </li>
+                  </ul>
+                </div>
               </div>
             </div>
           </div>

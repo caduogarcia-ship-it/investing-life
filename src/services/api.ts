@@ -1417,90 +1417,40 @@ export async function fetchStockData(symbol: string): Promise<StockData> {
   
   let loadedViaYahoo = false;
 
-  // 1. Fetch Price & Chart History via Yahoo Finance proxy
+  // 1. Fetch Price & Chart History via Brapi
   try {
-    const yahooSymbol = cleanSymbol.includes('.') || cleanSymbol.startsWith('^') || /^[A-Z]{1,5}$/.test(cleanSymbol)
-      ? cleanSymbol 
-      : `${cleanSymbol}.SA`;
-
-    const chartRes = await fetch(`/yahoo-chart/${yahooSymbol}?range=3mo&interval=1d`);
+    const brapiToken = import.meta.env.VITE_BRAPI_TOKEN || '';
+    const chartRes = await fetch(`https://brapi.dev/api/quote/${cleanSymbol}?range=3mo&interval=1d&token=${brapiToken}`);
     if (chartRes.ok) {
       const chartJson = await chartRes.json();
-      const chartResult = chartJson.chart?.result?.[0];
-      const meta = chartResult?.meta;
+      const meta = chartJson.results?.[0];
       if (meta) {
-        regularMarketPrice = meta.regularMarketPrice ?? meta.chartPreviousClose ?? regularMarketPrice;
+        regularMarketPrice = meta.regularMarketPrice ?? regularMarketPrice;
         high = meta.regularMarketDayHigh ?? regularMarketPrice;
         low = meta.regularMarketDayLow ?? regularMarketPrice;
         vol = meta.regularMarketVolume ?? vol;
         currency = meta.currency ?? currency;
-        longName = meta.longName ?? longName;
+        longName = meta.longName ?? meta.shortName ?? longName;
+        change = meta.regularMarketChange ?? 0;
+        changePercent = meta.regularMarketChangePercent ?? 0;
 
-        const timestamps = chartResult.timestamp || [];
-        const quote = chartResult.indicators?.quote?.[0] || {};
-        const closePrices = quote.close || [];
-        const openPrices = quote.open || [];
-        const highPrices = quote.high || [];
-        const lowPrices = quote.low || [];
-        const volumeList = quote.volume || [];
-
-        if (timestamps.length > 0) {
-          history = [];
-          for (let i = 0; i < timestamps.length; i++) {
-            const c = closePrices[i];
-            const o = openPrices[i];
-            const h = highPrices[i];
-            const l = lowPrices[i];
-            const v = volumeList[i];
-            if (c !== null && c !== undefined) {
-              history.push({
-                date: new Date(timestamps[i] * 1000).toISOString().split('T')[0],
-                price: Number(c.toFixed(2)),
-                open: o !== null && o !== undefined ? Number(o.toFixed(2)) : Number(c.toFixed(2)),
-                high: h !== null && h !== undefined ? Number(h.toFixed(2)) : Number(c.toFixed(2)),
-                low: l !== null && l !== undefined ? Number(l.toFixed(2)) : Number(c.toFixed(2)),
-                close: Number(c.toFixed(2)),
-                volume: v !== null && v !== undefined ? Number(v) : 0
-              });
-            }
-          }
+        const historyData = meta.historicalDataPrice || [];
+        if (historyData.length > 0) {
+          history = historyData.map((d: any) => ({
+            date: new Date(d.date * 1000).toISOString().split('T')[0],
+            price: Number(d.close.toFixed(2)),
+            open: Number(d.open.toFixed(2)),
+            high: Number(d.high.toFixed(2)),
+            low: Number(d.low.toFixed(2)),
+            close: Number(d.close.toFixed(2)),
+            volume: Number(d.volume) || 0
+          }));
         }
-
-        // Calculate correct daily change:
-        let prevClose = regularMarketPrice;
-        if (history.length >= 2) {
-          const lastPoint = history[history.length - 1];
-          const secondLastPoint = history[history.length - 2];
-          const todayStr = new Date().toISOString().split('T')[0];
-          
-          if (lastPoint.date === todayStr) {
-            // Today's candle is already in the history.
-            prevClose = secondLastPoint.price;
-          } else {
-            // Today's candle is NOT in history yet.
-            // If the current price is the same as the last close (market has not opened today yet),
-            // show the variation of the last active trading session (lastPoint vs secondLastPoint).
-            const isMarketClosedToday = Math.abs(regularMarketPrice - lastPoint.price) < 0.001;
-            if (isMarketClosedToday) {
-              prevClose = secondLastPoint.price;
-            } else {
-              // Market is open today and price has moved, but history has not appended today's candle yet.
-              prevClose = lastPoint.price;
-            }
-          }
-        } else if (meta.previousClose) {
-          prevClose = meta.previousClose;
-        } else if (meta.chartPreviousClose) {
-          prevClose = meta.chartPreviousClose;
-        }
-
-        change = regularMarketPrice - prevClose;
-        changePercent = prevClose > 0 ? (change / prevClose) * 100 : 0.0;
-        loadedViaYahoo = true;
+        loadedViaYahoo = true; // Using same flag to bypass error check later
       }
     }
   } catch (err) {
-    console.warn('Yahoo Finance chart fetch failed, falling back to mocks', err);
+    console.warn('Brapi chart fetch failed, falling back to mocks', err);
   }
 
   // 2. Fetch Múltiplos Fundamentalistas from Investidor10
@@ -1686,61 +1636,45 @@ export interface CandleDataPoint {
   volume: number;
 }
 
-// Fetch OHLCV chart data from Yahoo Finance with configurable timeframe
-// Uses Yahoo's native interval support (1d, 1wk, 1mo) for accurate aggregation
+// Fetch OHLCV chart data from Brapi with configurable timeframe
 export async function fetchCandleChartData(
   symbol: string,
   timeframe: CandleTimeframe = 'daily'
 ): Promise<CandleDataPoint[]> {
   const cleanSymbol = symbol.toUpperCase().replace('.SA', '').trim();
-  const yahooSymbol = cleanSymbol.includes('.') || cleanSymbol.startsWith('^') || /^[A-Z]{1,5}$/.test(cleanSymbol)
-    ? cleanSymbol
-    : `${cleanSymbol}.SA`;
+  const brapiToken = import.meta.env.VITE_BRAPI_TOKEN || '';
 
-  // Map timeframe to Yahoo Finance API parameters
+  // Map timeframe to Brapi API parameters (extended ranges)
   const params: Record<CandleTimeframe, { range: string; interval: string }> = {
-    daily:   { range: '6mo',  interval: '1d' },
-    weekly:  { range: '2y',   interval: '1wk' },
-    monthly: { range: '5y',   interval: '1mo' },
+    daily:   { range: '1y',   interval: '1d' },
+    weekly:  { range: '5y',   interval: '1wk' },
+    monthly: { range: 'max',  interval: '1mo' },
   };
 
   const { range, interval } = params[timeframe];
+  const url = `https://brapi.dev/api/quote/${cleanSymbol}?range=${range}&interval=${interval}&token=${brapiToken}`;
 
   try {
-    const res = await fetch(`/yahoo-chart/${yahooSymbol}?range=${range}&interval=${interval}`);
-    if (!res.ok) throw new Error(`Yahoo chart returned ${res.status}`);
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Brapi chart returned ${res.status}`);
 
     const json = await res.json();
-    const result = json.chart?.result?.[0];
-    if (!result) throw new Error('No chart result');
+    const historyData = json.results?.[0]?.historicalDataPrice || [];
 
-    const timestamps: number[] = result.timestamp || [];
-    const quote = result.indicators?.quote?.[0] || {};
-    const closePrices: (number | null)[] = quote.close || [];
-    const openPrices: (number | null)[] = quote.open || [];
-    const highPrices: (number | null)[] = quote.high || [];
-    const lowPrices: (number | null)[] = quote.low || [];
-    const volumeList: (number | null)[] = quote.volume || [];
+    if (historyData.length === 0) throw new Error('No chart result');
 
-    const history: CandleDataPoint[] = [];
-    for (let i = 0; i < timestamps.length; i++) {
-      const c = closePrices[i];
-      const o = openPrices[i];
-      const h = highPrices[i];
-      const l = lowPrices[i];
-      const v = volumeList[i];
-      if (c !== null && c !== undefined) {
-        history.push({
-          date: new Date(timestamps[i] * 1000).toISOString().split('T')[0],
-          price: Number(c.toFixed(2)),
-          open: o !== null && o !== undefined ? Number(o.toFixed(2)) : Number(c.toFixed(2)),
-          high: h !== null && h !== undefined ? Number(h.toFixed(2)) : Number(c.toFixed(2)),
-          low: l !== null && l !== undefined ? Number(l.toFixed(2)) : Number(c.toFixed(2)),
-          close: Number(c.toFixed(2)),
-          volume: v !== null && v !== undefined ? Number(v) : 0,
-        });
-      }
-    }
+    const history: CandleDataPoint[] = historyData.map((d: any) => ({
+      date: new Date(d.date * 1000).toISOString().split('T')[0],
+      price: Number(d.close.toFixed(2)),
+      open: Number(d.open.toFixed(2)),
+      high: Number(d.high.toFixed(2)),
+      low: Number(d.low.toFixed(2)),
+      close: Number(d.close.toFixed(2)),
+      volume: Number(d.volume) || 0,
+    }));
+
+    // Generate fallback data if Brapi returns empty
+    if (history.length === 0) throw new Error('Empty history from Brapi');
 
     return history;
   } catch (err) {
@@ -1831,53 +1765,49 @@ function generateMockDividendEvents(symbol: string, years: number[]): DividendEv
   return events;
 }
 
-// Fetch dividend history from Yahoo Finance (uses events=div parameter)
+// Fetch dividend history from Brapi (extended range)
 export async function fetchDividendHistory(symbol: string): Promise<DividendHistoryResult> {
   const cleanSymbol = symbol.toUpperCase().replace('.SA', '').trim();
-  const yahooSymbol = cleanSymbol.includes('.') || cleanSymbol.startsWith('^') || /^[A-Z]{1,5}$/.test(cleanSymbol)
-    ? cleanSymbol
-    : `${cleanSymbol}.SA`;
+  const brapiToken = import.meta.env.VITE_BRAPI_TOKEN || '';
 
   const currentYear = new Date().getFullYear();
   const yearsToShow = [currentYear - 2, currentYear - 1, currentYear];
-
+  // With extended range, we can show up to 5-10 years on the UI if needed,
+  // but we'll return all available events. The UI can filter if needed.
   let events: DividendEvent[] = [];
   let currentPrice = 30;
   let longName = cleanSymbol;
   let dy = 0;
 
-  // Try Yahoo Finance
+  // Try Brapi
   try {
-    const res = await fetch(`/yahoo-chart/${yahooSymbol}?range=3y&interval=1mo&events=div`);
+    const url = `https://brapi.dev/api/quote/${cleanSymbol}?dividends=true&token=${brapiToken}`;
+    const res = await fetch(url);
     if (res.ok) {
       const json = await res.json();
-      const result = json.chart?.result?.[0];
+      const result = json.results?.[0];
       if (result) {
-        const meta = result.meta;
-        if (meta) {
-          currentPrice = meta.regularMarketPrice ?? meta.chartPreviousClose ?? currentPrice;
-          longName = meta.longName ?? meta.shortName ?? cleanSymbol;
-        }
+        currentPrice = result.regularMarketPrice ?? currentPrice;
+        longName = result.longName ?? result.shortName ?? cleanSymbol;
 
-        const dividends = result.events?.dividends;
-        if (dividends && typeof dividends === 'object') {
-          for (const key of Object.keys(dividends)) {
-            const div = dividends[key];
-            if (div && div.amount > 0) {
-              const dateObj = new Date(div.date * 1000);
+        const dividends = result.dividendsData?.cashDividends;
+        if (Array.isArray(dividends)) {
+          dividends.forEach(div => {
+            if (div.rate > 0 && div.paymentDate) {
+              const dateObj = new Date(div.paymentDate);
               events.push({
                 date: dateObj.toISOString().split('T')[0],
-                amount: Number(div.amount.toFixed(4)),
+                amount: Number(div.rate.toFixed(4)),
                 month: dateObj.getMonth(),
                 year: dateObj.getFullYear(),
               });
             }
-          }
+          });
         }
       }
     }
   } catch (err) {
-    console.warn(`Yahoo dividend fetch failed for ${cleanSymbol}:`, err);
+    console.warn(`Brapi dividend fetch failed for ${cleanSymbol}:`, err);
   }
 
   // Fallback to mock if no real events found
