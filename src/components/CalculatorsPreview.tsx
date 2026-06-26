@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Sliders, Calculator, RotateCcw, AlertTriangle, Zap, HelpCircle, Lock, Unlock } from 'lucide-react';
+import { Sliders, Calculator, RotateCcw, AlertTriangle, Zap, HelpCircle, Lock, Unlock, Printer } from 'lucide-react';
 import { ResponsiveContainer, ComposedChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import type { StockData } from '../services/api';
 
@@ -552,6 +552,55 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                 </div>
               </div>
             )}
+
+            {/* Glossário Dinâmico */}
+            <div className="bg-dark-card border border-dark-border rounded-2xl p-6 shadow-lg space-y-4">
+              <h3 className="text-xs font-extrabold text-brand-purple uppercase tracking-wider border-b border-dark-border/40 pb-2 mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                Fundamentação do Modelo
+              </h3>
+              <div className="space-y-3">
+                <div className="bg-dark-bg/40 p-3 rounded-lg border border-dark-border/30">
+                  <p className="text-xs text-dark-textPrimary font-bold mb-1">k (Custo de Capital Exigido)</p>
+                  <p className="text-2xs text-dark-textSecondary leading-relaxed">
+                    Derivado do CAPM (Rf + β * (Rm - Rf)). É o retorno mínimo que o investidor exige para compensar o risco do ativo. Rf representa o Tesouro (Selic), Rm a bolsa (Ibovespa) e β (Beta) a volatilidade do ativo.
+                  </p>
+                </div>
+                {valuationMode === 'GORDON' ? (
+                  <div className="bg-dark-bg/40 p-3 rounded-lg border border-dark-border/30">
+                    <p className="text-xs text-dark-textPrimary font-bold mb-1">g (Crescimento Constante)</p>
+                    <p className="text-2xs text-dark-textSecondary leading-relaxed">
+                      A taxa na qual os dividendos crescerão para sempre. Calculado como ROE * Taxa de Retenção (1 - Payout). Reflete a capacidade da empresa de reinvestir o lucro para gerar crescimento futuro sustentável.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="bg-dark-bg/40 p-3 rounded-lg border border-dark-border/30">
+                      <p className="text-xs text-dark-textPrimary font-bold mb-1">g1 & n (Estágio Acelerado)</p>
+                      <p className="text-2xs text-dark-textSecondary leading-relaxed">
+                        Taxa de crescimento anormal (g1) que a empresa consegue manter por uma vantagem competitiva temporária, durante um período finito de anos (n), antes de amadurecer.
+                      </p>
+                    </div>
+                    <div className="bg-dark-bg/40 p-3 rounded-lg border border-dark-border/30">
+                      <p className="text-xs text-dark-textPrimary font-bold mb-1">g2 (Crescimento Perpétuo)</p>
+                      <p className="text-2xs text-dark-textSecondary leading-relaxed">
+                        A taxa sustentável e conservadora de crescimento (geralmente acompanhando a inflação ou o PIB) que a empresa manterá eternamente após o amadurecimento.
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Print / Export PDF Button */}
+            <button
+              onClick={() => window.print()}
+              className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl text-sm font-extrabold uppercase tracking-wider text-white shadow-lg transition-all hover:scale-[1.02] active:scale-95 print:hidden"
+              style={{ background: 'linear-gradient(135deg, #10b981, #059669)', boxShadow: '0 4px 14px rgba(16,185,129,0.35)' }}
+            >
+              <Printer className="w-5 h-5" />
+              Gerar Relatório em PDF
+            </button>
+
           </div>
         </div>
       {/* ═══════════════════════════════════════════════ */}

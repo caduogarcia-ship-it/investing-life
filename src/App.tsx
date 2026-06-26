@@ -334,17 +334,19 @@ export default function App() {
   return (
     <div className="min-h-screen bg-dark-bg text-dark-textPrimary flex flex-col font-sans selection:bg-brand-primary/30 selection:text-white">
       {/* Header */}
-      <Header
-        onSearch={handleSearch}
-        onOpenSettings={() => setIsSettingsOpen(true)}
-        loading={loading}
-        onLogout={handleLogout}
-      />
+      <div className="print:hidden">
+        <Header
+          onSearch={handleSearch}
+          onOpenSettings={() => setIsSettingsOpen(true)}
+          loading={loading}
+          onLogout={handleLogout}
+        />
+      </div>
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-6 py-10 lg:px-8 space-y-8">
         
         {/* Main Tab Selectors */}
-        <div className="flex bg-dark-card border border-dark-border p-1 rounded-2xl text-xs font-bold uppercase tracking-wider max-w-5xl mx-auto justify-between shadow-md select-none w-full">
+        <div className="flex bg-dark-card border border-dark-border p-1 rounded-2xl text-xs font-bold uppercase tracking-wider max-w-5xl mx-auto justify-between shadow-md select-none w-full print:hidden">
           <button
             onClick={() => setActiveTab('analise')}
             className={`flex-1 py-2.5 rounded-xl transition-all duration-300 cursor-pointer active-scale flex items-center justify-center gap-1.5 ${
@@ -461,7 +463,7 @@ export default function App() {
 
         {/* Watchlist Strip (Horizontal Watchlist Bar) - Displayed in Analysis Detail and Candles Tabs */}
         {((activeTab === 'analise' && showDetail) || activeTab === 'candles') && (
-          <div className="bg-dark-card border border-dark-border rounded-2xl p-5 shadow-lg flex items-center gap-4 overflow-x-auto select-none no-scrollbar">
+          <div className="bg-dark-card border border-dark-border rounded-2xl p-5 shadow-lg flex items-center gap-4 overflow-x-auto select-none no-scrollbar print:hidden">
             <div className="flex items-center gap-2 text-xs font-bold text-dark-textSecondary uppercase tracking-wider shrink-0 pr-4 border-r border-dark-border/40">
               <FolderHeart className="w-4.5 h-4.5 text-brand-purple" />
               <span>Painel de Estudos</span>
@@ -710,7 +712,9 @@ export default function App() {
       />
 
       {/* Footer */}
-      <Footer />
+      <div className="print:hidden">
+        <Footer />
+      </div>
     </div>
   );
 }
