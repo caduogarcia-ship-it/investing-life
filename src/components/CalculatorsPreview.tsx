@@ -11,7 +11,6 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
   // --- VALUATION MODE TOGGLE ---
   const [valuationMode, setValuationMode] = useState<'GORDON' | 'VARIADO'>('GORDON');
 
-  // --- DEFAULT FALLBACKS & RECOMMENDED PARAMETERS ---
   const recommendedParams = useMemo(() => {
     if (!stockData) {
       return {
@@ -21,6 +20,10 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
         roe: 12.0,
         payout: 40.0,
         d1: 1.35,
+        g1: 15.0,
+        n: 5,
+        g2: 5.0,
+        d0: 1.20,
       };
     }
 
@@ -54,18 +57,18 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
       roe: Number(roe.toFixed(2)),
       payout: Number(payout.toFixed(2)),
       d1: Number(d1.toFixed(2)),
+      g1: Number(Math.max(5, Math.min(30, (roe * 1.5))).toFixed(2)),
+      n: 5,
+      g2: Number(Math.max(2, Math.min(gEst * 100, rf - 2)).toFixed(2)),
+      d0: Number(d0.toFixed(2)),
     };
   }, [stockData]);
 
   // --- INTERACTIVE / CUSTOMIZABLE STATES ---
   const [inputs, setInputs] = useState(recommendedParams);
   const [locks, setLocks] = useState({
-    rf: false,
-    beta: false,
-    rm: false,
-    roe: false,
-    payout: false,
-    d1: false,
+    rf: false, beta: false, rm: false, roe: false, payout: false, d1: false,
+    g1: false, n: false, g2: false, d0: false
   });
 
   const [growthScenario, setGrowthScenario] = useState<'otimista' | 'pessimista' | 'manual'>('manual');
@@ -73,7 +76,10 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
   // Sync initial state
   useEffect(() => {
     setInputs(recommendedParams);
-    setLocks({ rf: false, beta: false, rm: false, roe: false, payout: false, d1: false });
+    setLocks({ 
+      rf: false, beta: false, rm: false, roe: false, payout: false, d1: false,
+      g1: false, n: false, g2: false, d0: false 
+    });
     setGrowthScenario('manual');
   }, [recommendedParams]);
 
@@ -89,7 +95,10 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
 
   const handleReset = () => {
     setInputs(recommendedParams);
-    setLocks({ rf: false, beta: false, rm: false, roe: false, payout: false, d1: false });
+    setLocks({ 
+      rf: false, beta: false, rm: false, roe: false, payout: false, d1: false,
+      g1: false, n: false, g2: false, d0: false 
+    });
     setGrowthScenario('manual');
   };
 
@@ -104,6 +113,10 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
         if (!locks.roe) next.roe = Math.min(50, prev.roe * 1.2);
         if (!locks.payout) next.payout = Math.max(10, prev.payout * 0.8);
         if (!locks.d1) next.d1 = prev.d1 * 1.15;
+        if (!locks.g1) next.g1 = Math.min(40, prev.g1 * 1.25);
+        if (!locks.n) next.n = Math.min(10, prev.n + 1);
+        if (!locks.g2) next.g2 = Math.min(10, prev.g2 * 1.15);
+        if (!locks.d0) next.d0 = prev.d0 * 1.1;
       } else {
         if (!locks.rf) next.rf = Math.min(20, prev.rf * 1.1);
         if (!locks.beta) next.beta = Math.min(3.0, prev.beta * 1.15);
@@ -111,6 +124,10 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
         if (!locks.roe) next.roe = Math.max(2, prev.roe * 0.8);
         if (!locks.payout) next.payout = Math.min(95, prev.payout * 1.2);
         if (!locks.d1) next.d1 = Math.max(0, prev.d1 * 0.85);
+        if (!locks.g1) next.g1 = Math.max(0, prev.g1 * 0.75);
+        if (!locks.n) next.n = Math.max(2, prev.n - 1);
+        if (!locks.g2) next.g2 = Math.max(0, prev.g2 * 0.8);
+        if (!locks.d0) next.d0 = Math.max(0, prev.d0 * 0.9);
       }
       return next;
     });
@@ -119,46 +136,70 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
   // --- ENGINE DE CÁLCULO ---
   const calc = useMemo(() => {
     // Passo 2: Cálculo de k (CAPM)
-    // k = Rf + Beta * (Rm - Rf)
     const k = (inputs.rf / 100) + inputs.beta * ((inputs.rm / 100) - (inputs.rf / 100));
     const kPerc = k * 100;
 
-    // Passo 3: Cálculo de g
-    // b = 1 - Payout Ratio
-    const b = 1 - (inputs.payout / 100);
-    // g = ROE * b
-    const g = (inputs.roe / 100) * b;
-    const gPerc = g * 100;
+    if (valuationMode === 'GORDON') {
+      const b = 1 - (inputs.payout / 100);
+      const g = (inputs.roe / 100) * b;
+      const gPerc = g * 100;
+      const isValid = k > g;
+      
+      let p0 = 0;
+      if (isValid) {
+        p0 = inputs.d1 / (k - g);
+      }
 
-    // Passo 4: Validação Crítica
-    const isValid = k > g;
+      const chartData = [];
+      let currentD = inputs.d1;
+      for (let year = 1; year <= 10; year++) {
+        chartData.push({ year: `Ano ${year}`, dividendo: Number(currentD.toFixed(2)) });
+        currentD = currentD * (1 + g);
+      }
 
-    // Passo 5: Cálculo de P0
-    let p0 = 0;
-    if (isValid) {
-      p0 = inputs.d1 / (k - g);
+      return { kPerc, gPerc, isValid, p0, chartData, vpEstagio1: 0, vpTV: 0 };
+    } else {
+      // VARIADO MODE
+      const g1 = inputs.g1 / 100;
+      const g2 = inputs.g2 / 100;
+      const n = inputs.n;
+
+      const isValid = k > g2; // Regra de negócio: Custo de Capital deve ser maior que Crescimento Perpétuo
+      
+      let p0 = 0;
+      let vpEstagio1 = 0;
+      let vpTV = 0;
+      const chartData = [];
+      
+      if (isValid) {
+        let currentD = inputs.d0;
+        
+        // Estágio 1 (Crescimento Acelerado)
+        for (let t = 1; t <= n; t++) {
+          currentD = currentD * (1 + g1); // Dt
+          const pvDt = currentD / Math.pow(1 + k, t);
+          vpEstagio1 += pvDt;
+          chartData.push({ year: `Ano ${t}`, dividendo: Number(currentD.toFixed(2)) });
+        }
+
+        // Estágio 2 (Perpetuidade)
+        const dNPlus1 = currentD * (1 + g2);
+        const tvN = dNPlus1 / (k - g2);
+        vpTV = tvN / Math.pow(1 + k, n);
+        
+        p0 = vpEstagio1 + vpTV;
+        
+        // Projetar +5 anos no gráfico para ilustrar a perpetuidade
+        let currentDStage2 = dNPlus1;
+        for (let t = n + 1; t <= n + 5; t++) {
+          chartData.push({ year: `Ano ${t}`, dividendo: Number(currentDStage2.toFixed(2)) });
+          currentDStage2 = currentDStage2 * (1 + g2);
+        }
+      }
+
+      return { kPerc, gPerc: inputs.g2, isValid, p0, chartData, vpEstagio1, vpTV };
     }
-
-    // Gerar dados para o Gráfico (Projeção de 10 anos)
-    const chartData = [];
-    let currentD = inputs.d1;
-    for (let year = 1; year <= 10; year++) {
-      chartData.push({
-        year: `Ano ${year}`,
-        dividendo: Number(currentD.toFixed(2)),
-      });
-      // Crescimento projetado para o próximo ano
-      currentD = currentD * (1 + g);
-    }
-
-    return {
-      kPerc,
-      gPerc,
-      isValid,
-      p0,
-      chartData
-    };
-  }, [inputs]);
+  }, [inputs, valuationMode]);
 
   const currencySymbol = stockData?.currency === 'USD' ? '$' : 'R$';
 
@@ -275,7 +316,7 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                 }`}
                 style={valuationMode === 'VARIADO' ? { background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', boxShadow: '0 4px 14px rgba(99,102,241,0.35)' } : {}}
               >
-                ● Variado (Em Breve)
+                ● Variado (2 Estágios)
               </button>
             </div>
 
@@ -291,16 +332,7 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
         </div>
       </div>
 
-      {valuationMode === 'VARIADO' ? (
-        <div className="bg-dark-card border border-dark-border p-12 rounded-2xl text-center space-y-4 shadow-lg">
-          <Calculator className="w-12 h-12 text-brand-purple mx-auto opacity-50" />
-          <h3 className="text-xl font-bold text-dark-textPrimary">Modelo de Crescimento Variado</h3>
-          <p className="text-dark-textSecondary max-w-lg mx-auto">
-            Este modelo está aguardando as novas especificações matemáticas e será implementado em breve. Por favor, utilize o modelo de Crescimento Constante (Gordon) enquanto isso.
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* ─── COL 1 & 2: Parameters ─── */}
           <div className="lg:col-span-2 space-y-6">
             
@@ -335,7 +367,9 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                 <div className="p-1.5 rounded-lg" style={{ background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.2)' }}>
                   <Sliders className="w-4 h-4 text-brand-purple" />
                 </div>
-                <h3 className="text-sm font-black text-dark-textPrimary uppercase tracking-wider" style={{ fontFamily: 'Outfit, sans-serif' }}>Parâmetros da Fórmula de Gordon</h3>
+                <h3 className="text-sm font-black text-dark-textPrimary uppercase tracking-wider" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                  {valuationMode === 'GORDON' ? 'Parâmetros da Fórmula de Gordon' : 'Parâmetros do Crescimento Variado'}
+                </h3>
               </div>
 
               <div className="p-6 space-y-7">
@@ -354,30 +388,68 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                   </div>
                 </div>
 
-                {/* ── Bloco B: Fundamentos ── */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-md flex items-center justify-center text-xs font-black text-brand-primary" style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.2)' }}>B</span>
-                    <span className="text-sm font-extrabold text-brand-primary uppercase tracking-wider">Variáveis Fundamentais (g)</span>
-                  </div>
+                {valuationMode === 'GORDON' ? (
+                  <>
+                    {/* ── Bloco B: Fundamentos ── */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-md flex items-center justify-center text-xs font-black text-brand-primary" style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.2)' }}>B</span>
+                        <span className="text-sm font-extrabold text-brand-primary uppercase tracking-wider">Variáveis Fundamentais (g)</span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <LockableInput label="ROE" value={inputs.roe} min={1} max={60} step={0.5} unit="%" objKey="roe" tooltip="Return on Equity" />
+                        <LockableInput label="Payout Ratio" value={inputs.payout} min={0} max={100} step={1} unit="%" objKey="payout" tooltip="Porcentagem do Lucro Distribuída" />
+                      </div>
+                    </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <LockableInput label="ROE" value={inputs.roe} min={1} max={60} step={0.5} unit="%" objKey="roe" tooltip="Return on Equity" />
-                    <LockableInput label="Payout Ratio" value={inputs.payout} min={0} max={100} step={1} unit="%" objKey="payout" tooltip="Porcentagem do Lucro Distribuída" />
-                  </div>
-                </div>
+                    {/* ── Bloco C: Fluxo de Caixa ── */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-md flex items-center justify-center text-xs font-black text-emerald-400" style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.2)' }}>C</span>
+                        <span className="text-sm font-extrabold text-emerald-400 uppercase tracking-wider">Variável de Fluxo (Base)</span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <LockableInput label="Dividendo Esperado (D1)" value={inputs.d1} min={0.01} max={100} step={0.05} unit={currencySymbol} objKey="d1" tooltip="Dividendo Projetado para o Ano 1" />
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* ── Bloco B: Estágio 1 (Variado) ── */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-md flex items-center justify-center text-xs font-black text-brand-primary" style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.2)' }}>B</span>
+                        <span className="text-sm font-extrabold text-brand-primary uppercase tracking-wider">Estágio 1 (Cresc. Acelerado)</span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <LockableInput label="Cresc. Inicial (g1)" value={inputs.g1} min={0} max={100} step={0.5} unit="%" objKey="g1" tooltip="Taxa de Crescimento Inicial Anormal" />
+                        <LockableInput label="Duração (n)" value={inputs.n} min={1} max={20} step={1} unit="anos" objKey="n" tooltip="Duração do crescimento acelerado em anos" />
+                      </div>
+                    </div>
 
-                {/* ── Bloco C: Fluxo de Caixa ── */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-md flex items-center justify-center text-xs font-black text-emerald-400" style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.2)' }}>C</span>
-                    <span className="text-sm font-extrabold text-emerald-400 uppercase tracking-wider">Variável de Fluxo (Base)</span>
-                  </div>
+                    {/* ── Bloco C: Estágio 2 (Variado) ── */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-md flex items-center justify-center text-xs font-black text-emerald-400" style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.2)' }}>C</span>
+                        <span className="text-sm font-extrabold text-emerald-400 uppercase tracking-wider">Estágio 2 (Perpetuidade)</span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <LockableInput label="Cresc. Perpétuo (g2)" value={inputs.g2} min={0} max={15} step={0.1} unit="%" objKey="g2" tooltip="Taxa constante de crescimento na perpetuidade (k > g2)" />
+                      </div>
+                    </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <LockableInput label="Dividendo Esperado (D1)" value={inputs.d1} min={0.01} max={100} step={0.05} unit={currencySymbol} objKey="d1" tooltip="Dividendo Projetado para o Ano 1" />
-                  </div>
-                </div>
+                    {/* ── Bloco D: Fluxo Base (Variado) ── */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-md flex items-center justify-center text-xs font-black text-rose-400" style={{ background: 'rgba(244,63,94,0.12)', border: '1px solid rgba(244,63,94,0.2)' }}>D</span>
+                        <span className="text-sm font-extrabold text-rose-400 uppercase tracking-wider">Fluxo de Caixa Inicial</span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <LockableInput label="Último Dividendo (D0)" value={inputs.d0} min={0.01} max={100} step={0.05} unit={currencySymbol} objKey="d0" tooltip="Último dividendo pago pelo ativo" />
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 {/* ── Bloco de Explicação de Benchmarks ── */}
                 <div className="mt-8 bg-dark-bg/40 border border-dark-border/40 rounded-xl p-5 space-y-3">
@@ -419,9 +491,22 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                 </div>
                 
                 <div className="flex justify-between items-center p-3 rounded-xl bg-dark-bg/60 border border-dark-border/50">
-                  <span className="text-sm text-dark-textSecondary font-medium">Taxa de Cresc. (g)</span>
+                  <span className="text-sm text-dark-textSecondary font-medium">{valuationMode === 'GORDON' ? 'Taxa de Cresc. (g)' : 'Cresc. Perpétuo (g2)'}</span>
                   <span className="text-lg font-black font-mono text-brand-primary">{calc.gPerc.toFixed(2)}%</span>
                 </div>
+                
+                {valuationMode === 'VARIADO' && calc.isValid && (
+                  <>
+                    <div className="flex justify-between items-center p-3 rounded-xl bg-dark-bg/60 border border-dark-border/50">
+                      <span className="text-sm text-dark-textSecondary font-medium">VP Estágio 1</span>
+                      <span className="text-lg font-black font-mono text-emerald-400">{currencySymbol} {calc.vpEstagio1.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 rounded-xl bg-dark-bg/60 border border-dark-border/50">
+                      <span className="text-sm text-dark-textSecondary font-medium">VP Perpetuidade (TV)</span>
+                      <span className="text-lg font-black font-mono text-emerald-400">{currencySymbol} {calc.vpTV.toFixed(2)}</span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
@@ -435,10 +520,10 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                   <div className="space-y-2">
                     <h3 className="text-xl font-black text-brand-danger" style={{ fontFamily: 'Outfit, sans-serif' }}>Erro de Premissa</h3>
                     <p className="text-sm text-dark-textSecondary font-medium leading-relaxed">
-                      O Custo de Capital Exigido (k) deve ser <strong className="text-dark-textPrimary">estritamente maior</strong> do que a Taxa de Crescimento Perpétuo (g) para que o modelo seja válido.
+                      O Custo de Capital Exigido (k) deve ser <strong className="text-dark-textPrimary">estritamente maior</strong> do que a Taxa de Crescimento Perpétuo ({valuationMode === 'GORDON' ? 'g' : 'g2'}) para que o modelo seja válido.
                     </p>
                     <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 bg-dark-bg/50 rounded-lg text-xs font-mono text-dark-textSecondary">
-                      k ({calc.kPerc.toFixed(2)}%) ≤ g ({calc.gPerc.toFixed(2)}%)
+                      k ({calc.kPerc.toFixed(2)}%) ≤ {valuationMode === 'GORDON' ? 'g' : 'g2'} ({calc.gPerc.toFixed(2)}%)
                     </div>
                   </div>
                 </div>
@@ -462,27 +547,31 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                   </div>
                   
                   <div className="text-2xs text-dark-textSecondary font-medium mt-2 bg-dark-bg/80 px-3 py-1.5 rounded-lg border border-dark-border">
-                    P₀ = D₁ / (k - g)
+                    {valuationMode === 'GORDON' ? 'P₀ = D₁ / (k - g)' : 'P₀ = VP(Estágio 1) + VP(Perpetuidade)'}
                   </div>
                 </div>
               </div>
             )}
           </div>
         </div>
-      )}
-
       {/* ═══════════════════════════════════════════════ */}
       {/* GRÁFICO FINAL                                   */}
       {/* ═══════════════════════════════════════════════ */}
-      {valuationMode === 'GORDON' && calc.isValid && (
+      {calc.isValid && (
         <div className="bg-dark-card border border-dark-border rounded-2xl p-6 shadow-lg animate-fadeIn">
           <div className="flex items-center gap-3 mb-8">
             <div className="p-2 bg-brand-primary/10 rounded-lg border border-brand-primary/20">
               <Calculator className="w-5 h-5 text-brand-primary" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-dark-textPrimary" style={{ fontFamily: 'Outfit, sans-serif' }}>Projeção de Dividendos (Gordon)</h3>
-              <p className="text-xs text-dark-textSecondary mt-0.5">Visão do crescimento constante de {calc.gPerc.toFixed(2)}% ao ano</p>
+              <h3 className="text-lg font-bold text-dark-textPrimary" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                Projeção de Dividendos ({valuationMode === 'GORDON' ? 'Gordon' : 'Crescimento Variado'})
+              </h3>
+              <p className="text-xs text-dark-textSecondary mt-0.5">
+                {valuationMode === 'GORDON' 
+                  ? `Visão do crescimento constante de ${calc.gPerc.toFixed(2)}% ao ano`
+                  : `Crescimento acelerado de ${inputs.g1}% por ${inputs.n} anos, seguido de perpetuidade a ${inputs.g2}%`}
+              </p>
             </div>
           </div>
 
