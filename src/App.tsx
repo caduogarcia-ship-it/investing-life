@@ -1,5 +1,5 @@
 // src/App.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Header } from './components/Header';
 import { StockSummary } from './components/StockSummary';
 import { StockChart } from './components/StockChart';
@@ -17,17 +17,20 @@ import { RecommendedPortfolios } from './components/RecommendedPortfolios';
 import { QuickCompare } from './components/QuickCompare';
 import { fetchStockData, getSimilarTickers } from './services/api';
 import type { StockData, B3Ticker } from './services/api';
-import { AlertCircle, FolderHeart, Compass, ArrowRight, LineChart, Wallet, CandlestickChart, DollarSign, Trophy, Star, Calculator } from 'lucide-react';
+import { AlertCircle, FolderHeart, Compass, ArrowRight, LineChart, Wallet, CandlestickChart, DollarSign, Trophy, Star, Calculator, Shield } from 'lucide-react';
 import { Login } from './components/Login';
 import { HomeOverview } from './components/HomeOverview';
 import { AddAssetModal } from './components/AddAssetModal';
 import type { PortfolioItem } from './components/Portfolio';
 import { CalculatorsPreview } from './components/CalculatorsPreview';
+import { AdminHub } from './components/AdminHub';
+import { supabase, loadUserData, saveUserData, ADMIN_EMAIL } from './services/supabase';
 
 export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
-    return localStorage.getItem('b3_logged_in') === 'true';
-  });
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  const [currentUserEmail, setCurrentUserEmail] = useState<string>('');
+  const [currentUserId, setCurrentUserId] = useState<string>('');
+  const [authLoading, setAuthLoading] = useState(true);
 
   const [ticker, setTicker] = useState<string>(() => {
     return localStorage.getItem('b3_selected_ticker') || 'PETR4';
@@ -41,78 +44,83 @@ export default function App() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   
-  const [watchlist, setWatchlist] = useState<string[]>(() => {
-    const saved = localStorage.getItem('b3_watchlist');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error('Failed to parse watchlist from localStorage', e);
-      }
-    }
-    return ['PETR4', 'VALE3', 'WEGE3', 'CURY3', 'TEND3', 'ITUB4'];
-  });
+  const [watchlist, setWatchlist] = useState<string[]>(['PETR4', 'VALE3', 'WEGE3', 'CURY3', 'TEND3', 'ITUB4']);
+  const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
 
-  const [portfolio, setPortfolio] = useState<PortfolioItem[]>(() => {
-    const saved = localStorage.getItem('b3_analise_portfolio');
-    let currentPortfolio: PortfolioItem[] = [];
-    if (saved) {
-      try {
-        currentPortfolio = JSON.parse(saved);
-      } catch (e) {
-        console.error('Failed to parse portfolio from localStorage', e);
-      }
-    }
-
-    // Seed/merge the 12 user-requested assets exactly once
-    const seeded = localStorage.getItem('b3_portfolio_seeded_v2');
-    if (!seeded) {
-      const initialAssets: PortfolioItem[] = [
-        { symbol: 'BBDC3', quantity: 8, averagePrice: 11.55, currentPrice: 11.55, longName: 'Banco Bradesco S.A.' },
-        { symbol: 'VALE3', quantity: 1, averagePrice: 51.90, currentPrice: 51.90, longName: 'Vale S.A.' },
-        { symbol: 'TAEE11', quantity: 2, averagePrice: 34.62, currentPrice: 34.62, longName: 'Taesa S.A.' },
-        { symbol: 'EMBJ3', quantity: 1, averagePrice: 73.60, currentPrice: 73.60, longName: 'Embraer S.A.' },
-        { symbol: 'PRIO3', quantity: 1, averagePrice: 62.16, currentPrice: 62.16, longName: 'PetroRio S.A.' },
-        { symbol: 'SAPR4', quantity: 7, averagePrice: 6.27, currentPrice: 6.27, longName: 'Sanepar S.A.' },
-        { symbol: 'POMO4', quantity: 8, averagePrice: 6.35, currentPrice: 6.35, longName: 'Marcopolo S.A.' },
-        { symbol: 'ITSA4', quantity: 3, averagePrice: 10.43, currentPrice: 10.43, longName: 'Itaúsa S.A.' },
-        { symbol: 'SMFT3', quantity: 2, averagePrice: 18.64, currentPrice: 18.64, longName: 'Smartfit S.A.' },
-        { symbol: 'TOTS3', quantity: 1, averagePrice: 33.09, currentPrice: 33.09, longName: 'Totvs S.A.' },
-        { symbol: 'B3SA3', quantity: 2, averagePrice: 16.33, currentPrice: 16.33, longName: 'B3 S.A.' },
-        { symbol: 'CPLE3', quantity: 2, averagePrice: 12.10, currentPrice: 12.10, longName: 'Copel S.A.' }
-      ];
-
-      const merged = [...currentPortfolio];
-      initialAssets.forEach(asset => {
-        const existingIdx = merged.findIndex(item => item.symbol.toUpperCase() === asset.symbol.toUpperCase());
-        if (existingIdx > -1) {
-          const existing = merged[existingIdx];
-          const newQty = existing.quantity + asset.quantity;
-          const newAvg = ((existing.quantity * existing.averagePrice) + (asset.quantity * asset.averagePrice)) / newQty;
-          merged[existingIdx] = {
-            ...existing,
-            quantity: newQty,
-            averagePrice: Number(newAvg.toFixed(2)),
-          };
-        } else {
-          merged.push(asset);
-        }
-      });
-
-      localStorage.setItem('b3_portfolio_seeded_v2', 'true');
-      localStorage.setItem('b3_analise_portfolio', JSON.stringify(merged));
-      return merged;
-    }
-
-    return currentPortfolio;
-  });
-
-  const [activeTab, setActiveTab] = useState<'analise' | 'carteira' | 'candles' | 'dividendos' | 'rankings' | 'recomendadas' | 'calculos'>(() => {
+  const [activeTab, setActiveTab] = useState<'analise' | 'carteira' | 'candles' | 'dividendos' | 'rankings' | 'recomendadas' | 'calculos' | 'admin'>(() => {
     const saved = localStorage.getItem('b3_active_tab');
     return (saved as any) || 'analise';
   });
 
-  // Persist states to localStorage
+  // Debounce ref for cloud saving
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ── Supabase Auth: Check session on mount ──
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          setIsLoggedIn(true);
+          setCurrentUserEmail(session.user.email || '');
+          setCurrentUserId(session.user.id);
+          // Load user data from cloud
+          const userData = await loadUserData(session.user.id);
+          if (userData) {
+            if (Array.isArray(userData.portfolio) && userData.portfolio.length > 0) {
+              setPortfolio(userData.portfolio);
+            }
+            if (Array.isArray(userData.watchlist) && userData.watchlist.length > 0) {
+              setWatchlist(userData.watchlist);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Session check failed:', err);
+      } finally {
+        setAuthLoading(false);
+      }
+    };
+    checkSession();
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        setIsLoggedIn(true);
+        setCurrentUserEmail(session.user.email || '');
+        setCurrentUserId(session.user.id);
+      } else {
+        setIsLoggedIn(false);
+        setCurrentUserEmail('');
+        setCurrentUserId('');
+        setPortfolio([]);
+        setWatchlist(['PETR4', 'VALE3', 'WEGE3', 'CURY3', 'TEND3', 'ITUB4']);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  // ── Cloud Sync: Save portfolio & watchlist to Supabase (debounced) ──
+  const syncToCloud = useCallback(() => {
+    if (!currentUserId || !currentUserEmail) return;
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      saveUserData(currentUserId, currentUserEmail, portfolio, watchlist);
+    }, 1500);
+  }, [currentUserId, currentUserEmail, portfolio, watchlist]);
+
+  useEffect(() => {
+    if (isLoggedIn && currentUserId) {
+      syncToCloud();
+    }
+  }, [portfolio, watchlist, isLoggedIn, currentUserId, syncToCloud]);
+
+  const isAdmin = currentUserEmail === ADMIN_EMAIL;
+
+  // Persist local-only states to localStorage (ticker, tab)
   useEffect(() => {
     localStorage.setItem('b3_selected_ticker', ticker);
   }, [ticker]);
@@ -120,14 +128,6 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('b3_active_tab', activeTab);
   }, [activeTab]);
-
-  useEffect(() => {
-    localStorage.setItem('b3_watchlist', JSON.stringify(watchlist));
-  }, [watchlist]);
-
-  useEffect(() => {
-    localStorage.setItem('b3_analise_portfolio', JSON.stringify(portfolio));
-  }, [portfolio]);
 
   const handleAddAsset = async (symbol: string, type: 'studying' | 'portfolio', qty?: number, avgPrice?: number) => {
     const cleanSym = symbol.toUpperCase().replace('.SA', '').trim();
@@ -195,16 +195,40 @@ export default function App() {
     }
   };
 
-  const handleLoginSuccess = (email: string) => {
-    localStorage.setItem('b3_logged_in', 'true');
-    localStorage.setItem('b3_user_email', email);
+  const handleLoginSuccess = async (email: string) => {
+    setCurrentUserEmail(email);
     setIsLoggedIn(true);
+    // Load user data from cloud after login
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setCurrentUserId(session.user.id);
+        const userData = await loadUserData(session.user.id);
+        if (userData) {
+          if (Array.isArray(userData.portfolio) && userData.portfolio.length > 0) {
+            setPortfolio(userData.portfolio);
+          }
+          if (Array.isArray(userData.watchlist) && userData.watchlist.length > 0) {
+            setWatchlist(userData.watchlist);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Post-login data load failed:', err);
+    }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('b3_logged_in');
-    localStorage.removeItem('b3_user_email');
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
     setIsLoggedIn(false);
+    setCurrentUserEmail('');
+    setCurrentUserId('');
+    setPortfolio([]);
+    setWatchlist(['PETR4', 'VALE3', 'WEGE3', 'CURY3', 'TEND3', 'ITUB4']);
   };
 
 
@@ -284,6 +308,18 @@ export default function App() {
   };
 
 
+
+  // Show loading spinner while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-dark-bg flex items-center justify-center">
+        <div className="text-center space-y-4 animate-fadeIn">
+          <div className="w-12 h-12 border-4 border-brand-primary/30 border-t-brand-primary rounded-full animate-spin mx-auto" />
+          <p className="text-sm text-dark-textSecondary font-medium" style={{ fontFamily: 'Outfit, sans-serif' }}>Verificando sessão...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isLoggedIn) {
     return <Login onLoginSuccess={handleLoginSuccess} />;
@@ -387,6 +423,20 @@ export default function App() {
             <Star className="w-3.5 h-3.5" />
             Recomendações
           </button>
+          {isAdmin && (
+            <button
+              onClick={() => setActiveTab('admin')}
+              className={`flex-1 py-2.5 rounded-xl transition-all duration-300 cursor-pointer active-scale flex items-center justify-center gap-1.5 ${
+                activeTab === 'admin' 
+                  ? 'text-white' 
+                  : 'text-dark-textSecondary hover:text-dark-textPrimary'
+              }`}
+              style={activeTab === 'admin' ? { background: 'linear-gradient(135deg, #ef4444, #f59e0b)', boxShadow: '0 4px 15px rgba(239,68,68,0.3)', fontFamily: 'Outfit, sans-serif' } : { fontFamily: 'Outfit, sans-serif' }}
+            >
+              <Shield className="w-3.5 h-3.5" />
+              Admin
+            </button>
+          )}
         </div>
 
         {/* Error Alert */}
@@ -496,6 +546,8 @@ export default function App() {
               setActiveTab('analise');
             }}
           />
+        ) : activeTab === 'admin' && isAdmin ? (
+          <AdminHub currentEmail={currentUserEmail} />
         ) : activeTab === 'candles' ? (
           <CandleAnalysis ticker={ticker} />
         ) : loading ? (

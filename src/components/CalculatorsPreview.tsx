@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Sliders, Calculator, Info, RotateCcw, AlertTriangle, TrendingUp, HelpCircle } from 'lucide-react';
-import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { Sliders, Calculator, Info, RotateCcw, AlertTriangle, TrendingUp, HelpCircle, Zap } from 'lucide-react';
+import { ResponsiveContainer, ComposedChart, Bar, Line, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import type { StockData } from '../services/api';
 
 interface CalculatorsPreviewProps {
@@ -338,6 +338,55 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
               Restaurar
             </button>
           </div>
+
+          {/* ── Auto-fill Preset Buttons ── */}
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-xs font-bold text-dark-textSecondary uppercase tracking-wider" style={{ fontFamily: 'Outfit, sans-serif' }}>Preenchimento Rápido:</span>
+            <button
+              type="button"
+              onClick={() => {
+                setGrowthScenario('otimista');
+                setPessimisticDiscount(0);
+                setCustomBeta(Math.max(0.5, recommendedParams.beta * 0.85));
+                setCustomRf(recommendedParams.rf);
+                setCustomPremium(Math.max(3.5, recommendedParams.premium * 0.85));
+                setCustomRoe(Math.min(40, recommendedParams.roe * 1.15));
+                setCustomRoic(Math.min(35, recommendedParams.roic * 1.15));
+                setCustomPayout(Math.max(20, recommendedParams.payout * 0.85));
+                setCustomCagr(Math.min(25, recommendedParams.cagr * 1.2));
+                setCustomDiv0(recommendedParams.div0);
+                setCustomFcfe0(recommendedParams.fcfe0);
+                setCustomWacc(8.5);
+              }}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wider cursor-pointer select-none active-scale transition-all text-white shadow-lg hover:shadow-xl"
+              style={{ background: 'linear-gradient(135deg, #10b981, #059669)', boxShadow: '0 3px 12px rgba(16,185,129,0.3)' }}
+            >
+              <Zap className="w-3.5 h-3.5" />
+              Otimista
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setGrowthScenario('pessimista');
+                setPessimisticDiscount(30);
+                setCustomBeta(Math.min(2.5, recommendedParams.beta * 1.25));
+                setCustomRf(recommendedParams.rf * 1.05);
+                setCustomPremium(Math.min(8, recommendedParams.premium * 1.2));
+                setCustomRoe(Math.max(5, recommendedParams.roe * 0.75));
+                setCustomRoic(Math.max(4, recommendedParams.roic * 0.75));
+                setCustomPayout(Math.min(90, recommendedParams.payout * 1.2));
+                setCustomCagr(Math.max(1, recommendedParams.cagr * 0.6));
+                setCustomDiv0(recommendedParams.div0);
+                setCustomFcfe0(recommendedParams.fcfe0);
+                setCustomWacc(10);
+              }}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wider cursor-pointer select-none active-scale transition-all text-white shadow-lg hover:shadow-xl"
+              style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)', boxShadow: '0 3px 12px rgba(239,68,68,0.3)' }}
+            >
+              <Zap className="w-3.5 h-3.5" />
+              Pessimista
+            </button>
+          </div>
         </div>
       </div>
 
@@ -432,21 +481,7 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                         <span className="text-[11px] font-mono text-dark-textSecondary/70">Rec: {recommendedParams.beta}</span>
                       </div>
                       <div className="flex flex-wrap gap-1">
-                        <button type="button" onClick={() => setCustomBeta(0.75)}
-                          className="px-2.5 py-1 rounded-lg text-[11px] font-bold text-dark-textPrimary cursor-pointer active-scale transition-all hover:border-brand-purple/60"
-                          style={{ background: 'rgba(9,13,22,0.6)', border: '1px solid rgba(31,41,55,0.7)' }}>
-                          Defensivo
-                        </button>
-                        <button type="button" onClick={() => setCustomBeta(1.0)}
-                          className="px-2.5 py-1 rounded-lg text-[11px] font-bold text-dark-textPrimary cursor-pointer active-scale transition-all hover:border-brand-purple/60"
-                          style={{ background: 'rgba(9,13,22,0.6)', border: '1px solid rgba(31,41,55,0.7)' }}>
-                          Neutro
-                        </button>
-                        <button type="button" onClick={() => setCustomBeta(1.35)}
-                          className="px-2.5 py-1 rounded-lg text-[11px] font-bold text-dark-textPrimary cursor-pointer active-scale transition-all hover:border-brand-purple/60"
-                          style={{ background: 'rgba(9,13,22,0.6)', border: '1px solid rgba(31,41,55,0.7)' }}>
-                          Agressivo
-                        </button>
+                        <span className="text-[10px] font-mono text-dark-textSecondary/50 italic">β {'<'} 1 = menor risco | β {'>'} 1 = maior risco</span>
                       </div>
                     </div>
                   </div>
@@ -734,11 +769,11 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse" />
                   <h3 className="text-sm font-black text-dark-textPrimary uppercase tracking-wider">
-                    {valuationMode === 'DDM' ? 'Perpetuidade Gordon DDM' : 'Perpetuidade Gordon FCFE'}
+                    {valuationMode === 'DDM' ? 'Modelo de Gordon (DDM)' : 'Modelo de Gordon (FCFE)'}
                   </h3>
                 </div>
                 <span className="text-[11px] px-2.5 py-0.5 rounded-full font-bold" style={{ background: 'rgba(79,70,229,0.15)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.2)' }}>
-                  {valuationMode === 'DDM' ? 'GGM' : 'FCFE'}
+                  {valuationMode === 'DDM' ? 'DDM' : 'FCFE'}
                 </span>
               </div>
 
@@ -776,7 +811,7 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-brand-primary animate-pulse" />
                   <h3 className="text-sm font-black text-dark-textPrimary uppercase tracking-wider">
-                    {valuationMode === 'DDM' ? 'DDM de Dois Estágios' : 'FCFE de Dois Estágios'}
+                    {valuationMode === 'DDM' ? 'Fluxo de Dividendos Descontados (2 Estágios)' : 'Fluxo de Caixa Livre ao Acionista (2 Estágios)'}
                   </h3>
                 </div>
                 <span className="text-[11px] px-2.5 py-0.5 rounded-full font-bold" style={{ background: 'rgba(99,102,241,0.1)', color: '#a78bfa', border: '1px solid rgba(139,92,246,0.2)' }}>
@@ -844,39 +879,50 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
               </h3>
             </div>
             {/* Chart legend */}
-            <div className="flex items-center gap-5 text-xs text-dark-textSecondary font-mono">
-              <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ background: '#4f46e5' }} /> Rec. Bruto</div>
-              <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ background: '#6366f1' }} /> Pers. Bruto</div>
-              <div className="flex items-center gap-1.5"><span className="w-3 h-1 rounded-full bg-emerald-500" /> VP Rec.</div>
-              <div className="flex items-center gap-1.5"><span className="w-3 h-1 rounded-full bg-amber-500" /> VP Pers.</div>
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-dark-textSecondary" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
+              <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded" style={{ background: 'linear-gradient(180deg, #4f46e5, rgba(79,70,229,0.2))' }} /> {valuationMode === 'DDM' ? 'Dividendo Rec.' : 'FCFE Rec.'}</div>
+              <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded" style={{ background: 'linear-gradient(180deg, #818cf8, rgba(129,140,248,0.2))' }} /> {valuationMode === 'DDM' ? 'Dividendo Pers.' : 'FCFE Pers.'}</div>
+              <div className="flex items-center gap-1.5"><span className="w-4 h-[3px] rounded-full bg-emerald-500" /> VP Recomendado</div>
+              <div className="flex items-center gap-1.5"><span className="w-4 h-[3px] rounded-full bg-amber-500" /> VP Personalizado</div>
             </div>
           </div>
 
           <div className="h-72 md:h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <ComposedChart data={chartData} margin={{ top: 10, right: 15, left: -10, bottom: 0 }}>
                 <defs>
                   <linearGradient id="recBarGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.85}/>
-                    <stop offset="95%" stopColor="#4f46e5" stopOpacity={0.08}/>
+                    <stop offset="0%" stopColor="#4f46e5" stopOpacity={0.9}/>
+                    <stop offset="100%" stopColor="#4f46e5" stopOpacity={0.15}/>
                   </linearGradient>
                   <linearGradient id="custBarGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#818cf8" stopOpacity={0.85}/>
-                    <stop offset="95%" stopColor="#818cf8" stopOpacity={0.08}/>
+                    <stop offset="0%" stopColor="#818cf8" stopOpacity={0.9}/>
+                    <stop offset="100%" stopColor="#818cf8" stopOpacity={0.15}/>
+                  </linearGradient>
+                  <linearGradient id="pvRecAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#10b981" stopOpacity={0.25}/>
+                    <stop offset="100%" stopColor="#10b981" stopOpacity={0.02}/>
+                  </linearGradient>
+                  <linearGradient id="pvCustAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.2}/>
+                    <stop offset="100%" stopColor="#f59e0b" stopOpacity={0.02}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" opacity={0.4} />
-                <XAxis dataKey="year" stroke="#4b5563" fontSize={12} className="font-mono" />
-                <YAxis stroke="#4b5563" fontSize={12} className="font-mono" />
+                <CartesianGrid strokeDasharray="4 6" stroke="#1f2937" opacity={0.25} vertical={false} />
+                <XAxis dataKey="year" stroke="#4b5563" fontSize={11} tickLine={false} axisLine={{ stroke: '#1f2937', strokeWidth: 1 }} className="font-mono" />
+                <YAxis stroke="#4b5563" fontSize={11} tickLine={false} axisLine={false} className="font-mono" tickFormatter={(v: number) => `${v.toFixed(1)}`} />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#0f1218', border: '1px solid rgba(31,41,55,0.8)', borderRadius: '12px', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}
-                  labelStyle={{ color: '#f9fafb', fontWeight: 'bold', fontSize: '14px', fontFamily: 'Outfit' }}
-                  itemStyle={{ fontSize: '13px', fontFamily: 'JetBrains Mono' }}
+                  contentStyle={{ backgroundColor: '#0d1117', border: '1px solid rgba(99,102,241,0.25)', borderRadius: '14px', boxShadow: '0 12px 40px rgba(0,0,0,0.5)', padding: '12px 16px' }}
+                  labelStyle={{ color: '#f9fafb', fontWeight: '800', fontSize: '13px', fontFamily: 'Outfit', marginBottom: '6px' }}
+                  itemStyle={{ fontSize: '12px', fontFamily: 'JetBrains Mono', padding: '2px 0' }}
+                  cursor={{ fill: 'rgba(99,102,241,0.06)' }}
                 />
-                <Bar name={valuationMode === 'DDM' ? "Rec. Dividendo" : "Rec. FCFE"} dataKey="valueRec" fill="url(#recBarGradient)" radius={[6, 6, 0, 0]} maxBarSize={28} />
-                <Bar name={valuationMode === 'DDM' ? "Pers. Dividendo" : "Pers. FCFE"} dataKey="valueCust" fill="url(#custBarGradient)" radius={[6, 6, 0, 0]} maxBarSize={28} />
-                <Line name="VP Rec." type="monotone" dataKey="pvRec" stroke="#10b981" strokeWidth={2.5} dot={{ r: 3, fill: '#10b981', strokeWidth: 0 }} />
-                <Line name="VP Pers." type="monotone" dataKey="pvCust" stroke="#f59e0b" strokeWidth={2.5} dot={{ r: 3, fill: '#f59e0b', strokeWidth: 0 }} />
+                <Bar name={valuationMode === 'DDM' ? "Dividendo Rec." : "FCFE Rec."} dataKey="valueRec" fill="url(#recBarGradient)" radius={[5, 5, 0, 0]} maxBarSize={24} />
+                <Bar name={valuationMode === 'DDM' ? "Dividendo Pers." : "FCFE Pers."} dataKey="valueCust" fill="url(#custBarGradient)" radius={[5, 5, 0, 0]} maxBarSize={24} />
+                <Area name="VP Rec." type="natural" dataKey="pvRec" stroke="none" fill="url(#pvRecAreaGrad)" />
+                <Line name="VP Rec." type="natural" dataKey="pvRec" stroke="#10b981" strokeWidth={2.5} dot={{ r: 4, fill: '#0d1117', stroke: '#10b981', strokeWidth: 2 }} activeDot={{ r: 6, fill: '#10b981', stroke: '#0d1117', strokeWidth: 2 }} />
+                <Area name="VP Pers." type="natural" dataKey="pvCust" stroke="none" fill="url(#pvCustAreaGrad)" />
+                <Line name="VP Pers." type="natural" dataKey="pvCust" stroke="#f59e0b" strokeWidth={2.5} dot={{ r: 4, fill: '#0d1117', stroke: '#f59e0b', strokeWidth: 2 }} activeDot={{ r: 6, fill: '#f59e0b', stroke: '#0d1117', strokeWidth: 2 }} />
               </ComposedChart>
             </ResponsiveContainer>
           </div>

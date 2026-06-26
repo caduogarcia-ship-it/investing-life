@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { BarChart2, Mail, Lock, Eye, EyeOff, Loader2, AlertCircle, ArrowRight } from 'lucide-react';
+import { BarChart2, Mail, Lock, Eye, EyeOff, Loader2, AlertCircle, ArrowRight, UserPlus, LogIn } from 'lucide-react';
+import { signIn, signUp } from '../services/supabase';
 
 interface LoginProps {
   onLoginSuccess: (email: string) => void;
@@ -11,17 +12,19 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // Email regex validation
   const isValidEmail = (val: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccessMsg(null);
 
-    const cleanEmail = email.trim();
+    const cleanEmail = email.trim().toLowerCase();
     if (!cleanEmail) {
       setError('Por favor, preencha o campo de e-mail.');
       return;
@@ -41,17 +44,36 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
     setLoading(true);
 
-    // Simulate network authentication request
-    setTimeout(() => {
+    try {
+      if (mode === 'signup') {
+        await signUp(cleanEmail, password);
+        // After signup, auto sign in
+        try {
+          await signIn(cleanEmail, password);
+          onLoginSuccess(cleanEmail);
+        } catch {
+          setSuccessMsg('Conta criada com sucesso! Faça login para continuar.');
+          setMode('login');
+        }
+      } else {
+        await signIn(cleanEmail, password);
+        onLoginSuccess(cleanEmail);
+      }
+    } catch (err: any) {
+      const msg = err?.message || 'Erro desconhecido';
+      if (msg.includes('Invalid login credentials')) {
+        setError('E-mail ou senha incorretos. Verifique seus dados ou crie uma conta.');
+      } else if (msg.includes('User already registered')) {
+        setError('Este e-mail já está cadastrado. Faça login normalmente.');
+        setMode('login');
+      } else if (msg.includes('Email rate limit exceeded')) {
+        setError('Muitas tentativas. Aguarde alguns minutos e tente novamente.');
+      } else {
+        setError(msg);
+      }
+    } finally {
       setLoading(false);
-      onLoginSuccess(cleanEmail);
-    }, 1200);
-  };
-
-  const handleDemoFill = () => {
-    setEmail('demo@investidor.com');
-    setPassword('senha123');
-    setError(null);
+    }
   };
 
   return (
@@ -81,8 +103,38 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             Investing Life
           </h2>
           <p className="text-2xs font-semibold text-dark-textSecondary uppercase tracking-wider" style={{ fontFamily: 'Outfit, sans-serif' }}>
-            Painel de Estudos & Análise de Ativos
+            {mode === 'login' ? 'Acesse sua conta' : 'Crie sua conta gratuita'}
           </p>
+        </div>
+
+        {/* Mode Toggle */}
+        <div className="flex p-1 rounded-xl select-none" style={{ background: 'rgba(9,13,22,0.7)', border: '1px solid rgba(31,41,55,0.8)' }}>
+          <button
+            type="button"
+            onClick={() => { setMode('login'); setError(null); setSuccessMsg(null); }}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-extrabold uppercase tracking-wider transition-all duration-300 cursor-pointer ${
+              mode === 'login'
+                ? 'text-white shadow-lg'
+                : 'text-dark-textSecondary hover:text-dark-textPrimary'
+            }`}
+            style={mode === 'login' ? { background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', boxShadow: '0 4px 14px rgba(99,102,241,0.35)' } : {}}
+          >
+            <LogIn className="w-3.5 h-3.5" />
+            Entrar
+          </button>
+          <button
+            type="button"
+            onClick={() => { setMode('signup'); setError(null); setSuccessMsg(null); }}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-xs font-extrabold uppercase tracking-wider transition-all duration-300 cursor-pointer ${
+              mode === 'signup'
+                ? 'text-white shadow-lg'
+                : 'text-dark-textSecondary hover:text-dark-textPrimary'
+            }`}
+            style={mode === 'signup' ? { background: 'linear-gradient(135deg, #10b981, #059669)', boxShadow: '0 4px 14px rgba(16,185,129,0.35)' } : {}}
+          >
+            <UserPlus className="w-3.5 h-3.5" />
+            Criar Conta
+          </button>
         </div>
 
         {/* Validation Errors */}
@@ -93,8 +145,16 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           </div>
         )}
 
+        {/* Success Message */}
+        {successMsg && (
+          <div className="p-4 bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 rounded-2xl flex items-start gap-3.5 shadow-lg animate-fadeIn">
+            <UserPlus className="w-5 h-5 shrink-0 mt-0.5" />
+            <span className="text-xs font-semibold leading-relaxed" style={{ fontFamily: 'Outfit, sans-serif' }}>{successMsg}</span>
+          </div>
+        )}
+
         {/* Login Form */}
-        <form onSubmit={handleLogin} className="space-y-4.5">
+        <form onSubmit={handleSubmit} className="space-y-4.5">
           {/* Email Field */}
           <div className="space-y-1.5">
             <label className="block text-3xs font-bold text-dark-textSecondary uppercase tracking-wider" style={{ fontFamily: 'Outfit, sans-serif' }}>
@@ -153,41 +213,43 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 bg-gradient-to-r from-brand-primary to-brand-purple hover:opacity-95 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-brand-primary/15 hover:shadow-brand-primary/25 flex items-center justify-center gap-2 cursor-pointer active-scale disabled:opacity-50 disabled:cursor-not-allowed disabled:active-scale-none relative overflow-hidden group"
-            style={{ fontFamily: 'Outfit, sans-serif' }}
+            className="w-full py-3.5 hover:opacity-95 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer active-scale disabled:opacity-50 disabled:cursor-not-allowed disabled:active-scale-none relative overflow-hidden group"
+            style={{
+              fontFamily: 'Outfit, sans-serif',
+              background: mode === 'login'
+                ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
+                : 'linear-gradient(135deg, #10b981, #059669)',
+              boxShadow: mode === 'login'
+                ? '0 4px 20px rgba(99,102,241,0.25)'
+                : '0 4px 20px rgba(16,185,129,0.25)',
+            }}
           >
             {/* Shine effect on hover */}
             <div style={{ position: 'absolute', top: 0, left: '-100%', width: '100%', height: '100%', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)', transition: 'left 0.5s ease' }} className="group-hover:!left-[100%]" />
             {loading ? (
               <>
                 <Loader2 className="w-4.5 h-4.5 animate-spin" />
-                <span>Autenticando...</span>
+                <span>{mode === 'login' ? 'Autenticando...' : 'Criando conta...'}</span>
               </>
             ) : (
               <>
-                <span>Entrar no Portal</span>
+                <span>{mode === 'login' ? 'Entrar no Portal' : 'Criar Minha Conta'}</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
           </button>
         </form>
 
-        {/* Demo Helper Block */}
+        {/* Info Block */}
         <div className="border-t border-dark-border/40 pt-5 space-y-3">
           <div className="bg-dark-bg/40 border border-dark-border/40 p-4 rounded-2xl text-[10px] leading-relaxed text-dark-textSecondary font-semibold" style={{ fontFamily: 'Outfit, sans-serif' }}>
-            <span className="text-dark-textPrimary font-bold block mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>💡 Acesso Demonstrativo:</span>
-            Para fins de teste, você pode utilizar qualquer endereço de e-mail e senha válidos (mínimo de 6 caracteres), ou usar os dados rápidos de homologação abaixo.
+            <span className="text-dark-textPrimary font-bold block mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              {mode === 'login' ? '🔒 Autenticação Segura:' : '✨ Conta Gratuita:'}
+            </span>
+            {mode === 'login'
+              ? 'Seus dados são protegidos com criptografia de ponta a ponta via Supabase Auth. Cada investidor possui sua própria carteira isolada.'
+              : 'Crie sua conta gratuita para salvar sua carteira, favoritos e análises de forma segura na nuvem. Seus dados estarão disponíveis em qualquer dispositivo.'}
           </div>
-
-          <button
-            type="button"
-            onClick={handleDemoFill}
-            disabled={loading}
-            className="w-full py-2.5 bg-dark-bg border border-dark-border/60 hover:border-gray-700 text-dark-textPrimary hover:text-white font-bold text-3xs uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
-            style={{ fontFamily: 'Outfit, sans-serif' }}
-          >
-            Preencher Conta de Teste
-          </button>
 
           {/* Features grid */}
           <div style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
