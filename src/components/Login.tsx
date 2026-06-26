@@ -170,7 +170,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             <div className="relative">
               <Mail className="absolute left-3.5 top-3.5 w-4.5 h-4.5 text-dark-textSecondary" />
               <input
-                type="email"
+                type="text"
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
