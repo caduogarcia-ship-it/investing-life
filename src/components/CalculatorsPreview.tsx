@@ -131,9 +131,14 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
     // Gordon Model Price: P0 = [BaseValue * (1 + g)] / (Ke - g)
     let gGordon = gPerp;
     let gWarning = false;
-    if (gGordon >= ke) {
-      gGordon = ke - 1.5; // Cap to make formula work
+    // Macroeconomic constraint: Perpetuity growth cannot exceed Risk-Free Rate in the long run
+    if (gGordon >= p.rf) {
+      gGordon = Math.max(0, p.rf - 1.0); 
       gWarning = true;
+    }
+    // Also ensure g < ke
+    if (gGordon >= ke) {
+      gGordon = Math.max(0, ke - 1.0);
     }
 
     const gordonVal = gGordon > 0 ? (baseValue * (1 + gGordon / 100)) / ((ke - gGordon) / 100) : 0;
@@ -162,9 +167,12 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
     const gn = p.roic * (1 - p.payout / 100) * multiplier;
     let gnCap = gn;
     let gnWarning = false;
-    if (gnCap >= ke) {
-      gnCap = ke - 1.5;
+    if (gnCap >= p.rf) {
+      gnCap = Math.max(0, p.rf - 1.0);
       gnWarning = true;
+    }
+    if (gnCap >= ke) {
+      gnCap = Math.max(0, ke - 1.0);
     }
 
     // P(10) = [Val10 * (1 + gn)] / (Ke - gn)
@@ -201,9 +209,12 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
     const gPerp = customRoe * (1 - customPayout / 100) * multiplier;
     let gGordon = gPerp;
     let gWarning = false;
-    if (gGordon >= ke) {
-      gGordon = ke - 1.5;
+    if (gGordon >= customRf) {
+      gGordon = Math.max(0, customRf - 1.0);
       gWarning = true;
+    }
+    if (gGordon >= ke) {
+      gGordon = Math.max(0, ke - 1.0);
     }
 
     const gordonVal = gGordon > 0 ? (baseValue * (1 + gGordon / 100)) / ((ke - gGordon) / 100) : 0;
@@ -231,9 +242,12 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
     const gn = customRoic * (1 - customPayout / 100) * multiplier;
     let gnCap = gn;
     let gnWarning = false;
-    if (gnCap >= ke) {
-      gnCap = ke - 1.5;
+    if (gnCap >= customRf) {
+      gnCap = Math.max(0, customRf - 1.0);
       gnWarning = true;
+    }
+    if (gnCap >= ke) {
+      gnCap = Math.max(0, ke - 1.0);
     }
 
     const val10 = historyDivs[9].div;

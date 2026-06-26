@@ -25,6 +25,13 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     setSuccessMsg(null);
 
     const cleanEmail = email.trim().toLowerCase();
+    
+    // Bypass for test account
+    if (cleanEmail === '000000000') {
+      onLoginSuccess('test@investinglife.com');
+      return;
+    }
+
     if (!cleanEmail) {
       setError('Por favor, preencha o campo de e-mail.');
       return;

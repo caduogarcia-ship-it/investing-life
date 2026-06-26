@@ -105,7 +105,7 @@ export default function App() {
 
   // ── Cloud Sync: Save portfolio & watchlist to Supabase (debounced) ──
   const syncToCloud = useCallback(() => {
-    if (!currentUserId || !currentUserEmail) return;
+    if (!currentUserId || !currentUserEmail || currentUserEmail === 'test@investinglife.com') return;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
       saveUserData(currentUserId, currentUserEmail, portfolio, watchlist);
@@ -198,6 +198,12 @@ export default function App() {
   const handleLoginSuccess = async (email: string) => {
     setCurrentUserEmail(email);
     setIsLoggedIn(true);
+
+    if (email === 'test@investinglife.com') {
+      setCurrentUserId('test-user-id');
+      return;
+    }
+
     // Load user data from cloud after login
     try {
       const { data: { session } } = await supabase.auth.getSession();

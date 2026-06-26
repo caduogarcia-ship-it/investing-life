@@ -137,24 +137,47 @@ export const Header: React.FC<HeaderProps> = ({ onSearch, onOpenSettings, loadin
   useEffect(() => {
     const fetchIndicesData = async () => {
       try {
+        const token = getApiToken();
         const fetchedData = await Promise.all(
           INDEX_CONFIGS.map(async (config) => {
             try {
-              const res = await fetch(`/yahoo-chart/${config.symbol}?range=1d&interval=1m`);
+              // Online integration fix: Use brapi if token is available, otherwise fallback to yahoo proxy (local dev)
+              const url = token 
+                ? `https://brapi.dev/api/quote/${config.symbol}?token=${token}`
+                : `/yahoo-chart/${config.symbol}?range=1d&interval=1m`;
+                
+              const res = await fetch(url);
               if (res.ok) {
                 const json = await res.json();
-                const result = json.chart?.result?.[0];
-                const meta = result?.meta;
-                if (meta) {
-                  const price = meta.regularMarketPrice ?? meta.chartPreviousClose;
-                  const prevClose = meta.chartPreviousClose ?? price;
-                  const changePct = prevClose ? ((price - prevClose) / prevClose) * 100 : 0;
-                  if (price) {
+                
+                // Handle Brapi response
+                if (token && json.results && json.results.length > 0) {
+                  const result = json.results[0];
+                  const price = result.regularMarketPrice;
+                  const changePct = result.regularMarketChangePercent;
+                  if (price !== undefined) {
                     return {
                       name: config.name,
                       value: config.format(price),
-                      change: Number(changePct.toFixed(2))
+                      change: Number((changePct || 0).toFixed(2))
                     };
+                  }
+                } 
+                // Handle Yahoo proxy fallback
+                else if (!token) {
+                  const result = json.chart?.result?.[0];
+                  const meta = result?.meta;
+                  if (meta) {
+                    const price = meta.regularMarketPrice ?? meta.chartPreviousClose;
+                    const prevClose = meta.chartPreviousClose ?? price;
+                    const changePct = prevClose ? ((price - prevClose) / prevClose) * 100 : 0;
+                    if (price) {
+                      return {
+                        name: config.name,
+                        value: config.format(price),
+                        change: Number(changePct.toFixed(2))
+                      };
+                    }
                   }
                 }
               }
