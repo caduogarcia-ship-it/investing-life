@@ -754,44 +754,38 @@ export const IndicatorsGrid: React.FC<IndicatorsGridProps> = ({ data, onUpdateDa
               <table className="w-full text-left border-collapse select-none">
                 <thead>
                   <tr className="bg-dark-card/60 border-b border-dark-border/60 text-dark-textSecondary font-extrabold text-[11px] uppercase tracking-wider">
-                    <th className="py-3.5 px-5">Indicador</th>
-                    <th className="py-3.5 px-5 text-center">Atualizado (2026)</th>
-                    <th className="py-3.5 px-5 text-center">2025 (1 ano atrás)</th>
-                    <th className="py-3.5 px-5 text-center">2024 (2 anos atrás)</th>
-                    <th className="py-3.5 px-5 text-center">2023 (3 anos atrás)</th>
+                    <th className="py-3.5 px-5 sticky left-0 z-10 bg-dark-card/95 border-r border-dark-border/40">Indicador</th>
+                    {Array.from({ length: 11 }, (_, i) => new Date().getFullYear() - i).map((year, i) => (
+                      <th key={year} className="py-3.5 px-5 text-center min-w-[160px]">
+                        {i === 0 ? `Atualizado (${year})` : `${year} (${i} ano${i > 1 ? 's' : ''} atrás)`}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-dark-border/40 font-mono text-dark-textPrimary">
                   {indicators.map((ind) => {
-                    const val2026 = data[ind.key] !== undefined 
+                    const baseVal = data[ind.key] !== undefined 
                       ? (data[ind.key] as number) 
                       : getFallbackIndicatorValue(ind.key as string, data);
                     
-                    const val2025 = getHistoricalIndicator(ind.key, data.symbol, 1, val2026);
-                    const val2024 = getHistoricalIndicator(ind.key, data.symbol, 2, val2026);
-                    const val2023 = getHistoricalIndicator(ind.key, data.symbol, 3, val2026);
-
-                    const comp2026 = getComparisonStyle(val2026, val2025);
-                    const comp2025 = getComparisonStyle(val2025, val2024);
-                    const comp2024 = getComparisonStyle(val2024, val2023);
+                    const yearsList = Array.from({ length: 11 }, (_, i) => new Date().getFullYear() - i);
+                    const values = yearsList.map((_, i) => i === 0 ? baseVal : getHistoricalIndicator(ind.key, data.symbol, i, baseVal));
 
                     return (
                       <tr key={ind.key} className="hover:bg-dark-card/10 transition-colors">
-                        <td className="py-3.5 px-5 font-sans font-extrabold text-[12px] text-dark-textSecondary uppercase tracking-wider">
+                        <td className="py-3.5 px-5 font-sans font-extrabold text-[12px] text-dark-textSecondary uppercase tracking-wider sticky left-0 z-10 bg-dark-bg/95 border-r border-dark-border/40">
                           {ind.label}
                         </td>
-                        <td className={`py-3.5 px-5 text-center font-bold text-[13px] ${comp2026.className}`}>
-                          {ind.format(val2026)}{comp2026.icon}
-                        </td>
-                        <td className={`py-3.5 px-5 text-center font-bold text-[13px] ${comp2025.className}`}>
-                          {ind.format(val2025)}{comp2025.icon}
-                        </td>
-                        <td className={`py-3.5 px-5 text-center font-bold text-[13px] ${comp2024.className}`}>
-                          {ind.format(val2024)}{comp2024.icon}
-                        </td>
-                        <td className="py-3.5 px-5 text-center text-dark-textSecondary/80 font-semibold text-[13px]">
-                          {ind.format(val2023)}
-                        </td>
+                        {values.map((val, i) => {
+                          const prevVal = i < values.length - 1 ? values[i + 1] : val;
+                          const comp = i < values.length - 1 ? getComparisonStyle(val, prevVal) : { className: 'text-dark-textSecondary/80 font-semibold', icon: '' };
+                          
+                          return (
+                            <td key={yearsList[i]} className={`py-3.5 px-5 text-center font-bold text-[13px] ${comp.className}`}>
+                              {ind.format(val)}{comp.icon}
+                            </td>
+                          );
+                        })}
                       </tr>
                     );
                   })}

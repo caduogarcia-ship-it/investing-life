@@ -14,7 +14,7 @@ interface DividendMapProps {
 }
 
 export const DividendMap: React.FC<DividendMapProps> = ({ onSelectTicker, portfolio }) => {
-  const [subTab, setSubTab] = useState<'map' | 'simulator'>('map');
+  const [subTab, setSubTab] = useState<'map' | 'simulator' | 'long-term'>('map');
   const [tickers, setTickers] = useState<string[]>(() => {
     if (portfolio && portfolio.length > 0) {
       return portfolio.map(item => item.symbol);
@@ -29,6 +29,11 @@ export const DividendMap: React.FC<DividendMapProps> = ({ onSelectTicker, portfo
   const [searchQuery, setSearchQuery] = useState('');
   const [hoveredCell, setHoveredCell] = useState<{ symbol: string; month: number } | null>(null);
 
+  // Estados da aba de Histórico Longo
+  const [ltAsset, setLtAsset] = useState<string>('');
+  const [ltStartYear, setLtStartYear] = useState<number>(new Date().getFullYear() - 10);
+  const [ltEndYear, setLtEndYear] = useState<number>(new Date().getFullYear());
+
   const currentYear = new Date().getFullYear();
 
   // Sync tickers if portfolio changes
@@ -37,6 +42,13 @@ export const DividendMap: React.FC<DividendMapProps> = ({ onSelectTicker, portfo
       setTickers(portfolio.map(item => item.symbol));
     }
   }, [portfolio]);
+
+  // Set default long-term asset when tickers load
+  useEffect(() => {
+    if (tickers.length > 0 && !ltAsset) {
+      setLtAsset(tickers[0]);
+    }
+  }, [tickers, ltAsset]);
 
   // Serialized tickers key to detect changes without infinite loops
   const tickersKey = JSON.stringify(tickers);
@@ -316,6 +328,16 @@ export const DividendMap: React.FC<DividendMapProps> = ({ onSelectTicker, portfo
           }`}
         >
           Simulador Bola de Neve
+        </button>
+        <button
+          onClick={() => setSubTab('long-term')}
+          className={`pb-3 px-6 text-xs font-bold uppercase tracking-wider transition-all border-b-2 cursor-pointer ${
+            subTab === 'long-term'
+              ? 'border-emerald-500 text-emerald-400 font-black'
+              : 'border-transparent text-dark-textSecondary hover:text-dark-textPrimary'
+          }`}
+        >
+          Histórico Longo
         </button>
       </div>
 
@@ -635,8 +657,152 @@ export const DividendMap: React.FC<DividendMapProps> = ({ onSelectTicker, portfo
             </div>
           </div>
         </>
-      ) : (
+      ) : subTab === 'simulator' ? (
         <DividendSimulator />
+      ) : (
+        (() => {
+          const assetData = data.get(ltAsset);
+          if (!assetData) return <div className="p-8 text-center text-dark-textSecondary font-bold">Carregando dados...</div>;
+
+          // Validação de intervalo para não ser negativo e ordenar os anos corretamente
+          const start = Math.min(ltStartYear, ltEndYear);
+          const end = Math.max(ltStartYear, ltEndYear);
+          const yearsRange = [];
+          for (let y = start; y <= end; y++) {
+            yearsRange.push(y);
+          }
+
+          const yearTotals = yearsRange.map(yr => {
+            const yearEvents = assetData.events.filter(e => e.year === yr);
+            return yearEvents.reduce((sum, e) => sum + e.amount, 0);
+          });
+
+          const totalPeriod = yearTotals.reduce((a, b) => a + b, 0);
+          const avgYear = totalPeriod / yearsRange.length;
+          const missingYearsCount = yearTotals.filter(v => v === 0).length;
+
+          return (
+            <div className="space-y-6 animate-fadeIn">
+              {/* Filtros */}
+              <div className="bg-dark-card border border-dark-border rounded-2xl p-5 shadow-lg flex flex-wrap items-center gap-4">
+                <div className="flex flex-col gap-1">
+                  <span className="text-3xs font-bold text-dark-textSecondary uppercase">Ativo</span>
+                  <select
+                    value={ltAsset}
+                    onChange={(e) => setLtAsset(e.target.value)}
+                    className="bg-dark-bg border border-dark-border rounded-lg text-sm text-dark-textPrimary font-bold px-3 py-2 outline-none focus:border-emerald-500 cursor-pointer"
+                  >
+                    {tickers.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+                
+                <div className="flex flex-col gap-1">
+                  <span className="text-3xs font-bold text-dark-textSecondary uppercase">Ano Base</span>
+                  <select
+                    value={ltStartYear}
+                    onChange={(e) => setLtStartYear(Number(e.target.value))}
+                    className="bg-dark-bg border border-dark-border rounded-lg text-sm text-dark-textPrimary font-bold px-3 py-2 outline-none focus:border-emerald-500 cursor-pointer"
+                  >
+                    {Array.from({ length: 26 }, (_, i) => currentYear - i).map(y => (
+                      <option key={`start-${y}`} value={y}>{y}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center pt-5 text-dark-textSecondary font-bold text-sm">até</div>
+
+                <div className="flex flex-col gap-1">
+                  <span className="text-3xs font-bold text-dark-textSecondary uppercase">Ano Final</span>
+                  <select
+                    value={ltEndYear}
+                    onChange={(e) => setLtEndYear(Number(e.target.value))}
+                    className="bg-dark-bg border border-dark-border rounded-lg text-sm text-dark-textPrimary font-bold px-3 py-2 outline-none focus:border-emerald-500 cursor-pointer"
+                  >
+                    {Array.from({ length: 26 }, (_, i) => currentYear - i).map(y => (
+                      <option key={`end-${y}`} value={y}>{y}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Resumo */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-dark-card border border-dark-border rounded-2xl p-5 shadow-lg">
+                  <span className="text-3xs font-bold text-dark-textSecondary uppercase tracking-wider block">Total Acumulado</span>
+                  <span className="text-2xl font-black text-emerald-400 font-mono mt-1 block">R$ {totalPeriod.toFixed(2).replace('.', ',')}</span>
+                  <span className="text-3xs text-dark-textSecondary block mt-0.5">no período selecionado</span>
+                </div>
+                <div className="bg-dark-card border border-dark-border rounded-2xl p-5 shadow-lg">
+                  <span className="text-3xs font-bold text-dark-textSecondary uppercase tracking-wider block">Média Anual</span>
+                  <span className="text-2xl font-black text-emerald-400 font-mono mt-1 block">R$ {avgYear.toFixed(2).replace('.', ',')}</span>
+                  <span className="text-3xs text-dark-textSecondary block mt-0.5">por ano</span>
+                </div>
+                <div className="bg-dark-card border border-dark-border rounded-2xl p-5 shadow-lg">
+                  <span className="text-3xs font-bold text-dark-textSecondary uppercase tracking-wider block">Período Analisado</span>
+                  <span className="text-2xl font-black text-dark-textPrimary font-mono mt-1 block">{yearsRange.length} Anos</span>
+                  <span className="text-3xs text-dark-textSecondary block mt-0.5">entre {start} e {end}</span>
+                </div>
+              </div>
+
+              {/* Alerta de Risco */}
+              {missingYearsCount > 0 && (
+                <div className="bg-brand-danger/10 border-2 border-brand-danger/30 rounded-xl p-5 shadow-lg flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-brand-danger/20 flex items-center justify-center border border-brand-danger/30 shrink-0">
+                    <AlertTriangle className="w-6 h-6 text-brand-danger" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-brand-danger uppercase tracking-wide">Alerta de Inconstância</h3>
+                    <p className="text-xs text-brand-danger/90 font-semibold mt-1">
+                      No intervalo selecionado, o ativo <strong>{ltAsset}</strong> teve <strong className="text-brand-danger bg-brand-danger/20 px-1.5 py-0.5 rounded">{missingYearsCount} ano(s)</strong> sem pagar nenhum dividendo (R$ 0,00). Isso afeta gravemente o efeito dos juros compostos a longo prazo.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Gráfico/Tabela Ano a Ano */}
+              <div className="bg-dark-card border border-dark-border rounded-2xl p-6 shadow-xl">
+                 <h3 className="text-xs font-black text-dark-textPrimary uppercase tracking-wider mb-6 border-l-2 border-emerald-500 pl-2">Distribuição Histórica Ano a Ano</h3>
+                 <div className="flex items-end gap-2 overflow-x-auto no-scrollbar pb-2" style={{ height: '220px' }}>
+                    {yearsRange.map((yr, i) => {
+                      const total = yearTotals[i];
+                      const maxTotal = Math.max(...yearTotals) || 1;
+                      const barMaxHeight = 180;
+                      const barHeight = total > 0 ? Math.max(12, Math.round((total / maxTotal) * barMaxHeight)) : 6;
+                      const isZero = total === 0;
+
+                      return (
+                        <div key={yr} className="flex-1 min-w-[48px] flex flex-col items-center justify-end group h-full">
+                          <span className={`text-[10px] font-bold font-mono mb-1 transition-opacity ${
+                            isZero ? 'text-brand-danger' : 'text-emerald-400 opacity-0 group-hover:opacity-100'
+                          }`}>
+                            {isZero ? '🚨 0,00' : `R$ ${total.toFixed(2)}`}
+                          </span>
+                          <div 
+                            className={`w-full max-w-[40px] rounded-t-lg transition-all duration-300 relative ${
+                              isZero 
+                                ? 'bg-brand-danger/30 border border-brand-danger' 
+                                : 'bg-gradient-to-t from-emerald-700 to-emerald-500/80 group-hover:from-emerald-600 group-hover:to-emerald-400'
+                            }`}
+                            style={{ height: `${barHeight}px` }}
+                          >
+                             {isZero && (
+                               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none opacity-50">
+                                 <div className="w-full h-px bg-brand-danger/50 absolute top-1/2 -translate-y-1/2 rotate-45" />
+                                 <div className="w-full h-px bg-brand-danger/50 absolute top-1/2 -translate-y-1/2 -rotate-45" />
+                               </div>
+                             )}
+                          </div>
+                          <span className={`text-3xs font-bold mt-2 ${isZero ? 'text-brand-danger' : 'text-dark-textSecondary'}`}>
+                            {yr}
+                          </span>
+                        </div>
+                      );
+                    })}
+                 </div>
+              </div>
+            </div>
+          );
+        })()
       )}
 
     </div>
