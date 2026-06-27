@@ -9,20 +9,20 @@ export default {
     extend: {
       colors: {
         dark: {
-          bg: '#090D16',       // Ultra deep slate-dark background
-          card: '#111827',     // Deep gray card background
-          cardHover: '#1F2937',// Card hover
-          border: '#1F2937',   // Slate border
-          textPrimary: '#F9FAFB', // White text
-          textSecondary: '#9CA3AF', // Gray text
+          bg: '#0F172A',       // Softer Slate 900 background
+          card: '#1E293B',     // Softer Slate 800 card
+          cardHover: '#334155',// Card hover
+          border: '#334155',   // Slate border
+          textPrimary: '#F8FAFC', // White text
+          textSecondary: '#94A3B8', // Gray text
         },
         brand: {
-          primary: '#6366F1',   // Indigo
+          primary: '#3B82F6',   // Blue
           success: '#10B981',   // Emerald
           danger: '#EF4444',    // Red
           warning: '#F59E0B',   // Amber
           info: '#3B82F6',      // Blue
-          purple: '#8B5CF6'     // Violet
+          purple: '#60A5FA'     // Light Blue
         }
       },
       fontFamily: {

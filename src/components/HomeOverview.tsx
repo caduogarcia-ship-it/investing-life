@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bookmark, Briefcase, Trash2, TrendingUp, TrendingDown, Eye, Plus, Loader2, Award, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Bookmark, Briefcase, Trash2, TrendingUp, TrendingDown, Eye, Plus, Loader2, Award, ArrowUpRight, ArrowDownRight, X, HelpCircle, Search, LineChart, Calculator } from 'lucide-react';
 import { fetchStockData, fetchMarketMoves } from '../services/api';
 import type { MarketMove } from '../services/api';
 import type { PortfolioItem } from './Portfolio';
@@ -34,6 +34,7 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({
   const [loadingWatch, setLoadingWatch] = useState(false);
   const [marketMoves, setMarketMoves] = useState<MarketMove[]>([]);
   const [loadingMoves, setLoadingMoves] = useState(false);
+  const [showGuide, setShowGuide] = useState(() => !localStorage.getItem('b3_hide_welcome_guide'));
 
   const isMarketOpen = () => {
     const d = new Date();
@@ -134,6 +135,77 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({
 
   return (
     <div className="space-y-8 animate-fadeIn">
+      {showGuide && (
+        <div className="bg-gradient-to-r from-brand-primary/10 to-brand-purple/5 border border-brand-primary/20 rounded-2xl p-6 relative shadow-lg animate-fadeIn">
+          <button
+            onClick={() => {
+              setShowGuide(false);
+              localStorage.setItem('b3_hide_welcome_guide', 'true');
+            }}
+            className="absolute top-4 right-4 p-1.5 rounded-lg text-dark-textSecondary hover:text-dark-textPrimary hover:bg-dark-cardHover transition-colors cursor-pointer"
+            title="Fechar guia"
+          >
+            <X className="w-4 h-4" />
+          </button>
+          
+          <div className="flex gap-3 mb-4">
+            <span className="p-1.5 rounded-lg bg-brand-primary/10 border border-brand-primary/20 shrink-0 self-start">
+              <HelpCircle className="w-5 h-5 text-brand-primary" />
+            </span>
+            <div>
+              <h3 className="text-sm font-extrabold text-dark-textPrimary tracking-wide uppercase" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                Guia Rápido de Introdução
+              </h3>
+              <p className="text-xs text-dark-textSecondary mt-0.5 font-semibold leading-relaxed">
+                Bem-vindo ao Investing Life! Esta plataforma foi projetada para tornar a análise de ações da B3 simples e fundamentada. Siga os passos abaixo para começar:
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mt-2">
+            <div className="bg-dark-card/45 p-4 rounded-xl border border-dark-border/40 space-y-1.5">
+              <div className="flex items-center gap-2">
+                <Search className="w-4 h-4 text-brand-primary shrink-0" />
+                <span className="text-2xs font-extrabold text-dark-textPrimary uppercase tracking-wider">1. Buscar Ativo</span>
+              </div>
+              <p className="text-3xs text-dark-textSecondary leading-relaxed">
+                Use a barra de pesquisa no topo (ex: <strong>VALE3</strong>, <strong>PETR4</strong>) para carregar os dados fundamentados do ativo.
+              </p>
+            </div>
+
+            <div className="bg-dark-card/45 p-4 rounded-xl border border-dark-border/40 space-y-1.5">
+              <div className="flex items-center gap-2">
+                <LineChart className="w-4 h-4 text-brand-primary shrink-0" />
+                <span className="text-2xs font-extrabold text-dark-textPrimary uppercase tracking-wider">2. Analisar Indicadores</span>
+              </div>
+              <p className="text-3xs text-dark-textSecondary leading-relaxed">
+                Na aba <strong>Análise de Ativo</strong>, confira Graham, Bazin, saúde financeira, histórico de dividendos e consensos.
+              </p>
+            </div>
+
+            <div className="bg-dark-card/45 p-4 rounded-xl border border-dark-border/40 space-y-1.5">
+              <div className="flex items-center gap-2">
+                <Calculator className="w-4 h-4 text-brand-primary shrink-0" />
+                <span className="text-2xs font-extrabold text-dark-textPrimary uppercase tracking-wider">3. Fazer Valuation</span>
+              </div>
+              <p className="text-3xs text-dark-textSecondary leading-relaxed">
+                Na aba <strong>Calculadoras</strong>, use o Gordon ou Crescimento Variado para simular o preço justo e justificar as taxas.
+              </p>
+            </div>
+
+            <div className="bg-dark-card/45 p-4 rounded-xl border border-dark-border/40 space-y-1.5">
+              <div className="flex items-center gap-2">
+                <Briefcase className="w-4 h-4 text-brand-primary shrink-0" />
+                <span className="text-2xs font-extrabold text-dark-textPrimary uppercase tracking-wider">4. Simular Aportes</span>
+              </div>
+              <p className="text-3xs text-dark-textSecondary leading-relaxed">
+                Utilize as abas <strong>Carteira</strong>, <strong>Simulador</strong> e <strong>Rankings</strong> para comparar ativos e estimar a sua renda passiva no futuro.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Top Banner and Aggregates */}
       <div className="bg-dark-card border border-dark-border rounded-2xl p-6 shadow-lg flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
         <div>

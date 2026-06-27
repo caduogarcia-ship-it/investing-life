@@ -1,19 +1,56 @@
 @import "tailwindcss";
 
 @theme {
-  --color-dark-bg: #090D16;
-  --color-dark-card: #111827;
-  --color-dark-cardHover: #1F2937;
-  --color-dark-border: #1F2937;
-  --color-dark-textPrimary: #F9FAFB;
-  --color-dark-textSecondary: #9CA3AF;
+  --color-dark-bg: #0F172A;       /* Softer Slate 900 background */
+  --color-dark-card: #1E293B;     /* Softer Slate 800 card background */
+  --color-dark-cardHover: #334155;/* Slate 700 hover state */
+  --color-dark-border: #334155;   /* Softer border contrast */
+  --color-dark-textPrimary: #F8FAFC;
+  --color-dark-textSecondary: #94A3B8;
   
-  --color-brand-primary: #6366F1;
-  --color-brand-success: #10B981;
-  --color-brand-danger: #EF4444;
+  --color-brand-primary: #3B82F6;  /* Softer, professional Blue primary brand color */
+  --color-brand-success: #10B981;  /* Soft Green for positive metrics */
+  --color-brand-danger: #EF4444;   /* Soft Red for negative/risk metrics */
   --color-brand-warning: #F59E0B;
   --color-brand-info: #3B82F6;
-  --color-brand-purple: #8B5CF6;
+  --color-brand-purple: #60A5FA;   /* Light Blue branding accent */
+  
+  /* Overwrite indigo, purple, violet to be shades of blue to dynamically swap the theme colors globally */
+  --color-indigo-50: #eff6ff;
+  --color-indigo-100: #dbeafe;
+  --color-indigo-200: #bfdbfe;
+  --color-indigo-300: #93c5fd;
+  --color-indigo-400: #60a5fa;
+  --color-indigo-500: #3b82f6;
+  --color-indigo-600: #2563eb;
+  --color-indigo-700: #1d4ed8;
+  --color-indigo-800: #1e40af;
+  --color-indigo-900: #1e3a8a;
+  --color-indigo-950: #172554;
+
+  --color-purple-50: #f0f9ff;
+  --color-purple-100: #e0f2fe;
+  --color-purple-200: #bae6fd;
+  --color-purple-300: #7dd3fc;
+  --color-purple-400: #38bdf8;
+  --color-purple-500: #0ea5e9;
+  --color-purple-600: #0284c7;
+  --color-purple-700: #0369a1;
+  --color-purple-800: #075985;
+  --color-purple-900: #0c4a6e;
+  --color-purple-950: #082f49;
+
+  --color-violet-50: #f0f9ff;
+  --color-violet-100: #e0f2fe;
+  --color-violet-200: #bae6fd;
+  --color-violet-300: #7dd3fc;
+  --color-violet-400: #38bdf8;
+  --color-violet-500: #0ea5e9;
+  --color-violet-600: #0284c7;
+  --color-violet-700: #0369a1;
+  --color-violet-800: #075985;
+  --color-violet-900: #0c4a6e;
+  --color-violet-950: #082f49;
   
   --font-sans: 'Outfit', 'Plus Jakarta Sans', 'Inter', sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
@@ -38,14 +75,14 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #090D16;
+  background: #0F172A;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1F2937;
+  background: #1E293B;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #374151;
+  background: #334155;
 }
 
 /* Hide scrollbar utility */
@@ -88,10 +125,10 @@ html {
 @keyframes pulse-glow {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.5);
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5);
   }
   50% {
-    box-shadow: 0 0 12px 4px rgba(99, 102, 241, 0.25);
+    box-shadow: 0 0 12px 4px rgba(59, 130, 246, 0.25);
   }
 }
 
@@ -127,7 +164,7 @@ button:focus-visible {
 }
 .hover-lift:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.4), 0 0 15px 1px rgba(99, 102, 241, 0.05);
+  box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.4), 0 0 15px 1px rgba(59, 130, 246, 0.05);
 }
 
 .active-scale:active {
@@ -136,14 +173,14 @@ button:focus-visible {
 
 /* ── Glassmorphism ── */
 .glass-card {
-  background: rgba(17, 24, 39, 0.65);
+  background: rgba(30, 41, 59, 0.65);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(31, 41, 55, 0.6);
+  border: 1px solid rgba(51, 65, 85, 0.6);
 }
 
 .glass-panel {
-  background: rgba(9, 13, 22, 0.7);
+  background: rgba(15, 23, 42, 0.7);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }
@@ -156,7 +193,7 @@ button:focus-visible {
 
 /* ── Text selection ── */
 ::selection {
-  background-color: rgba(99, 102, 241, 0.3);
+  background-color: rgba(59, 130, 246, 0.3);
   color: var(--color-dark-textPrimary);
 }
 
@@ -173,11 +210,11 @@ button:focus-visible {
 .animate-shimmer {
   background: linear-gradient(
     90deg,
-    rgba(31, 41, 55, 0) 0%,
-    rgba(99, 102, 241, 0.08) 40%,
-    rgba(99, 102, 241, 0.15) 50%,
-    rgba(99, 102, 241, 0.08) 60%,
-    rgba(31, 41, 55, 0) 100%
+    rgba(51, 65, 85, 0) 0%,
+    rgba(59, 130, 246, 0.08) 40%,
+    rgba(59, 130, 246, 0.15) 50%,
+    rgba(59, 130, 246, 0.08) 60%,
+    rgba(51, 65, 85, 0) 100%
   );
   background-size: 200% 100%;
   animation: shimmer 1.8s ease-in-out infinite;
@@ -216,10 +253,10 @@ button:focus-visible {
 }
 .glow-border:hover {
   box-shadow:
-    0 0 8px 1px rgba(99, 102, 241, 0.25),
-    0 0 20px 2px rgba(99, 102, 241, 0.1),
-    inset 0 0 6px 0 rgba(99, 102, 241, 0.06);
-  border-color: rgba(99, 102, 241, 0.5);
+    0 0 8px 1px rgba(59, 130, 246, 0.25),
+    0 0 20px 2px rgba(59, 130, 246, 0.1),
+    inset 0 0 6px 0 rgba(59, 130, 246, 0.06);
+  border-color: rgba(59, 130, 246, 0.5);
 }
 
 /* ── Extra staggered animation delays ── */
@@ -243,10 +280,10 @@ button:focus-visible {
 /* ── Soft glow pulse ── */
 @keyframes glow-pulse-soft {
   0%, 100% {
-    box-shadow: 0 0 8px 2px rgba(99, 102, 241, 0.15);
+    box-shadow: 0 0 8px 2px rgba(59, 130, 246, 0.15);
   }
   50% {
-    box-shadow: 0 0 16px 6px rgba(99, 102, 241, 0.35);
+    box-shadow: 0 0 16px 6px rgba(59, 130, 246, 0.35);
   }
 }
 
@@ -279,7 +316,7 @@ button:focus-visible {
 
 /* ── Gradient text ── */
 .gradient-text {
-  background: linear-gradient(135deg, #6366F1, #8B5CF6);
+  background: linear-gradient(135deg, #3B82F6, #60A5FA);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -316,21 +353,21 @@ button:focus-visible {
 
 /* ── Improved glass-card with brighter top border ── */
 .glass-card {
-  background: rgba(17, 24, 39, 0.65);
+  background: rgba(30, 41, 59, 0.65);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(31, 41, 55, 0.6);
+  border: 1px solid rgba(51, 65, 85, 0.6);
   border-top: 1px solid rgba(148, 163, 184, 0.12);
 }
 
 /* ── Premium glass card with gradient border ── */
 .glass-card-premium {
-  background: rgba(17, 24, 39, 0.65);
+  background: rgba(30, 41, 59, 0.65);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(31, 41, 55, 0.6);
+  border: 1px solid rgba(51, 65, 85, 0.6);
   border-top: 1px solid rgba(148, 163, 184, 0.12);
-  border-image: linear-gradient(135deg, rgba(99, 102, 241, 0.4), rgba(139, 92, 246, 0.4), rgba(99, 102, 241, 0.1)) 1;
+  border-image: linear-gradient(135deg, rgba(59, 130, 246, 0.4), rgba(96, 165, 250, 0.4), rgba(59, 130, 246, 0.1)) 1;
   border-image-slice: 1;
 }
 

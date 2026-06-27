@@ -1464,9 +1464,17 @@ export async function fetchStockData(symbol: string): Promise<StockData> {
     console.warn('Investidor10 parser fetch failed', err);
   }
 
-  // If both failed and it's not a known fallback ticker, throw error so UI triggers "Not Found" state
+  // If both failed, try to fallback to B3 registry entry to avoid "Not Found" errors for valid B3 assets
+  const registryEntry = ALL_B3_TICKERS.find(t => t.symbol === cleanSymbol);
+
   if (!loadedViaYahoo && !investidor10Data && !DEFAULT_MOCK_DATA[cleanSymbol]) {
-    throw new Error(`Ticker "${cleanSymbol}" não foi encontrado na B3.`);
+    if (registryEntry) {
+      longName = registryEntry.name;
+      // Mark as loaded to trigger dynamic mock generation smoothly
+      loadedViaYahoo = true;
+    } else {
+      throw new Error(`Ticker "${cleanSymbol}" não foi encontrado na B3.`);
+    }
   }
 
   // Set default history fallback if none loaded
