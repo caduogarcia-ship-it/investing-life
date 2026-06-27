@@ -17,13 +17,14 @@ import { RecommendedPortfolios } from './components/RecommendedPortfolios';
 import { QuickCompare } from './components/QuickCompare';
 import { fetchStockData, getSimilarTickers } from './services/api';
 import type { StockData, B3Ticker } from './services/api';
-import { AlertCircle, FolderHeart, Compass, ArrowRight, LineChart, Wallet, CandlestickChart, DollarSign, Trophy, Star, Calculator, Shield } from 'lucide-react';
+import { AlertCircle, FolderHeart, Compass, ArrowRight, LineChart, Wallet, CandlestickChart, DollarSign, Trophy, Star, Calculator, Shield, Landmark } from 'lucide-react';
 import { Login } from './components/Login';
 import { HomeOverview } from './components/HomeOverview';
 import { AddAssetModal } from './components/AddAssetModal';
 import type { PortfolioItem } from './components/Portfolio';
 import { CalculatorsPreview } from './components/CalculatorsPreview';
 import { AdminHub } from './components/AdminHub';
+import { TesouroDireto } from './components/TesouroDireto';
 import { supabase, loadUserData, saveUserData, ADMIN_EMAIL } from './services/supabase';
 
 export default function App() {
@@ -47,7 +48,7 @@ export default function App() {
   const [watchlist, setWatchlist] = useState<string[]>(['PETR4', 'VALE3', 'WEGE3', 'CURY3', 'TEND3', 'ITUB4']);
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
 
-  const [activeTab, setActiveTab] = useState<'analise' | 'carteira' | 'candles' | 'dividendos' | 'rankings' | 'recomendadas' | 'calculos' | 'admin'>(() => {
+  const [activeTab, setActiveTab] = useState<'analise' | 'carteira' | 'candles' | 'dividendos' | 'rankings' | 'recomendadas' | 'calculos' | 'tesouro' | 'admin'>(() => {
     const saved = localStorage.getItem('b3_active_tab');
     return (saved as any) || 'analise';
   });
@@ -408,6 +409,18 @@ export default function App() {
             Cálculos
           </button>
           <button
+            onClick={() => setActiveTab('tesouro')}
+            className={`flex-1 py-2.5 rounded-xl transition-all duration-300 cursor-pointer active-scale flex items-center justify-center gap-1.5 ${
+              activeTab === 'tesouro' 
+                ? 'text-white' 
+                : 'text-dark-textSecondary hover:text-dark-textPrimary'
+            }`}
+            style={activeTab === 'tesouro' ? { background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', boxShadow: '0 4px 15px rgba(99,102,241,0.3)', fontFamily: 'Outfit, sans-serif' } : { fontFamily: 'Outfit, sans-serif' }}
+          >
+            <Landmark className="w-3.5 h-3.5" />
+            Tesouro
+          </button>
+          <button
             onClick={() => setActiveTab('rankings')}
             className={`flex-1 py-2.5 rounded-xl transition-all duration-300 cursor-pointer active-scale flex items-center justify-center gap-1.5 ${
               activeTab === 'rankings' 
@@ -417,7 +430,7 @@ export default function App() {
             style={activeTab === 'rankings' ? { background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', boxShadow: '0 4px 15px rgba(99,102,241,0.3)', fontFamily: 'Outfit, sans-serif' } : { fontFamily: 'Outfit, sans-serif' }}
           >
             <Trophy className="w-3.5 h-3.5" />
-            Rankings da Bolsa
+            Rankings
           </button>
           <button
             onClick={() => setActiveTab('recomendadas')}
@@ -538,6 +551,8 @@ export default function App() {
           />
         ) : activeTab === 'calculos' ? (
           <CalculatorsPreview stockData={stockData} />
+        ) : activeTab === 'tesouro' ? (
+          <TesouroDireto />
         ) : activeTab === 'rankings' ? (
           <Rankings 
             onSelectTicker={(sym) => {

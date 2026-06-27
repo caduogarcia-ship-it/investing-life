@@ -23,42 +23,17 @@ interface IndexConfig {
 }
 
 const INDEX_CONFIGS: IndexConfig[] = [
-  {
-    name: 'IBOVESPA',
-    symbol: '^BVSP',
-    format: (p) => Math.round(p).toLocaleString('pt-BR')
-  },
-  {
-    name: 'IFIX',
-    symbol: 'IFIX.SA',
-    format: (p) => Math.round(p).toLocaleString('pt-BR')
-  },
-  {
-    name: 'DÓLAR (USD)',
-    symbol: 'USDBRL=X',
-    format: (p) => `R$ ${p.toFixed(2).replace('.', ',')}`
-  },
-  {
-    name: 'S&P 500',
-    symbol: '^GSPC',
-    format: (p) => Math.round(p).toLocaleString('pt-BR')
-  },
-  {
-    name: 'NASDAQ',
-    symbol: '^IXIC',
-    format: (p) => Math.round(p).toLocaleString('pt-BR')
-  },
-  {
-    name: 'BITCOIN (BTC)',
-    symbol: 'BTC-USD',
-    format: (p) => `U$ ${Math.round(p).toLocaleString('pt-BR')}`
-  }
-];
-
-export const Header: React.FC<HeaderProps> = ({ onSearch, onOpenSettings, loading, onLogout }) => {
+  { name: 'IBOVESPA', symbol: '^BVSP', format: (p) => Math.round(p).toLocaleString('pt-BR') },
+  { name: 'IFIX', symbol: 'IFIX.SA', format: (p) => Math.round(p).toLocaleString('pt-BR') },
+  { name: 'DÓLAR (USD)', symbol: 'USDBRL=X', format: (p) => `R$ ${p.toFixed(2).replace('.', ',')}` },
+  { name: 'S&P 500', symbol: '^GSPC', format: (p) => Math.round(p).toLocaleString('pt-BR') },
+  { name: 'NASDAQ', symbol: '^IXIC', format: (p) => Math.round(p).toLocaleString('pt-BR') },
+  { name: 'BITCOIN (BTC)', symbol: 'BTC-USD', format: (p) => `U$ ${Math.round(p).toLocaleString('pt-BR')}` }
+];export const Header: React.FC<HeaderProps> = ({ onSearch, onOpenSettings, loading, onLogout }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState<Array<{ symbol: string; name: string; category?: string }>>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  
   const [indices, setIndices] = useState<IndexData[]>([
     { name: 'IBOVESPA', value: '124.305', change: 0.84 },
     { name: 'IFIX', value: '3.384', change: 0.12 },
@@ -68,7 +43,6 @@ export const Header: React.FC<HeaderProps> = ({ onSearch, onOpenSettings, loadin
     { name: 'BITCOIN (BTC)', value: 'U$ 68.450', change: 1.85 },
     { name: 'TAXA SELIC', value: '10,50%', change: 0.00 }
   ]);
-  
   const suggestionsRef = useRef<HTMLFormElement>(null);
 
   // Popular B3 Tickers for Quick Selection
@@ -133,25 +107,19 @@ export const Header: React.FC<HeaderProps> = ({ onSearch, onOpenSettings, loadin
     setShowSuggestions(false);
   };
 
-  // Real-time indices fetching and simulation
+  // Real-time indices fetching ONCE per day/session
   useEffect(() => {
     const fetchIndicesData = async () => {
       try {
-        const token = getApiToken();
+        const token = getApiToken() || 'cgWz89yC3Q8H8JpDMM7sPZ'; // Fallback token
         const fetchedData = await Promise.all(
           INDEX_CONFIGS.map(async (config) => {
             try {
-              // Online integration fix: Use brapi if token is available, otherwise fallback to yahoo proxy (local dev)
-              const url = token 
-                ? `https://brapi.dev/api/quote/${config.symbol}?token=${token}`
-                : `/yahoo-chart/${config.symbol}?range=1d&interval=1m`;
-                
+              const url = `https://brapi.dev/api/quote/${config.symbol}?token=${token}`;
               const res = await fetch(url);
               if (res.ok) {
                 const json = await res.json();
-                
-                // Handle Brapi response
-                if (token && json.results && json.results.length > 0) {
+                if (json.results && json.results.length > 0) {
                   const result = json.results[0];
                   const price = result.regularMarketPrice;
                   const changePct = result.regularMarketChangePercent;
@@ -162,27 +130,10 @@ export const Header: React.FC<HeaderProps> = ({ onSearch, onOpenSettings, loadin
                       change: Number((changePct || 0).toFixed(2))
                     };
                   }
-                } 
-                // Handle Yahoo proxy fallback
-                else if (!token) {
-                  const result = json.chart?.result?.[0];
-                  const meta = result?.meta;
-                  if (meta) {
-                    const price = meta.regularMarketPrice ?? meta.chartPreviousClose;
-                    const prevClose = meta.chartPreviousClose ?? price;
-                    const changePct = prevClose ? ((price - prevClose) / prevClose) * 100 : 0;
-                    if (price) {
-                      return {
-                        name: config.name,
-                        value: config.format(price),
-                        change: Number(changePct.toFixed(2))
-                      };
-                    }
-                  }
                 }
               }
             } catch (e) {
-              console.error(`Error fetching index ${config.name}:`, e);
+              console.warn(`Failed to fetch index ${config.name}`);
             }
             return null;
           })
@@ -197,49 +148,11 @@ export const Header: React.FC<HeaderProps> = ({ onSearch, onOpenSettings, loadin
           return idx;
         }));
       } catch (err) {
-        console.error('Error in fetchIndicesData:', err);
+        console.error('Error fetching indices:', err);
       }
     };
 
-    // Initial fetch
     fetchIndicesData();
-
-    // Fetch real values every 30 seconds
-    const fetchInterval = setInterval(fetchIndicesData, 30000);
-
-    // Simulate minor visual fluctuations every 8 seconds (only between syncs)
-    const simulationInterval = setInterval(() => {
-      setIndices(prev => prev.map(idx => {
-        if (idx.name === 'TAXA SELIC') {
-          return idx;
-        }
-
-        const delta = (Math.random() - 0.5) * 0.05;
-        const newChange = Number((idx.change + delta).toFixed(2));
-        
-        let valNum = parseFloat(idx.value.replace('R$', '').replace('U$', '').replace(/\./g, '').replace(',', '.'));
-        if (isNaN(valNum)) return idx;
-
-        const multiplier = 1 + (delta / 100);
-        const newVal = valNum * multiplier;
-
-        let formattedVal = idx.value;
-        if (idx.name === 'IBOVESPA' || idx.name === 'IFIX' || idx.name === 'S&P 500' || idx.name === 'NASDAQ') {
-          formattedVal = Math.round(newVal).toLocaleString('pt-BR');
-        } else if (idx.name === 'DÓLAR (USD)') {
-          formattedVal = `R$ ${newVal.toFixed(2).replace('.', ',')}`;
-        } else if (idx.name === 'BITCOIN (BTC)') {
-          formattedVal = `U$ ${Math.round(newVal).toLocaleString('pt-BR')}`;
-        }
-
-        return { ...idx, value: formattedVal, change: newChange };
-      }));
-    }, 8000);
-
-    return () => {
-      clearInterval(fetchInterval);
-      clearInterval(simulationInterval);
-    };
   }, []);
 
   const hasToken = getApiToken().length > 0;
@@ -254,32 +167,35 @@ export const Header: React.FC<HeaderProps> = ({ onSearch, onOpenSettings, loadin
 
   return (
     <header className="sticky top-0 z-40 glass-panel border-b border-dark-border flex flex-col">
-      {/* Scrolling Index Ticker Tape */}
-      <div className="w-full border-b border-dark-border/40 py-2 px-4 overflow-x-auto no-scrollbar flex items-center gap-6 select-none whitespace-nowrap" style={{ background: 'linear-gradient(90deg, rgba(9,13,22,0.8), rgba(17,24,39,0.6), rgba(9,13,22,0.8))', borderBottom: '1px solid transparent', borderImage: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.15), rgba(139,92,246,0.15), transparent) 1' }}>
-        {indices.map((idx, i) => {
-          const isPositive = idx.change >= 0;
-          const isNeutral = idx.change === 0;
-          return (
-            <div 
-              key={i} 
-              className={`inline-flex items-center gap-2 px-3 py-1 bg-dark-card/30 border rounded-full transition-all hover:bg-dark-card/70 ${
-                isNeutral
-                  ? 'border-dark-border/50 text-dark-textSecondary'
-                  : isPositive
-                    ? 'border-brand-success/15 text-brand-success hover:border-brand-success/35'
-                    : 'border-brand-danger/15 text-brand-danger hover:border-brand-danger/35'
-              }`}
-            >
-              <span className="text-4xs font-black tracking-wider uppercase opacity-75">{idx.name}</span>
-              <span className="text-xs font-extrabold text-dark-textPrimary font-mono">{idx.value}</span>
-              {!isNeutral && (
-                <span className={`text-4xs font-black font-mono flex items-center${Math.abs(idx.change) > 1 ? ' animate-pulse' : ''}`}>
-                  {isPositive ? '+' : ''}{idx.change.toFixed(2)}%
-                </span>
-              )}
-            </div>
-          );
-        })}
+      {/* Scrolling Index Ticker Tape (Custom CSS Marquee) */}
+      <div className="w-full border-b border-dark-border/40 overflow-hidden flex" style={{ height: '36px', background: 'linear-gradient(90deg, rgba(9,13,22,0.8), rgba(17,24,39,0.6), rgba(9,13,22,0.8))', borderBottom: '1px solid transparent', borderImage: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.15), rgba(139,92,246,0.15), transparent) 1' }}>
+        <div className="animate-marquee flex items-center py-1">
+          {/* Double map to ensure seamless looping without empty space */}
+          {[...indices, ...indices].map((idx, i) => {
+            const isPositive = idx.change >= 0;
+            const isNeutral = idx.change === 0;
+            return (
+              <div 
+                key={i} 
+                className={`inline-flex items-center gap-2 px-3 py-1 bg-dark-card/30 border rounded-full mx-3 transition-all hover:bg-dark-card/70 shrink-0 ${
+                  isNeutral
+                    ? 'border-dark-border/50 text-dark-textSecondary'
+                    : isPositive
+                      ? 'border-brand-success/15 text-brand-success hover:border-brand-success/35'
+                      : 'border-brand-danger/15 text-brand-danger hover:border-brand-danger/35'
+                }`}
+              >
+                <span className="text-4xs font-black tracking-wider uppercase opacity-75">{idx.name}</span>
+                <span className="text-xs font-extrabold text-dark-textPrimary font-mono">{idx.value}</span>
+                {!isNeutral && (
+                  <span className={`text-4xs font-black font-mono flex items-center${Math.abs(idx.change) > 1 ? ' animate-pulse' : ''}`}>
+                    {isPositive ? '+' : ''}{idx.change.toFixed(2)}%
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       <div className="px-4 py-3 lg:px-8 max-w-7xl mx-auto w-full flex flex-col md:flex-row md:items-center md:justify-between gap-4">

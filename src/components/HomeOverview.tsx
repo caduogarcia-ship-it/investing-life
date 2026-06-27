@@ -448,7 +448,7 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({
           <div>
             <h3 className="text-base font-bold text-dark-textPrimary flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
               <Award className="w-5 h-5 text-brand-primary" />
-              Destaques do Mercado B3
+              Destaques do mercado, {new Date().toLocaleDateString('pt-BR')}
             </h3>
             <p className="text-4xs text-dark-textSecondary font-medium" style={{ fontFamily: 'Outfit, sans-serif' }}>
               As 10 maiores oscilações diárias entre os ativos mais negociados da bolsa

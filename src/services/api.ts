@@ -2390,74 +2390,31 @@ export const POPULAR_B3_MARKET_MOVES = [
 ];
 
 export async function fetchMarketMoves(): Promise<MarketMove[]> {
-  const results = await Promise.all(
-    POPULAR_B3_MARKET_MOVES.map(async (symbol) => {
-      try {
-        const cleanSymbol = symbol.toUpperCase().replace('.SA', '').trim();
-        const yahooSymbol = cleanSymbol.includes('.') || cleanSymbol.startsWith('^') || /^[A-Z]{1,5}$/.test(cleanSymbol)
-          ? cleanSymbol 
-          : `${cleanSymbol}.SA`;
-
-        const res = await fetch(`/yahoo-chart/${yahooSymbol}?range=5d&interval=1d`);
-        if (res.ok) {
-          const json = await res.json();
-          const result = json.chart?.result?.[0];
-          const meta = result?.meta;
-          if (meta) {
-            const regularMarketPrice = meta.regularMarketPrice ?? meta.chartPreviousClose;
-            const longName = meta.longName ?? meta.shortName ?? cleanSymbol;
-            
-            const timestamps = result.timestamp || [];
-            const quote = result.indicators?.quote?.[0] || {};
-            const closePrices = quote.close || [];
-            
-            const history: Array<{ date: string; price: number }> = [];
-            for (let i = 0; i < timestamps.length; i++) {
-              const c = closePrices[i];
-              if (c !== null && c !== undefined) {
-                history.push({
-                  date: new Date(timestamps[i] * 1000).toISOString().split('T')[0],
-                  price: c
-                });
-              }
-            }
-
-            let prevClose = regularMarketPrice;
-            if (history.length >= 2) {
-              const lastPoint = history[history.length - 1];
-              const secondLastPoint = history[history.length - 2];
-              const todayStr = new Date().toISOString().split('T')[0];
-              if (lastPoint.date === todayStr) {
-                prevClose = secondLastPoint.price;
-              } else {
-                const isMarketClosedToday = Math.abs(regularMarketPrice - lastPoint.price) < 0.001;
-                if (isMarketClosedToday) {
-                  prevClose = secondLastPoint.price;
-                } else {
-                  prevClose = lastPoint.price;
-                }
-              }
-            }
-
-            const change = regularMarketPrice - prevClose;
-            const changePercent = prevClose > 0 ? (change / prevClose) * 100 : 0;
-
-            return {
-              symbol: cleanSymbol,
-              name: longName.split(' - ')[0].replace(' S.A.', '').replace(' Group', '').replace(' Holding', '').replace(' S/A', ''),
-              price: regularMarketPrice,
-              changePercent: Number(changePercent.toFixed(2)),
-              change: Number(change.toFixed(2))
-            };
-          }
-        }
-      } catch (err) {
-        console.warn(`Failed to fetch market move for ${symbol}:`, err);
-      }
-      return null;
-    })
-  );
-
-  return results.filter((r): r is MarketMove => r !== null);
+  try {
+    const token = getApiToken() || 'cgWz89yC3Q8H8JpDMM7sPZ'; // fallback token
+    const symbols = POPULAR_B3_MARKET_MOVES.join('%2C');
+    const url = `https://brapi.dev/api/quote/${symbols}?token=${token}`;
+    
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Failed to fetch from brapi');
+    
+    const json = await res.json();
+    if (!json.results) return [];
+    
+    const results: MarketMove[] = json.results.map((r: any) => {
+      return {
+        symbol: r.symbol,
+        name: r.shortName || r.longName || r.symbol,
+        price: r.regularMarketPrice || 0,
+        changePercent: r.regularMarketChangePercent || 0,
+        change: r.regularMarketChange || 0
+      };
+    });
+    
+    return results;
+  } catch (err) {
+    console.warn('Failed to fetch market moves:', err);
+    return [];
+  }
 }
 
