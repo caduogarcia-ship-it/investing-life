@@ -1,7 +1,148 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Sliders, Calculator, RotateCcw, AlertTriangle, Zap, HelpCircle, Lock, Unlock, Printer } from 'lucide-react';
+import { Sliders, Calculator, RotateCcw, AlertTriangle, Zap, HelpCircle, Lock, Unlock, Printer, TrendingUp, FileText } from 'lucide-react';
 import { ResponsiveContainer, ComposedChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import type { StockData } from '../services/api';
+
+interface LockableInputProps {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  unit: string;
+  isLocked: boolean;
+  onToggleLock: () => void;
+  onChange: (val: number) => void;
+  tooltip?: string;
+  disabled?: boolean;
+  disableLock?: boolean;
+  statusText?: string;
+}
+
+const LockableInput: React.FC<LockableInputProps> = ({
+  label,
+  value,
+  min,
+  max,
+  step,
+  unit,
+  isLocked,
+  onToggleLock,
+  onChange,
+  tooltip,
+  disabled,
+  disableLock,
+  statusText
+}) => {
+  const [localVal, setLocalVal] = useState<string>('');
+  const [isFocused, setIsFocused] = useState(false);
+
+  useEffect(() => {
+    if (!isFocused) {
+      setLocalVal(value.toString());
+    }
+  }, [value, isFocused]);
+
+  const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const text = e.target.value;
+    setLocalVal(text);
+    const parsed = parseFloat(text);
+    if (!isNaN(parsed)) {
+      onChange(parsed);
+    }
+  };
+
+  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const parsed = parseFloat(e.target.value);
+    if (!isNaN(parsed)) {
+      setLocalVal(parsed.toString());
+      onChange(parsed);
+    }
+  };
+
+  const isDisabled = disabled !== undefined ? disabled : isLocked;
+  const isLockBtnDisabled = disableLock !== undefined ? disableLock : false;
+
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(31,41,55,0.5)' }}>
+      <div className="h-[2px]" style={{ background: isLocked ? 'linear-gradient(90deg, #ef4444, #f87171)' : 'linear-gradient(90deg, #6366f1, #8b5cf6)' }} />
+      <div className="p-3.5 space-y-3" style={{ background: 'rgba(9,13,22,0.35)' }}>
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-sm font-bold text-dark-textSecondary">{label}</span>
+            {statusText && (
+              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                statusText.includes('Inativo') ? 'bg-brand-danger/10 text-brand-danger border border-brand-danger/10 opacity-70' :
+                statusText === 'Calculado' ? 'bg-brand-primary/20 text-brand-primary border border-brand-primary/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+              }`}>
+                {statusText}
+              </span>
+            )}
+            {tooltip && (
+              <span title={tooltip}>
+                <HelpCircle className="w-3 h-3 text-dark-textSecondary/50" />
+              </span>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={onToggleLock}
+              disabled={isLockBtnDisabled}
+              className={`p-1.5 rounded-lg transition-colors ${
+                isLockBtnDisabled ? 'opacity-30 cursor-not-allowed text-dark-textSecondary/30' :
+                isLocked ? 'bg-brand-danger/20 text-brand-danger' : 'bg-dark-bg/60 text-dark-textSecondary hover:text-dark-textPrimary'
+              }`}
+              title={isLockBtnDisabled ? "Inativo" : isLocked ? "Destravar valor" : "Travar valor contra Auto-Preenchimento"}
+            >
+              {isLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+            </button>
+            <div className={`flex items-center bg-dark-bg/80 border ${isDisabled ? 'border-brand-danger/20' : 'border-dark-border/60 focus-within:border-brand-purple'} rounded-lg px-2.5 py-1`}>
+              <input 
+                type="number" step={step} min={min} max={max} 
+                value={localVal}
+                disabled={isDisabled}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                onChange={handleTextChange}
+                className={`w-14 bg-transparent text-right font-mono text-sm outline-none border-none p-0 focus:ring-0 focus:outline-none ${isDisabled ? 'text-dark-textSecondary opacity-60' : 'text-dark-textPrimary'}`}
+              />
+              <span className="text-dark-textSecondary text-sm font-mono ml-1">{unit}</span>
+            </div>
+          </div>
+        </div>
+        <input 
+          type="range" min={min} max={max} step={step} 
+          value={value}
+          disabled={isDisabled}
+          onChange={handleSliderChange}
+          className={`w-full h-1.5 rounded-full appearance-none accent-brand-purple ${isDisabled ? 'bg-brand-danger/10 opacity-30 cursor-not-allowed' : 'bg-dark-bg cursor-pointer'}`}
+        />
+      </div>
+    </div>
+  );
+};
+
+export const formatCurrency = (val: number) => {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+};
+
+export const formatPercent = (val: number) => {
+  return `${val.toFixed(2).replace('.', ',')}%`;
+};
+
+const initialJustifications = {
+  rf: { label: 'Taxa Livre de Risco (Rf)', text: 'Baseada na média histórica do Tesouro IPCA+ de longo prazo ou Selic.', active: true },
+  beta: { label: 'Beta (β)', text: 'Reflete a volatilidade histórica observada para o papel nos últimos 5 anos.', active: true },
+  erp: { label: 'Prêmio de Risco (ERP)', text: 'Equity Risk Premium estimado por Aswath Damodaran para o mercado brasileiro.', active: true },
+  k: { label: 'Custo de Capital (R ou Ke)', text: 'Taxa de desconto calculada via modelo CAPM (Rf + β * ERP).', active: true },
+  roe: { label: 'Retorno sobre Patrimônio (ROE)', text: 'Retorno sobre o patrimônio médio recente do ativo.', active: true },
+  payout: { label: 'Taxa de Payout', text: 'Percentual estimado de distribuição de lucros sob a forma de dividendos.', active: true },
+  g: { label: 'Crescimento Constante (g)', text: 'Calculado a partir de ROE x (1 - Payout) para perpetuidade.', active: true },
+  d0: { label: 'Dividendo Atual (DIV0)', text: 'Último dividendo pago acumulado no ano base.', active: true },
+  g1: { label: 'Crescimento Estágio 1 (g1)', text: 'Crescimento forte projetado para os próximos 3 anos.', active: true },
+  g2: { label: 'Crescimento Perpétuo (g2)', text: 'Crescimento de longo prazo na perpetuidade alinhado à inflação histórica.', active: true },
+};
 
 interface CalculatorsPreviewProps {
   stockData: StockData | null;
@@ -16,14 +157,16 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
       return {
         rf: 10.75,
         beta: 1.0,
-        rm: 16.25,
+        erp: 5.50,
         roe: 12.0,
         payout: 40.0,
         d1: 1.35,
-        g1: 15.0,
-        n: 5,
-        g2: 5.0,
-        d0: 1.20,
+        g1: 10.0, // Default 10%
+        n: 3,     // Fixed at 3 years
+        g2: 4.0,  // Default 4%
+        d0: 1.00, // Default DIV0 1.00
+        g: 7.20,
+        ke: 12.41, // Default Ke 12.41%
       };
     }
 
@@ -35,8 +178,7 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
     // Check if US stock or B3 BDR
     const isUS = stockData.currency === 'USD' || /^[A-Z]{1,5}$/.test(stockData.symbol) || stockData.symbol.endsWith('34');
     const rf = isUS ? 4.25 : 10.75; 
-    const premium = isUS ? 4.5 : 5.5; 
-    const rm = rf + premium;
+    const erp = isUS ? 4.50 : 5.50; // Damodaran Equity Risk Premium
 
     // Payout estimation from DY & ROE
     let payout = 45.0;
@@ -49,57 +191,111 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
     const ret = 1 - (payout / 100);
     const gEst = (roe / 100) * ret;
     const d1 = d0 * (1 + gEst);
+    const keCalculated = rf + beta * erp;
 
     return {
       rf: Number(rf.toFixed(2)),
       beta: Math.max(0.5, Math.min(2.5, beta)),
-      rm: Number(rm.toFixed(2)),
+      erp: Number(erp.toFixed(2)),
       roe: Number(roe.toFixed(2)),
       payout: Number(payout.toFixed(2)),
       d1: Number(d1.toFixed(2)),
       g1: Number(Math.max(5, Math.min(30, (roe * 1.5))).toFixed(2)),
-      n: 5,
+      n: 3,     // Fixed at 3 years
       g2: Number(Math.max(2, Math.min(gEst * 100, rf - 2)).toFixed(2)),
       d0: Number(d0.toFixed(2)),
+      g: Number((gEst * 100).toFixed(2)),
+      ke: Number(keCalculated.toFixed(2)),
     };
   }, [stockData]);
 
   // --- INTERACTIVE / CUSTOMIZABLE STATES ---
   const [inputs, setInputs] = useState(recommendedParams);
   const [locks, setLocks] = useState({
-    rf: false, beta: false, rm: false, roe: false, payout: false, d1: false,
-    g1: false, n: false, g2: false, d0: false
+    rf: false, beta: false, erp: false, roe: false, payout: false, d1: false,
+    g1: false, n: false, g2: false, d0: false, g: false, ke: false
   });
 
   const [growthScenario, setGrowthScenario] = useState<'otimista' | 'pessimista' | 'manual'>('manual');
+  const [justifications, setJustifications] = useState(initialJustifications);
 
   // Sync initial state
   useEffect(() => {
     setInputs(recommendedParams);
     setLocks({ 
-      rf: false, beta: false, rm: false, roe: false, payout: false, d1: false,
-      g1: false, n: false, g2: false, d0: false 
+      rf: false, beta: false, erp: false, roe: false, payout: false, d1: false,
+      g1: false, n: false, g2: false, d0: false, g: false, ke: false 
     });
+    setJustifications(initialJustifications);
     setGrowthScenario('manual');
   }, [recommendedParams]);
 
   // --- HANDLERS ---
   const handleInputChange = (key: keyof typeof inputs, value: number) => {
-    setInputs(prev => ({ ...prev, [key]: value }));
+    setInputs(prev => {
+      const next = { ...prev, [key]: value };
+      if ((key === 'roe' || key === 'payout') && !locks.g) {
+        const ret = 1 - (next.payout / 100);
+        const gEst = (next.roe / 100) * ret;
+        next.g = Number((gEst * 100).toFixed(2));
+      }
+      if ((key === 'rf' || key === 'beta' || key === 'erp') && !locks.ke) {
+        next.ke = Number((next.rf + next.beta * next.erp).toFixed(2));
+      }
+      return next;
+    });
     setGrowthScenario('manual');
   };
 
   const toggleLock = (key: keyof typeof locks) => {
-    setLocks(prev => ({ ...prev, [key]: !prev[key] }));
+    setLocks(prev => {
+      const nextLocks = { ...prev, [key]: !prev[key] };
+      // If unlocking g, recalculate it immediately to sync
+      if (key === 'g' && !nextLocks.g) {
+        setInputs(prevInputs => {
+          const ret = 1 - (prevInputs.payout / 100);
+          const gEst = (prevInputs.roe / 100) * ret;
+          return {
+            ...prevInputs,
+            g: Number((gEst * 100).toFixed(2))
+          };
+        });
+      }
+      // If unlocking ke, recalculate it immediately to sync
+      if (key === 'ke' && !nextLocks.ke) {
+        setInputs(prevInputs => {
+          return {
+            ...prevInputs,
+            ke: Number((prevInputs.rf + prevInputs.beta * prevInputs.erp).toFixed(2))
+          };
+        });
+      }
+      return nextLocks;
+    });
   };
 
   const handleReset = () => {
     setInputs(recommendedParams);
     setLocks({ 
-      rf: false, beta: false, rm: false, roe: false, payout: false, d1: false,
-      g1: false, n: false, g2: false, d0: false 
+      rf: false, beta: false, erp: false, roe: false, payout: false, d1: false,
+      g1: false, n: false, g2: false, d0: false, g: false, ke: false 
     });
+    setJustifications(initialJustifications);
     setGrowthScenario('manual');
+  };
+
+  const updateJustificationText = (key: keyof typeof initialJustifications, text: string) => {
+    setJustifications(prev => ({
+      ...prev,
+      [key]: { ...prev[key], text }
+    }));
+  };
+
+  const toggleJustification = (key: keyof typeof initialJustifications) => {
+    setJustifications(prev => ({
+      ...prev,
+      [key]: { ...prev[key], active: !prev[key].active }
+    }));
   };
 
   const handleScenario = (scenario: 'otimista' | 'pessimista') => {
@@ -109,25 +305,42 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
       if (scenario === 'otimista') {
         if (!locks.rf) next.rf = Math.max(2, prev.rf * 0.9);
         if (!locks.beta) next.beta = Math.max(0.4, prev.beta * 0.85);
-        if (!locks.rm) next.rm = Math.min(25, prev.rm * 1.1);
+        if (!locks.erp) next.erp = Math.min(15, prev.erp * 1.05);
         if (!locks.roe) next.roe = Math.min(50, prev.roe * 1.2);
         if (!locks.payout) next.payout = Math.max(10, prev.payout * 0.8);
         if (!locks.d1) next.d1 = prev.d1 * 1.15;
         if (!locks.g1) next.g1 = Math.min(40, prev.g1 * 1.25);
-        if (!locks.n) next.n = Math.min(10, prev.n + 1);
+        if (!locks.n) next.n = 3;
         if (!locks.g2) next.g2 = Math.min(10, prev.g2 * 1.15);
         if (!locks.d0) next.d0 = prev.d0 * 1.1;
+        if (locks.g) {
+          next.g = Math.min(15, prev.g * 1.1);
+        }
       } else {
         if (!locks.rf) next.rf = Math.min(20, prev.rf * 1.1);
         if (!locks.beta) next.beta = Math.min(3.0, prev.beta * 1.15);
-        if (!locks.rm) next.rm = Math.max(5, prev.rm * 0.9);
+        if (!locks.erp) next.erp = Math.max(2, prev.erp * 0.95);
         if (!locks.roe) next.roe = Math.max(2, prev.roe * 0.8);
         if (!locks.payout) next.payout = Math.min(95, prev.payout * 1.2);
         if (!locks.d1) next.d1 = Math.max(0, prev.d1 * 0.85);
         if (!locks.g1) next.g1 = Math.max(0, prev.g1 * 0.75);
-        if (!locks.n) next.n = Math.max(2, prev.n - 1);
+        if (!locks.n) next.n = 3;
         if (!locks.g2) next.g2 = Math.max(0, prev.g2 * 0.8);
         if (!locks.d0) next.d0 = Math.max(0, prev.d0 * 0.9);
+        if (locks.g) {
+          next.g = Math.max(0, prev.g * 0.9);
+        }
+      }
+
+      // If g is not locked, recalculate it based on the scenario's new ROE/Payout
+      if (!locks.g) {
+        const ret = 1 - (next.payout / 100);
+        const gEst = (next.roe / 100) * ret;
+        next.g = Number((gEst * 100).toFixed(2));
+      }
+      // If ke is not locked, recalculate it based on the scenario's new CAPM parameters
+      if (!locks.ke) {
+        next.ke = Number((next.rf + next.beta * next.erp).toFixed(2));
       }
       return next;
     });
@@ -135,14 +348,13 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
 
   // --- ENGINE DE CÁLCULO ---
   const calc = useMemo(() => {
-    // Passo 2: Cálculo de k (CAPM)
-    const k = (inputs.rf / 100) + inputs.beta * ((inputs.rm / 100) - (inputs.rf / 100));
-    const kPerc = k * 100;
+    // k is inputs.ke (which is either manually written or computed from CAPM in real-time)
+    const k = inputs.ke / 100;
+    const kPerc = inputs.ke;
 
     if (valuationMode === 'GORDON') {
-      const b = 1 - (inputs.payout / 100);
-      const g = (inputs.roe / 100) * b;
-      const gPerc = g * 100;
+      const gPerc = inputs.g;
+      const g = gPerc / 100;
       const isValid = k > g;
       
       let p0 = 0;
@@ -159,10 +371,10 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
 
       return { kPerc, gPerc, isValid, p0, chartData, vpEstagio1: 0, vpTV: 0 };
     } else {
-      // VARIADO MODE
+      // VARIADO MODE (n-Stage Growth Model)
       const g1 = inputs.g1 / 100;
       const g2 = inputs.g2 / 100;
-      const n = inputs.n;
+      const n = inputs.n; // Dynamic duration based on input
 
       const isValid = k > g2; // Regra de negócio: Custo de Capital deve ser maior que Crescimento Perpétuo
       
@@ -203,72 +415,7 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
 
   const currencySymbol = stockData?.currency === 'USD' ? '$' : 'R$';
 
-  // --- SUB-COMPONENT: Lockable Input ---
-  const LockableInput = ({ 
-    label, 
-    value, 
-    min, 
-    max, 
-    step, 
-    unit, 
-    objKey,
-    tooltip 
-  }: { 
-    label: string, 
-    value: number, 
-    min: number, 
-    max: number, 
-    step: number, 
-    unit: string, 
-    objKey: keyof typeof inputs,
-    tooltip?: string
-  }) => {
-    const isLocked = locks[objKey];
-    return (
-      <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(31,41,55,0.5)' }}>
-        <div className="h-[2px]" style={{ background: isLocked ? 'linear-gradient(90deg, #ef4444, #f87171)' : 'linear-gradient(90deg, #6366f1, #8b5cf6)' }} />
-        <div className="p-3.5 space-y-3" style={{ background: 'rgba(9,13,22,0.35)' }}>
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-1.5">
-              <span className="text-sm font-bold text-dark-textSecondary">{label}</span>
-              {tooltip && (
-                <span title={tooltip}>
-                  <HelpCircle className="w-3 h-3 text-dark-textSecondary/50" />
-                </span>
-              )}
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={() => toggleLock(objKey)}
-                className={`p-1.5 rounded-lg transition-colors ${isLocked ? 'bg-brand-danger/20 text-brand-danger' : 'bg-dark-bg/60 text-dark-textSecondary hover:text-dark-textPrimary'}`}
-                title={isLocked ? "Destravar valor" : "Travar valor contra Auto-Preenchimento"}
-              >
-                {isLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
-              </button>
-              <div className={`flex items-center bg-dark-bg/80 border ${isLocked ? 'border-brand-danger/40' : 'border-dark-border/60 focus-within:border-brand-purple'} rounded-lg px-2.5 py-1`}>
-                <input 
-                  type="number" step={step} min={min} max={max} 
-                  value={value}
-                  disabled={isLocked}
-                  onChange={(e) => { const v = parseFloat(e.target.value); handleInputChange(objKey, isNaN(v) ? 0 : v); }}
-                  className={`w-14 bg-transparent text-right font-mono text-sm outline-none border-none p-0 focus:ring-0 focus:outline-none ${isLocked ? 'text-dark-textSecondary' : 'text-dark-textPrimary'}`}
-                />
-                <span className="text-dark-textSecondary text-sm font-mono ml-1">{unit}</span>
-              </div>
-            </div>
-          </div>
-          <input 
-            type="range" min={min} max={max} step={step} 
-            value={value}
-            disabled={isLocked}
-            onChange={(e) => handleInputChange(objKey, parseFloat(e.target.value))}
-            className={`w-full h-1.5 rounded-full appearance-none accent-brand-purple ${isLocked ? 'bg-brand-danger/20 opacity-50 cursor-not-allowed' : 'bg-dark-bg cursor-pointer'}`}
-          />
-        </div>
-      </div>
-    );
-  };
+  // LockableInput is defined outside the component to prevent unmounting and focus loss
 
   return (
     <>
@@ -383,9 +530,9 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <LockableInput label="Rf (Livre Risco)" value={inputs.rf} min={1} max={25} step={0.1} unit="%" objKey="rf" tooltip="Taxa Livre de Risco" />
-                    <LockableInput label="Beta (β)" value={inputs.beta} min={0.1} max={4.0} step={0.05} unit="" objKey="beta" tooltip="Volatilidade do Ativo vs Mercado" />
-                    <LockableInput label="Rm (Retorno Merc.)" value={inputs.rm} min={2} max={35} step={0.1} unit="%" objKey="rm" tooltip="Retorno Esperado do Mercado" />
+                    <LockableInput label="Rf (Livre Risco)" value={inputs.rf} min={1} max={25} step={0.1} unit="%" isLocked={locks.rf} onToggleLock={() => toggleLock('rf')} onChange={(val) => handleInputChange('rf', val)} tooltip="Taxa Livre de Risco" />
+                    <LockableInput label="Beta (β)" value={inputs.beta} min={0.1} max={4.0} step={0.05} unit="" isLocked={locks.beta} onToggleLock={() => toggleLock('beta')} onChange={(val) => handleInputChange('beta', val)} tooltip="Volatilidade do Ativo vs Mercado" />
+                    <LockableInput label="ERP (Prêmio de Risco)" value={inputs.erp} min={1} max={15} step={0.05} unit="%" isLocked={locks.erp} onToggleLock={() => toggleLock('erp')} onChange={(val) => handleInputChange('erp', val)} tooltip="Equity Risk Premium (Prêmio de Risco do Mercado - Damodaran)" />
                   </div>
                 </div>
 
@@ -397,9 +544,10 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                         <span className="w-6 h-6 rounded-md flex items-center justify-center text-xs font-black text-brand-primary" style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.2)' }}>B</span>
                         <span className="text-sm font-extrabold text-brand-primary uppercase tracking-wider">Variáveis Fundamentais (g)</span>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <LockableInput label="ROE" value={inputs.roe} min={1} max={60} step={0.5} unit="%" objKey="roe" tooltip="Return on Equity" />
-                        <LockableInput label="Payout Ratio" value={inputs.payout} min={0} max={100} step={1} unit="%" objKey="payout" tooltip="Porcentagem do Lucro Distribuída" />
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <LockableInput label="ROE" value={inputs.roe} min={1} max={60} step={0.5} unit="%" isLocked={locks.roe} onToggleLock={() => toggleLock('roe')} onChange={(val) => handleInputChange('roe', val)} tooltip="Return on Equity" disabled={locks.g} disableLock={locks.g} statusText={locks.g ? "Inativo (g Manual)" : undefined} />
+                        <LockableInput label="Payout Ratio" value={inputs.payout} min={0} max={100} step={1} unit="%" isLocked={locks.payout} onToggleLock={() => toggleLock('payout')} onChange={(val) => handleInputChange('payout', val)} tooltip="Porcentagem do Lucro Distribuída" disabled={locks.g} disableLock={locks.g} statusText={locks.g ? "Inativo (g Manual)" : undefined} />
+                        <LockableInput label="Taxa de Crescimento (g)" value={inputs.g} min={0} max={15} step={0.05} unit="%" isLocked={locks.g} onToggleLock={() => toggleLock('g')} onChange={(val) => handleInputChange('g', val)} tooltip="Taxa de Crescimento Constante. Destrave (🔓) para calcular automaticamente de ROE x Retenção ou trave (🔒) para digitar um valor manual (ex: inflação de 4%)." disabled={!locks.g} disableLock={false} statusText={locks.g ? "Manual" : "Calculado"} />
                       </div>
                     </div>
 
@@ -410,43 +558,24 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                         <span className="text-sm font-extrabold text-emerald-400 uppercase tracking-wider">Variável de Fluxo (Base)</span>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <LockableInput label="Dividendo Esperado (D1)" value={inputs.d1} min={0.01} max={100} step={0.05} unit={currencySymbol} objKey="d1" tooltip="Dividendo Projetado para o Ano 1" />
+                        <LockableInput label="Dividendo Esperado (D1)" value={inputs.d1} min={0.01} max={100} step={0.05} unit={currencySymbol} isLocked={locks.d1} onToggleLock={() => toggleLock('d1')} onChange={(val) => handleInputChange('d1', val)} tooltip="Dividendo Projetado para o Ano 1" />
                       </div>
                     </div>
                   </>
                 ) : (
                   <>
-                    {/* ── Bloco B: Estágio 1 (Variado) ── */}
+                    {/* ── Bloco B: Parâmetros Crescimento Variado (DIV0, n, g1, g2, Ke) ── */}
                     <div className="space-y-4">
                       <div className="flex items-center gap-2">
                         <span className="w-6 h-6 rounded-md flex items-center justify-center text-xs font-black text-brand-primary" style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.2)' }}>B</span>
-                        <span className="text-sm font-extrabold text-brand-primary uppercase tracking-wider">Estágio 1 (Cresc. Acelerado)</span>
+                        <span className="text-sm font-extrabold text-brand-primary uppercase tracking-wider">Variáveis de Entrada ({inputs.n} Anos + Perpétuo)</span>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <LockableInput label="Cresc. Inicial (g1)" value={inputs.g1} min={0} max={100} step={0.5} unit="%" objKey="g1" tooltip="Taxa de Crescimento Inicial Anormal" />
-                        <LockableInput label="Duração (n)" value={inputs.n} min={1} max={20} step={1} unit="anos" objKey="n" tooltip="Duração do crescimento acelerado em anos" />
-                      </div>
-                    </div>
-
-                    {/* ── Bloco C: Estágio 2 (Variado) ── */}
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-md flex items-center justify-center text-xs font-black text-emerald-400" style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.2)' }}>C</span>
-                        <span className="text-sm font-extrabold text-emerald-400 uppercase tracking-wider">Estágio 2 (Perpetuidade)</span>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <LockableInput label="Cresc. Perpétuo (g2)" value={inputs.g2} min={0} max={15} step={0.1} unit="%" objKey="g2" tooltip="Taxa constante de crescimento na perpetuidade (k > g2)" />
-                      </div>
-                    </div>
-
-                    {/* ── Bloco D: Fluxo Base (Variado) ── */}
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-md flex items-center justify-center text-xs font-black text-rose-400" style={{ background: 'rgba(244,63,94,0.12)', border: '1px solid rgba(244,63,94,0.2)' }}>D</span>
-                        <span className="text-sm font-extrabold text-rose-400 uppercase tracking-wider">Fluxo de Caixa Inicial</span>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <LockableInput label="Último Dividendo (D0)" value={inputs.d0} min={0.01} max={100} step={0.05} unit={currencySymbol} objKey="d0" tooltip="Último dividendo pago pelo ativo" />
+                        <LockableInput label="Dividendo Atual (DIV0)" value={inputs.d0} min={0.01} max={100} step={0.05} unit="R$" isLocked={locks.d0} onToggleLock={() => toggleLock('d0')} onChange={(val) => handleInputChange('d0', val)} tooltip="Dividendo atual pago pela ação (DIV0)" />
+                        <LockableInput label="Duração Estágio 1 (n)" value={inputs.n} min={1} max={15} step={1} unit="anos" isLocked={locks.n} onToggleLock={() => toggleLock('n')} onChange={(val) => handleInputChange('n', val)} tooltip="Duração do período de crescimento acelerado/anormal (n)" />
+                        <LockableInput label={`Cresc. Estágio 1 (g1)`} value={inputs.g1} min={0} max={100} step={0.5} unit="%" isLocked={locks.g1} onToggleLock={() => toggleLock('g1')} onChange={(val) => handleInputChange('g1', val)} tooltip={`Taxa de Crescimento para os próximos ${inputs.n} anos (g1)`} />
+                        <LockableInput label="Cresc. Perpétuo (g2)" value={inputs.g2} min={0} max={15} step={0.1} unit="%" isLocked={locks.g2} onToggleLock={() => toggleLock('g2')} onChange={(val) => handleInputChange('g2', val)} tooltip="Taxa constante de crescimento na perpetuidade (g2)" />
+                        <LockableInput label="Custo de Capital (R ou Ke)" value={inputs.ke} min={1} max={30} step={0.05} unit="%" isLocked={locks.ke} onToggleLock={() => toggleLock('ke')} onChange={(val) => handleInputChange('ke', val)} tooltip="Custo de Capital Exigido (R ou Ke). Destrave (🔓) para calcular usando CAPM ou trave (🔒) para digitar um valor fixo." disabled={false} disableLock={false} statusText={locks.ke ? "Manual" : "Calculado"} />
                       </div>
                     </div>
                   </>
@@ -465,13 +594,284 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                       <strong className="text-dark-textPrimary">Rf (Taxa Livre de Risco):</strong> Representa o retorno sem risco (ex: Tesouro Direto, taxa Selic ou título do Tesouro IPCA+ de longo prazo).
                     </li>
                     <li>
-                      <strong className="text-dark-textPrimary">Rm (Retorno do Mercado):</strong> Representa o retorno esperado médio da bolsa (ex: crescimento histórico do Ibovespa ou S&P 500).
+                      <strong className="text-dark-textPrimary">ERP (Prêmio de Risco do Mercado - Damodaran):</strong> Representa a taxa excedente que o mercado exige em relação à taxa livre de risco (Rm - Rf), baseada no histórico de risco país do site de Aswath Damodaran.
                     </li>
                     <li>
                       <strong className="text-dark-textPrimary">Destravamento:</strong> Você pode ajustar e <strong className="text-brand-danger">travar (🔒)</strong> esses índices nos blocos acima para garantir que sua pesquisa de CDI/IPCA não seja sobrescrita pelos cenários automáticos (Otimista/Pessimista).
                     </li>
                   </ul>
                 </div>
+              </div>
+            </div>
+
+            {/* Cards de Passo a Passo do Crescimento Variado */}
+            {valuationMode === 'VARIADO' && (
+              <div className="space-y-6 animate-fadeIn">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                    <TrendingUp className="w-5 h-5 text-emerald-400" />
+                  </div>
+                  <h3 className="text-sm font-extrabold text-dark-textPrimary uppercase tracking-wider" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                    Demonstração Passo a Passo do Cálculo ({inputs.n} Anos + Perpetuidade)
+                  </h3>
+                </div>
+
+                {!calc.isValid ? (
+                  <div className="bg-brand-danger/10 border-2 border-brand-danger/30 rounded-2xl p-5 shadow-lg">
+                    <div className="flex items-center gap-3">
+                      <AlertTriangle className="w-6 h-6 text-brand-danger shrink-0" />
+                      <div>
+                        <h4 className="text-xs font-black text-brand-danger uppercase tracking-wide">Premissa Inválida para o Passo a Passo</h4>
+                        <p className="text-2xs text-dark-textSecondary mt-1 leading-relaxed">
+                          O Custo de Capital (R ou Ke) deve ser estritamente maior que a Taxa de Crescimento na Perpetuidade (g2) para que o cálculo possa ser realizado.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {/* Passo 1 Card */}
+                    <div className="bg-dark-card border border-dark-border rounded-2xl p-6 shadow-lg space-y-4">
+                      <div className="flex items-center gap-2 border-b border-dark-border/40 pb-3">
+                        <span className="w-6 h-6 rounded-md flex items-center justify-center text-2xs font-black text-brand-purple bg-brand-purple/10 border border-brand-purple/20">1</span>
+                        <h4 className="text-xs font-black text-dark-textPrimary uppercase tracking-wider" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                          Passo 1: Projeção dos Dividendos (Anos 1 a {inputs.n})
+                        </h4>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <div className="bg-dark-bg/40 p-3 rounded-lg border border-dark-border/30">
+                          <p className="text-xs font-bold text-dark-textSecondary font-mono">Fórmula: DIV_n = DIV_anterior * (1 + g1)</p>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                          {Array.from({ length: inputs.n }).map((_, idx) => {
+                            const year = idx + 1;
+                            const prevVal = year === 1 ? inputs.d0 : inputs.d0 * Math.pow(1 + inputs.g1 / 100, year - 1);
+                            const val = inputs.d0 * Math.pow(1 + inputs.g1 / 100, year);
+                            return (
+                              <div key={year} className="bg-dark-bg/60 p-4 rounded-xl border border-dark-border/50">
+                                <span className="text-[10px] font-bold text-dark-textSecondary uppercase block">Ano {year} (DIV_{year})</span>
+                                <span className="text-2xs font-bold text-dark-textSecondary block mt-1">
+                                  {formatCurrency(prevVal)} × (1 + {inputs.g1.toFixed(1)}%)
+                                </span>
+                                <span className="text-base font-black text-emerald-400 block mt-0.5">
+                                  {formatCurrency(val)}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Passo 2 Card */}
+                    <div className="bg-dark-card border border-dark-border rounded-2xl p-6 shadow-lg space-y-4">
+                      <div className="flex items-center gap-2 border-b border-dark-border/40 pb-3">
+                        <span className="w-6 h-6 rounded-md flex items-center justify-center text-2xs font-black text-brand-primary bg-brand-primary/10 border border-brand-primary/20">2</span>
+                        <h4 className="text-xs font-black text-dark-textPrimary uppercase tracking-wider" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                          Passo 2: Cálculo da Perpetuidade (P_{inputs.n}) no Ano {inputs.n}
+                        </h4>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <div className="bg-dark-bg/40 p-3 rounded-lg border border-dark-border/30">
+                          <p className="text-xs font-bold text-dark-textSecondary font-mono">Fórmula de Gordon: P_{inputs.n} = [DIV_{inputs.n} * (1 + g2)] / (R - g2)</p>
+                        </div>
+                        
+                        <div className="bg-dark-bg/60 p-4 rounded-xl border border-dark-border/50 space-y-3">
+                          {(() => {
+                            const divN = inputs.d0 * Math.pow(1 + inputs.g1 / 100, inputs.n);
+                            const pN = (divN * (1 + inputs.g2 / 100)) / (inputs.ke / 100 - inputs.g2 / 100);
+                            return (
+                              <>
+                                <div>
+                                  <span className="text-[10px] font-bold text-dark-textSecondary uppercase block">Valores Substituídos</span>
+                                  <p className="text-xs font-bold text-dark-textPrimary mt-1">
+                                    P_{inputs.n} = [{formatCurrency(divN)} × (1 + {inputs.g2.toFixed(1)}%)] / ({inputs.ke.toFixed(2)}% - {inputs.g2.toFixed(1)}%)
+                                  </p>
+                                </div>
+                                
+                                <div className="pt-2 border-t border-dark-border/30 flex justify-between items-center">
+                                  <span className="text-[10px] font-bold text-dark-textSecondary uppercase">Valor de Venda Terminal (P_{inputs.n})</span>
+                                  <span className="text-lg font-black text-brand-primary">
+                                    {formatCurrency(pN)}
+                                  </span>
+                                </div>
+                              </>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Passo 3 Card */}
+                    <div className="bg-dark-card border border-dark-border rounded-2xl p-6 shadow-lg space-y-4">
+                      <div className="flex items-center gap-2 border-b border-dark-border/40 pb-3">
+                        <span className="w-6 h-6 rounded-md flex items-center justify-center text-2xs font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">3</span>
+                        <h4 className="text-xs font-black text-dark-textPrimary uppercase tracking-wider" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                          Passo 3: Valor Presente (Preço Justo P₀)
+                        </h4>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <div className="bg-dark-bg/40 p-3 rounded-lg border border-dark-border/30">
+                          <p className="text-xs font-bold text-dark-textSecondary font-mono leading-relaxed">
+                            Fórmula: P₀ = {Array.from({ length: inputs.n }).map((_, i) => `[DIV_${i+1} / (1+R)^${i+1}]`).join(' + ')} + [P_{inputs.n} / (1+R)^{inputs.n}]
+                          </p>
+                        </div>
+
+                        <div className="space-y-2.5">
+                          {(() => {
+                            const d0 = inputs.d0;
+                            const g1 = inputs.g1 / 100;
+                            const g2 = inputs.g2 / 100;
+                            const r = inputs.ke / 100;
+                            const n = inputs.n;
+
+                            let vpSum = 0;
+                            const steps = [];
+
+                            // Estágio 1
+                            for (let t = 1; t <= n; t++) {
+                              const dt = d0 * Math.pow(1 + g1, t);
+                              const vpDt = dt / Math.pow(1 + r, t);
+                              vpSum += vpDt;
+                              steps.push({
+                                label: `VP de DIV_${t}`,
+                                valStr: `${formatCurrency(dt)} / ${Math.pow(1 + r, t).toFixed(4)}`,
+                                vp: vpDt
+                              });
+                            }
+
+                            // Estágio 2
+                            const divN = d0 * Math.pow(1 + g1, n);
+                            const pN = (divN * (1 + g2)) / (r - g2);
+                            const vpPN = pN / Math.pow(1 + r, n);
+                            vpSum += vpPN;
+                            steps.push({
+                              label: `VP de P_${n} (TV)`,
+                              valStr: `${formatCurrency(pN)} / ${Math.pow(1 + r, n).toFixed(4)}`,
+                              vp: vpPN
+                            });
+
+                            return (
+                              <>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                                  {steps.map((st, i) => (
+                                    <div key={i} className="bg-dark-bg/55 p-3 rounded-lg border border-dark-border/40">
+                                      <span className="text-[9px] font-bold text-dark-textSecondary uppercase block">{st.label}</span>
+                                      <span className="text-[10px] text-dark-textSecondary block mt-1">{st.valStr}</span>
+                                      <span className="text-sm font-extrabold text-dark-textPrimary block mt-0.5">{formatCurrency(st.vp)}</span>
+                                    </div>
+                                  ))}
+                                </div>
+
+                                <div className="bg-dark-bg/60 p-4 rounded-xl border border-dark-border/50 space-y-2 mt-4">
+                                  <span className="text-[10px] font-bold text-dark-textSecondary uppercase block">Soma de Valores Descontados</span>
+                                  <p className="text-xs font-bold text-dark-textSecondary leading-relaxed">
+                                    P₀ = {steps.map(st => formatCurrency(st.vp)).join(' + ')}
+                                  </p>
+                                </div>
+
+                                <div className="flex flex-col items-center justify-center p-6 bg-emerald-500/10 border-2 border-emerald-500/20 rounded-2xl shadow-[0_0_15px_rgba(16,185,129,0.15)] text-center gap-2 mt-4">
+                                  <span className="text-xs font-black text-emerald-400 uppercase tracking-widest">
+                                    Preço Justo Final (P₀)
+                                  </span>
+                                  <span className="text-4xl font-black text-emerald-400 font-mono">
+                                    {formatCurrency(vpSum)}
+                                  </span>
+                                </div>
+                              </>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            {/* Bloco de Justificativas Editáveis */}
+            <div className="bg-dark-card border border-dark-border rounded-2xl p-6 shadow-lg space-y-5 animate-fadeIn">
+              <div className="flex items-center justify-between border-b border-dark-border/40 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="p-1.5 rounded-lg bg-brand-primary/10 border border-brand-primary/20">
+                    <FileText className="w-4 h-4 text-brand-primary" />
+                  </span>
+                  <h3 className="text-sm font-black text-dark-textPrimary uppercase tracking-wider" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                    Notas & Justificativas para o PDF
+                  </h3>
+                </div>
+                <span className="text-[10px] text-dark-textSecondary font-bold bg-dark-bg/60 border border-dark-border/50 px-2 py-0.5 rounded">
+                  Editável
+                </span>
+              </div>
+              <p className="text-2xs text-dark-textSecondary leading-relaxed">
+                Adicione notas justificando as taxas adotadas abaixo. Elas serão incluídas no memorial de cálculo do relatório impresso. Use o botão <strong className="text-brand-danger">X</strong> para desativar e excluir uma nota do PDF.
+              </p>
+              
+              <div className="space-y-4">
+                {Object.entries(justifications)
+                  .filter(([key]) => {
+                    // Filter variables based on selected valuation mode to keep it relevant
+                    if (valuationMode === 'GORDON') {
+                      return ['rf', 'beta', 'erp', 'k', 'roe', 'payout', 'g'].includes(key);
+                    } else {
+                      return ['d0', 'g1', 'g2', 'k', 'rf', 'beta', 'erp'].includes(key);
+                    }
+                  })
+                  .map(([key, item]) => {
+                    const justificationKey = key as keyof typeof initialJustifications;
+                    // Get current value to show next to label
+                    let currentValStr = '';
+                    if (justificationKey === 'rf') currentValStr = `${inputs.rf.toFixed(2)}%`;
+                    else if (justificationKey === 'beta') currentValStr = inputs.beta.toFixed(2);
+                    else if (justificationKey === 'erp') currentValStr = `${inputs.erp.toFixed(2)}%`;
+                    else if (justificationKey === 'k') currentValStr = `${calc.kPerc.toFixed(2)}%`;
+                    else if (justificationKey === 'roe') currentValStr = `${inputs.roe.toFixed(2)}%`;
+                    else if (justificationKey === 'payout') currentValStr = `${inputs.payout.toFixed(2)}%`;
+                    else if (justificationKey === 'g') currentValStr = `${inputs.g.toFixed(2)}%`;
+                    else if (justificationKey === 'd0') currentValStr = formatCurrency(inputs.d0);
+                    else if (justificationKey === 'g1') currentValStr = `${inputs.g1.toFixed(2)}%`;
+                    else if (justificationKey === 'g2') currentValStr = `${inputs.g2.toFixed(2)}%`;
+
+                    return (
+                      <div key={key} className={`space-y-1.5 transition-all duration-300 ${!item.active ? 'opacity-40' : ''}`}>
+                        <div className="flex justify-between items-center">
+                          <span className="text-[11px] font-extrabold text-dark-textPrimary flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-brand-primary" />
+                            {item.label}
+                            <span className="font-mono text-dark-textSecondary text-[10px] ml-1 bg-dark-bg/60 border border-dark-border/40 px-1.5 py-0.2 rounded">
+                              {currentValStr}
+                            </span>
+                          </span>
+                          
+                          <button
+                            onClick={() => toggleJustification(justificationKey)}
+                            className={`p-1 rounded text-2xs font-extrabold flex items-center justify-center transition-all cursor-pointer ${
+                              item.active 
+                                ? 'bg-brand-danger/10 hover:bg-brand-danger/25 text-brand-danger border border-brand-danger/20' 
+                                : 'bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/20'
+                            }`}
+                            title={item.active ? "Remover do relatório" : "Incluir no relatório"}
+                            style={{ width: '22px', height: '22px' }}
+                          >
+                            {item.active ? '✕' : '＋'}
+                          </button>
+                        </div>
+                        
+                        <textarea
+                          value={item.text}
+                          disabled={!item.active}
+                          onChange={(e) => updateJustificationText(justificationKey, e.target.value)}
+                          placeholder={item.active ? `Justifique o valor de ${currentValStr}...` : "Nota inativa. Clique no '＋' para reativar e imprimir no PDF."}
+                          rows={2}
+                          className="w-full text-xs bg-dark-bg/60 border border-dark-border/60 rounded-lg p-2.5 outline-none focus:border-brand-purple disabled:bg-dark-bg/20 disabled:border-dark-border/30 disabled:text-dark-textSecondary/40 resize-none font-medium leading-relaxed transition-all duration-300"
+                        />
+                      </div>
+                    );
+                  })}
               </div>
             </div>
           </div>
@@ -563,7 +963,7 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                 <div className="bg-dark-bg/40 p-3 rounded-lg border border-dark-border/30">
                   <p className="text-xs text-dark-textPrimary font-bold mb-1">k (Custo de Capital Exigido)</p>
                   <p className="text-2xs text-dark-textSecondary leading-relaxed">
-                    Derivado do CAPM (Rf + β * (Rm - Rf)). É o retorno mínimo que o investidor exige para compensar o risco do ativo. Rf representa o Tesouro (Selic), Rm a bolsa (Ibovespa) e β (Beta) a volatilidade do ativo.
+                    Derivado do CAPM (Rf + β * ERP). É o retorno mínimo que o investidor exige para compensar o risco do ativo. Rf representa o Tesouro (Selic), ERP representa o Prêmio de Risco da Bolsa/País de Damodaran e β (Beta) a volatilidade do ativo.
                   </p>
                 </div>
                 {valuationMode === 'GORDON' ? (
@@ -773,8 +1173,81 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                  </ComposedChart>
                </ResponsiveContainer>
              </div>
-           </div>
-        )}
+            </div>
+         )}
+
+        {/* Memorial de Premissas e Justificativas */}
+        <div className="mt-8 border-t-2 border-gray-800 pt-6 break-inside-avoid">
+          <h2 className="text-lg font-black text-gray-800 uppercase tracking-widest border-b border-gray-300 pb-2 mb-4">
+            Memorial de Adopção de Taxas & Justificativas
+          </h2>
+          
+          <div className="space-y-4">
+            {Object.entries(justifications)
+              .filter(([key, item]) => {
+                // Only show active and non-empty justifications relevant to current mode
+                const isRelevant = valuationMode === 'GORDON' 
+                  ? ['rf', 'beta', 'erp', 'k', 'roe', 'payout', 'g'].includes(key)
+                  : ['d0', 'g1', 'g2', 'k', 'rf', 'beta', 'erp'].includes(key);
+                return isRelevant && item.active && item.text.trim() !== '';
+              })
+              .map(([key, item]) => {
+                const justificationKey = key as keyof typeof initialJustifications;
+                let valStr = '';
+                let sourceStr = '';
+                if (justificationKey === 'rf') {
+                  valStr = `${inputs.rf.toFixed(2)}%`;
+                  sourceStr = `Taxa de juros livre de risco padrão para ativos nacionais de longo prazo.`;
+                } else if (justificationKey === 'beta') {
+                  valStr = inputs.beta.toFixed(2);
+                  sourceStr = `Volatilidade histórica calculada versus o Ibovespa (B3).`;
+                } else if (justificationKey === 'erp') {
+                  valStr = `${inputs.erp.toFixed(2)}%`;
+                  sourceStr = `Equity Risk Premium atualizado conforme banco de dados de A. Damodaran.`;
+                } else if (justificationKey === 'k') {
+                  valStr = `${calc.kPerc.toFixed(2)}%`;
+                  sourceStr = `Custo de Capital exigido calculado pela fórmula: Rf + (β × ERP).`;
+                } else if (justificationKey === 'roe') {
+                  valStr = `${inputs.roe.toFixed(2)}%`;
+                  sourceStr = `Retorno sobre Patrimônio Líquido histórico apurado.`;
+                } else if (justificationKey === 'payout') {
+                  valStr = `${inputs.payout.toFixed(2)}%`;
+                  sourceStr = `Percentual médio de lucros distribuído de forma histórica.`;
+                } else if (justificationKey === 'g') {
+                  valStr = `${inputs.g.toFixed(2)}%`;
+                  sourceStr = `Crescimento constante estimado de longo prazo pela taxa de retenção: ROE × (1 - Payout).`;
+                } else if (justificationKey === 'd0') {
+                  valStr = formatCurrency(inputs.d0);
+                  sourceStr = `Dividendo base distribuído nos últimos 12 meses.`;
+                } else if (justificationKey === 'g1') {
+                  valStr = `${inputs.g1.toFixed(2)}%`;
+                  sourceStr = `Crescimento acelerado projetado para os próximos 3 anos.`;
+                } else if (justificationKey === 'g2') {
+                  valStr = `${inputs.g2.toFixed(2)}%`;
+                  sourceStr = `Crescimento de longo prazo na perpetuidade alinhado à inflação histórica.`;
+                }
+
+                return (
+                  <div key={key} className="bg-gray-50 p-4 border border-gray-200 rounded-lg">
+                    <div className="flex justify-between items-baseline mb-2 border-b border-gray-200 pb-1">
+                      <span className="font-bold text-gray-800 text-sm">{item.label}</span>
+                      <span className="font-mono font-bold text-gray-900 text-sm bg-gray-200 px-2 py-0.5 rounded">
+                        {valStr}
+                      </span>
+                    </div>
+                    <div className="space-y-1.5">
+                      <p className="text-2xs text-gray-500 italic">
+                        <strong className="text-gray-600">Como é obtido:</strong> {sourceStr}
+                      </p>
+                      <p className="text-xs text-gray-700 font-medium">
+                        <strong className="text-gray-800">Justificativa Adotada:</strong> {item.text}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        </div>
       </div>
     </>
   );

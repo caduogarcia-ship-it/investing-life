@@ -1495,18 +1495,18 @@ export async function fetchStockData(symbol: string): Promise<StockData> {
     logourl: logo,
     
     // Fundamentalist Indicators (Investidor10 -> User Overrides -> Mocks -> Standard Fallbacks)
-    pl: Number((userOverrides.pl ?? investidor10Data?.pl ?? mockBase.pl ?? 10.0).toFixed(2)),
-    pvp: Number((userOverrides.pvp ?? investidor10Data?.pvp ?? mockBase.pvp ?? 1.5).toFixed(2)),
-    dy: Number((userOverrides.dy ?? investidor10Data?.dy ?? mockBase.dy ?? 4.0).toFixed(2)),
-    roe: Number((userOverrides.roe ?? investidor10Data?.roe ?? mockBase.roe ?? 12.0).toFixed(2)),
-    margemLiquida: Number((userOverrides.margemLiquida ?? investidor10Data?.margemLiquida ?? mockBase.margemLiquida ?? 10.0).toFixed(2)),
+    pl: Number((userOverrides.pl ?? investidor10Data?.pl ?? mockBase.pl ?? 10.0).toFixed(3)),
+    pvp: Number((userOverrides.pvp ?? investidor10Data?.pvp ?? mockBase.pvp ?? 1.5).toFixed(3)),
+    dy: Number((userOverrides.dy ?? investidor10Data?.dy ?? mockBase.dy ?? 4.0).toFixed(3)),
+    roe: Number((userOverrides.roe ?? investidor10Data?.roe ?? mockBase.roe ?? 12.0).toFixed(3)),
+    margemLiquida: Number((userOverrides.margemLiquida ?? investidor10Data?.margemLiquida ?? mockBase.margemLiquida ?? 10.0).toFixed(3)),
     
     // Risk & Valuation
     volatility: calculatedVol,
     riskLevel: userOverrides.riskLevel ?? (calculatedVol < 15 ? 'Baixo' : calculatedVol > 30 ? 'Alto' : mockBase.riskLevel ?? 'Médio'),
-    lpa: Number((userOverrides.lpa ?? investidor10Data?.lpa ?? mockBase.lpa ?? 1.0).toFixed(4)),
-    vpa: Number((userOverrides.vpa ?? investidor10Data?.vpa ?? mockBase.vpa ?? 10.0).toFixed(4)),
-    targetPrice: Number((userOverrides.targetPrice ?? mockBase.targetPrice ?? regularMarketPrice * 1.2).toFixed(2)),
+    lpa: Number((userOverrides.lpa ?? investidor10Data?.lpa ?? mockBase.lpa ?? 1.0).toFixed(3)),
+    vpa: Number((userOverrides.vpa ?? investidor10Data?.vpa ?? mockBase.vpa ?? 10.0).toFixed(3)),
+    targetPrice: Number((userOverrides.targetPrice ?? mockBase.targetPrice ?? regularMarketPrice * 1.2).toFixed(3)),
     fairPriceManual: userOverrides.fairPriceManual,
     
     // Strategy & thesis
@@ -1691,6 +1691,9 @@ export interface DividendEvent {
   amount: number;     // Value per share in BRL
   month: number;      // 0-11
   year: number;
+  type?: 'CASH' | 'STOCK';
+  label?: string;
+  factor?: number;    // for stock dividends (bonificações)
 }
 
 export interface DividendHistoryResult {
@@ -1765,75 +1768,198 @@ function generateMockDividendEvents(symbol: string, years: number[]): DividendEv
   return events;
 }
 
-// Fetch dividend history from Brapi (extended range)
+// Fetch dividend history — Investidor10 (primary) → Brapi (fallback) → Mock
 export async function fetchDividendHistory(symbol: string): Promise<DividendHistoryResult> {
   const cleanSymbol = symbol.toUpperCase().replace('.SA', '').trim();
   const brapiToken = import.meta.env.VITE_BRAPI_TOKEN || '';
 
   const currentYear = new Date().getFullYear();
-  const yearsToShow = [currentYear - 2, currentYear - 1, currentYear];
-  // With extended range, we can show up to 5-10 years on the UI if needed,
-  // but we'll return all available events. The UI can filter if needed.
+  const yearsToShow = Array.from({ length: 15 }, (_, i) => currentYear - i).reverse();
   let events: DividendEvent[] = [];
   let currentPrice = 30;
   let longName = cleanSymbol;
   let dy = 0;
 
-  // Try Brapi
-  try {
-    const url = `https://brapi.dev/api/quote/${cleanSymbol}?dividends=true&token=${brapiToken}`;
-    const res = await fetch(url);
-    if (res.ok) {
-      const json = await res.json();
-      const result = json.results?.[0];
-      if (result) {
-        currentPrice = result.regularMarketPrice ?? currentPrice;
-        longName = result.longName ?? result.shortName ?? cleanSymbol;
+  // Helper to parse BR date "DD/MM/YYYY" → Date
+  const parseBrDate = (s: string): Date | null => {
+    if (!s) return null;
+    const parts = s.trim().split('/');
+    if (parts.length !== 3) return null;
+    const [dd, mm, yyyy] = parts;
+    const d = new Date(Number(yyyy), Number(mm) - 1, Number(dd));
+    return isNaN(d.getTime()) ? null : d;
+  };
 
-        const dividends = result.dividendsData?.cashDividends;
-        if (Array.isArray(dividends)) {
-          dividends.forEach(div => {
-            if (div.rate > 0 && div.paymentDate) {
-              const dateObj = new Date(div.paymentDate);
-              events.push({
-                date: dateObj.toISOString().split('T')[0],
-                amount: Number(div.rate.toFixed(4)),
-                month: dateObj.getMonth(),
-                year: dateObj.getFullYear(),
-              });
-            }
-          });
-        }
+  // Helper to parse value like " 0,35048636" → number
+  const parseDecimal = (s: string): number => {
+    if (!s) return 0;
+    const cleaned = s.trim().replace(/\./g, '').replace(',', '.');
+    const v = parseFloat(cleaned);
+    return isNaN(v) ? 0 : v;
+  };
+
+  // ─── 1. Try Investidor10 (primary source — real data) ───
+  // Determine category order for URL
+  const isBdr = cleanSymbol.endsWith('34');
+  const is11 = cleanSymbol.endsWith('11');
+  let categoryOrder = ['acoes', 'fiis', 'bdrs', 'etfs'];
+  if (isBdr) categoryOrder = ['bdrs', 'acoes', 'etfs', 'fiis'];
+  else if (is11) categoryOrder = ['fiis', 'acoes', 'etfs', 'bdrs'];
+
+  for (const cat of categoryOrder) {
+    if (events.length > 0) break; // already got data
+    try {
+      const url = `/investidor10/${cat}/${cleanSymbol.toLowerCase()}/proventos/`;
+      const res = await fetch(url);
+      if (!res.ok) continue;
+
+      const htmlText = await res.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlText, 'text/html');
+
+      // Extract company name
+      const nameEl = doc.querySelector('.name-company');
+      if (nameEl?.textContent) {
+        longName = nameEl.textContent.replace(/\s+/g, ' ').trim();
       }
+
+      // Extract current price from the page header
+      const priceEl = doc.querySelector('._card-body span[data-value]') || doc.querySelector('.cotacao .value span');
+      if (priceEl?.textContent) {
+        const parsed = parseDecimal(priceEl.textContent);
+        if (parsed > 0) currentPrice = parsed;
+      }
+
+      // Parse the dividends table: #table-dividends-history
+      const table = doc.querySelector('#table-dividends-history');
+      if (!table) continue;
+
+      const rows = table.querySelectorAll('tbody tr');
+      rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length < 4) return;
+
+        const tipo = (cells[0].textContent || '').trim().toUpperCase();
+        // const dataCom = cells[1].textContent || '';
+        const pagamento = (cells[2].textContent || '').trim();
+        const valor = parseDecimal(cells[3].textContent || '');
+
+        if (valor <= 0) return;
+
+        // Use payment date for calendar placement (that's when money arrives)
+        const payDate = parseBrDate(pagamento);
+        if (!payDate) return;
+
+        // Determine event type label
+        let eventType: 'CASH' | 'STOCK' = 'CASH';
+        let label = 'DIVIDENDO';
+        if (tipo.includes('JSCP') || tipo.includes('JCP')) {
+          label = 'JCP';
+        } else if (tipo.includes('REND')) {
+          label = 'REND. TRIB.';
+        } else if (tipo.includes('BONIF')) {
+          eventType = 'STOCK';
+          label = 'BONIFICAÇÃO';
+        }
+
+        events.push({
+          date: payDate.toISOString().split('T')[0],
+          amount: eventType === 'STOCK' ? 0 : Number(valor.toFixed(8)),
+          month: payDate.getMonth(),
+          year: payDate.getFullYear(),
+          type: eventType,
+          label,
+          ...(eventType === 'STOCK' ? { factor: valor } : {}),
+        });
+      });
+
+      if (events.length > 0) {
+        console.log(`[DividendMap] Investidor10 loaded ${events.length} events for ${cleanSymbol} (${cat})`);
+      }
+    } catch (err) {
+      console.warn(`Investidor10 proventos fetch failed for ${cleanSymbol} (${cat}):`, err);
     }
-  } catch (err) {
-    console.warn(`Brapi dividend fetch failed for ${cleanSymbol}:`, err);
   }
 
-  // Fallback to mock if no real events found
+  // ─── 2. Fallback: Try Brapi ───
+  if (events.length === 0) {
+    try {
+      const url = `https://brapi.dev/api/quote/${cleanSymbol}?dividends=true&token=${brapiToken}`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const json = await res.json();
+        const result = json.results?.[0];
+        if (result) {
+          currentPrice = result.regularMarketPrice ?? currentPrice;
+          longName = result.longName ?? result.shortName ?? cleanSymbol;
+
+          const cashDividends = result.dividendsData?.cashDividends;
+          if (Array.isArray(cashDividends)) {
+            cashDividends.forEach(div => {
+              if (div.rate > 0 && div.paymentDate) {
+                // Filter out estimated duplicates to prevent double-counting
+                if (div.remarks && div.remarks.toLowerCase().includes('estimated')) {
+                  return;
+                }
+                const dateObj = new Date(div.paymentDate);
+                events.push({
+                  date: dateObj.toISOString().split('T')[0],
+                  amount: Number(div.rate.toFixed(3)),
+                  month: dateObj.getMonth(),
+                  year: dateObj.getFullYear(),
+                  type: 'CASH',
+                  label: div.label || 'DIVIDENDO'
+                });
+              }
+            });
+          }
+          
+          const stockDividends = result.dividendsData?.stockDividends;
+          if (Array.isArray(stockDividends)) {
+            stockDividends.forEach(div => {
+              if (div.factor > 0 && (div.paymentDate || div.approvedOn)) {
+                const dateObj = new Date(div.paymentDate || div.approvedOn);
+                events.push({
+                  date: dateObj.toISOString().split('T')[0],
+                  amount: 0,
+                  month: dateObj.getMonth(),
+                  year: dateObj.getFullYear(),
+                  type: 'STOCK',
+                  label: div.label || 'BONIFICACAO',
+                  factor: div.factor
+                });
+              }
+            });
+          }
+        }
+      }
+    } catch (err) {
+      console.warn(`Brapi dividend fetch failed for ${cleanSymbol}:`, err);
+    }
+  }
+
+  // ─── 3. Fallback: Mock data ───
   if (events.length === 0) {
     events = generateMockDividendEvents(cleanSymbol, yearsToShow);
-    // Use mock data for price/name if available
     const mockBase = DEFAULT_MOCK_DATA[cleanSymbol];
     if (mockBase) {
       longName = mockBase.longName || cleanSymbol;
       dy = mockBase.dy || 0;
     }
 
-    // If still no events (ticker not in mock schedules), generate synthetic dividends from DY%
+    // If still no events, generate synthetic from DY%
     if (events.length === 0) {
       const effectiveDY = dy || DEFAULT_MOCK_DATA[cleanSymbol]?.dy || 0;
       if (effectiveDY > 0 && currentPrice > 0) {
-        // Assume quarterly distribution
         const annualDiv = currentPrice * (effectiveDY / 100);
         const quarterlyDiv = annualDiv / 4;
-        const quarterMonths = [2, 5, 8, 11]; // Mar, Jun, Sep, Dec
+        const quarterMonths = [2, 5, 8, 11];
         for (const year of yearsToShow) {
           for (const month of quarterMonths) {
             const variation = 1 + (Math.random() - 0.5) * 0.1;
             events.push({
               date: `${year}-${String(month + 1).padStart(2, '0')}-15`,
-              amount: Number((quarterlyDiv * variation).toFixed(4)),
+              amount: Number((quarterlyDiv * variation).toFixed(3)),
               month,
               year,
             });
@@ -1842,20 +1968,10 @@ export async function fetchDividendHistory(symbol: string): Promise<DividendHist
       }
     }
   } else {
-    // Yahoo returned real data — but check if it covers the current year
-    // If not, supplement with mock data for the current year
-    const currentYearEvents = events.filter(e => e.year === currentYear);
-    if (currentYearEvents.length === 0) {
-      const mockEvents = generateMockDividendEvents(cleanSymbol, [currentYear]);
-      if (mockEvents.length > 0) {
-        events = [...events, ...mockEvents];
-      }
-    }
-
-    // Calculate DY from real events (sum last 12 months dividends / current price)
+    // Real data loaded — calculate DY from last 12 months CASH events
     const oneYearAgo = new Date();
     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-    const last12 = events.filter(e => new Date(e.date) >= oneYearAgo);
+    const last12 = events.filter(e => new Date(e.date) >= oneYearAgo && e.type !== 'STOCK');
     const totalDiv12 = last12.reduce((sum, e) => sum + e.amount, 0);
     dy = currentPrice > 0 ? (totalDiv12 / currentPrice) * 100 : 0;
   }
@@ -1871,7 +1987,7 @@ export async function fetchDividendHistory(symbol: string): Promise<DividendHist
     longName,
     events,
     currentPrice,
-    dy: Number(dy.toFixed(2)),
+    dy: Number(dy.toFixed(3)),
   };
 }
 

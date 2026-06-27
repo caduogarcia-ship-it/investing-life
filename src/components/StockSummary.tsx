@@ -43,9 +43,9 @@ export const StockSummary: React.FC<StockSummaryProps> = ({ data, onUpdateData }
   };
 
   const formatLargeNumber = (num: number) => {
-    if (num >= 1e12) return `${(num / 1e12).toFixed(2)}T`;
-    if (num >= 1e9) return `${(num / 1e9).toFixed(2)}B`;
-    if (num >= 1e6) return `${(num / 1e6).toFixed(2)}M`;
+    if (num >= 1e12) return `${(num / 1e12).toFixed(3)}T`;
+    if (num >= 1e9) return `${(num / 1e9).toFixed(3)}B`;
+    if (num >= 1e6) return `${(num / 1e6).toFixed(3)}M`;
     return num.toLocaleString('pt-BR');
   };
 
@@ -81,7 +81,7 @@ export const StockSummary: React.FC<StockSummaryProps> = ({ data, onUpdateData }
         {/* Current Price Display */}
         <div className="text-left sm:text-right">
           <div className="text-3xl font-extrabold text-dark-textPrimary font-mono" style={{ fontFamily: 'JetBrains Mono, monospace', textShadow: '0 0 20px rgba(99,102,241,0.15)' }}>
-            R$ {currentPrice.toFixed(2).replace('.', ',')}
+            R$ {currentPrice.toFixed(3).replace('.', ',')}
           </div>
           <div className="flex items-center sm:justify-end gap-2 mt-1.5">
             <span className={`text-sm font-semibold flex items-center px-2.5 py-1 rounded-lg ${
@@ -89,10 +89,10 @@ export const StockSummary: React.FC<StockSummaryProps> = ({ data, onUpdateData }
                            'bg-rose-950/20 text-brand-danger border border-brand-danger/20'
             }`} style={{ fontFamily: 'JetBrains Mono, monospace', boxShadow: isPositive ? '0 0 12px rgba(16,185,129,0.15)' : '0 0 12px rgba(239,68,68,0.15)' }}>
               {isPositive ? <TrendingUp className="w-4 h-4 mr-1 shrink-0" /> : <TrendingDown className="w-4 h-4 mr-1 shrink-0" />}
-              {isPositive ? '+' : ''}{priceChangePercent.toFixed(2)}%
+              {isPositive ? '+' : ''}{priceChangePercent.toFixed(3)}%
             </span>
             <span className="text-xs text-dark-textSecondary" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
-              (R$ {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(2).replace('.', ',')})
+              (R$ {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(3).replace('.', ',')})
             </span>
           </div>
         </div>
@@ -102,11 +102,11 @@ export const StockSummary: React.FC<StockSummaryProps> = ({ data, onUpdateData }
       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2">
         <div className="bg-dark-card/30 border border-dark-border/40 rounded-xl p-2.5 flex flex-col justify-between transition-all hover:border-brand-primary/30 hover:bg-dark-card/50">
           <span className="block text-[10px] font-bold text-dark-textSecondary uppercase tracking-wider mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Máxima do Dia</span>
-          <span className="text-xs font-bold text-dark-textPrimary font-mono" style={{ fontFamily: 'JetBrains Mono, monospace' }}>R$ {data.regularMarketDayHigh.toFixed(2).replace('.', ',')}</span>
+          <span className="text-xs font-bold text-dark-textPrimary font-mono" style={{ fontFamily: 'JetBrains Mono, monospace' }}>R$ {data.regularMarketDayHigh.toFixed(3).replace('.', ',')}</span>
         </div>
         <div className="bg-dark-card/30 border border-dark-border/40 rounded-xl p-2.5 flex flex-col justify-between transition-all hover:border-brand-primary/30 hover:bg-dark-card/50">
           <span className="block text-[10px] font-bold text-dark-textSecondary uppercase tracking-wider mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Mínima do Dia</span>
-          <span className="text-xs font-bold text-dark-textPrimary font-mono" style={{ fontFamily: 'JetBrains Mono, monospace' }}>R$ {data.regularMarketDayLow.toFixed(2).replace('.', ',')}</span>
+          <span className="text-xs font-bold text-dark-textPrimary font-mono" style={{ fontFamily: 'JetBrains Mono, monospace' }}>R$ {data.regularMarketDayLow.toFixed(3).replace('.', ',')}</span>
         </div>
         <div className="bg-dark-card/30 border border-dark-border/40 rounded-xl p-2.5 flex flex-col justify-between transition-all hover:border-brand-primary/30 hover:bg-dark-card/50">
           <span className="block text-[10px] font-bold text-dark-textSecondary uppercase tracking-wider mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Volume Diário</span>
@@ -118,11 +118,11 @@ export const StockSummary: React.FC<StockSummaryProps> = ({ data, onUpdateData }
         </div>
         <div className="bg-dark-card/30 border border-dark-border/40 rounded-xl p-2.5 flex flex-col justify-between transition-all hover:border-brand-primary/30 hover:bg-dark-card/50">
           <span className="block text-[10px] font-bold text-dark-textSecondary uppercase tracking-wider mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Máx. 52 Sem</span>
-          <span className="text-xs font-bold text-dark-textPrimary font-mono" style={{ fontFamily: 'JetBrains Mono, monospace' }}>R$ {(data.history.length > 0 ? Math.max(...data.history.map(h => h.high ?? h.price)) : 0).toFixed(2).replace('.', ',')}</span>
+          <span className="text-xs font-bold text-dark-textPrimary font-mono" style={{ fontFamily: 'JetBrains Mono, monospace' }}>R$ {(data.history.length > 0 ? Math.max(...data.history.map(h => h.high ?? h.price)) : 0).toFixed(3).replace('.', ',')}</span>
         </div>
         <div className="bg-dark-card/30 border border-dark-border/40 rounded-xl p-2.5 flex flex-col justify-between transition-all hover:border-brand-primary/30 hover:bg-dark-card/50">
           <span className="block text-[10px] font-bold text-dark-textSecondary uppercase tracking-wider mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Abertura</span>
-          <span className="text-xs font-bold text-dark-textPrimary font-mono" style={{ fontFamily: 'JetBrains Mono, monospace' }}>R$ {(data.history.length > 0 ? (data.history[data.history.length - 1]?.open ?? 0) : 0).toFixed(2).replace('.', ',')}</span>
+          <span className="text-xs font-bold text-dark-textPrimary font-mono" style={{ fontFamily: 'JetBrains Mono, monospace' }}>R$ {(data.history.length > 0 ? (data.history[data.history.length - 1]?.open ?? 0) : 0).toFixed(3).replace('.', ',')}</span>
         </div>
       </div>
 

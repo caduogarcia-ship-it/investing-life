@@ -126,26 +126,35 @@ export const DividendMap: React.FC<DividendMapProps> = ({ onSelectTicker, portfo
       dy: number;
       currentPrice: number;
       months: number[]; // amount per month (0 = no dividend)
+      stockBonus: boolean[];
+      stockLabels: string[];
       annualTotal: number;
     }> = [];
 
     for (const sym of tickers) {
       const result = data.get(sym);
       if (!result) {
-        rows.push({ symbol: sym, longName: sym, dy: 0, currentPrice: 0, months: new Array(12).fill(0), annualTotal: 0 });
+        rows.push({ symbol: sym, longName: sym, dy: 0, currentPrice: 0, months: new Array(12).fill(0), stockBonus: new Array(12).fill(false), stockLabels: new Array(12).fill(''), annualTotal: 0 });
         continue;
       }
 
-      const months = new Array(12).fill(0);
       const yearEvents = result.events.filter(e => e.year === selectedYear);
+      const months = new Array(12).fill(0);
+      const stockBonus = new Array(12).fill(false);
+      const stockLabels = new Array(12).fill('');
       
       for (const event of yearEvents) {
-        months[event.month] += event.amount;
+        if (event.type === 'STOCK') {
+          stockBonus[event.month] = true;
+          stockLabels[event.month] = `${event.label || 'BONIFICAÇÃO'} ${event.factor ? (event.factor * 100).toFixed(1) + '%' : ''}`;
+        } else {
+          months[event.month] += event.amount;
+        }
       }
 
       // Round
       for (let i = 0; i < 12; i++) {
-        months[i] = Number(months[i].toFixed(4));
+        months[i] = Number(months[i].toFixed(3));
       }
 
       const annualTotal = months.reduce((a, b) => a + b, 0);
@@ -156,7 +165,9 @@ export const DividendMap: React.FC<DividendMapProps> = ({ onSelectTicker, portfo
         dy: result.dy,
         currentPrice: result.currentPrice,
         months,
-        annualTotal: Number(annualTotal.toFixed(2)),
+        stockBonus,
+        stockLabels,
+        annualTotal: Number(annualTotal.toFixed(3)),
       });
     }
 
@@ -171,7 +182,7 @@ export const DividendMap: React.FC<DividendMapProps> = ({ onSelectTicker, portfo
         totals[i] += row.months[i];
       }
     }
-    return totals.map(v => Number(v.toFixed(2)));
+    return totals.map(v => Number(v.toFixed(3)));
   }, [heatmapData]);
 
   const grandTotal = useMemo(() => monthlyTotals.reduce((a, b) => a + b, 0), [monthlyTotals]);
@@ -235,8 +246,8 @@ export const DividendMap: React.FC<DividendMapProps> = ({ onSelectTicker, portfo
             {/* Year selector */}
             <div className="flex items-center bg-dark-bg border border-dark-border rounded-xl p-0.5">
               <button
-                onClick={() => setSelectedYear(prev => Math.max(prev - 1, currentYear - 2))}
-                disabled={selectedYear <= currentYear - 2}
+                onClick={() => setSelectedYear(prev => Math.max(prev - 1, currentYear - 15))}
+                disabled={selectedYear <= currentYear - 15}
                 className="p-1.5 rounded-lg text-dark-textSecondary hover:text-dark-textPrimary hover:bg-dark-cardHover transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -350,9 +361,9 @@ export const DividendMap: React.FC<DividendMapProps> = ({ onSelectTicker, portfo
               <span className="text-2xl font-black text-dark-textPrimary font-mono mt-1 block">{tickers.length}</span>
             </div>
             <div className="bg-dark-card border border-dark-border rounded-2xl p-5 shadow-lg">
-              <span className="text-3xs font-bold text-dark-textSecondary uppercase tracking-wider block">Total Dividendos {selectedYear}</span>
-              <span className="text-2xl font-black text-emerald-400 font-mono mt-1 block">R$ {grandTotal.toFixed(2).replace('.', ',')}</span>
-              <span className="text-3xs text-dark-textSecondary block mt-0.5">por ação (unitário)</span>
+              <span className="text-3xs font-bold text-dark-textSecondary uppercase tracking-wider block">Soma Dividendos {selectedYear}</span>
+              <span className="text-2xl font-black text-emerald-400 font-mono mt-1 block">R$ {grandTotal.toFixed(3).replace('.', ',')}</span>
+              <span className="text-3xs text-dark-textSecondary block mt-0.5">soma de todos os ativos monitorados</span>
             </div>
             <div className="bg-dark-card border border-dark-border rounded-2xl p-5 shadow-lg">
               <span className="text-3xs font-bold text-dark-textSecondary uppercase tracking-wider block">Meses c/ Dividendos</span>
@@ -363,10 +374,10 @@ export const DividendMap: React.FC<DividendMapProps> = ({ onSelectTicker, portfo
               <span className="text-3xs font-bold text-dark-textSecondary uppercase tracking-wider block">Média Mensal</span>
               <span className="text-2xl font-black text-brand-primary font-mono mt-1 block">
                 R$ {monthlyTotals.filter(v => v > 0).length > 0
-                  ? (grandTotal / monthlyTotals.filter(v => v > 0).length).toFixed(2).replace('.', ',')
-                  : '0,00'}
+                  ? (grandTotal / monthlyTotals.filter(v => v > 0).length).toFixed(3).replace('.', ',')
+                  : '0,000'}
               </span>
-              <span className="text-3xs text-dark-textSecondary block mt-0.5">por mês ativo</span>
+              <span className="text-3xs text-dark-textSecondary block mt-0.5">por mês ativo (todos os ativos)</span>
             </div>
           </div>
 
@@ -462,21 +473,22 @@ export const DividendMap: React.FC<DividendMapProps> = ({ onSelectTicker, portfo
                                 <div
                                   className={`mx-auto w-full max-w-[56px] py-2 px-1 rounded-lg border transition-all ${
                                     getCellColor(val)
-                                  } ${isHovered && val > 0 ? 'ring-1 ring-emerald-400/40 scale-105' : ''} ${
-                                    val > 0 ? 'border-emerald-800/20' : 'border-transparent'
+                                  } ${isHovered && (val > 0 || row.stockBonus[monthIdx]) ? 'ring-1 ring-emerald-400/40 scale-105' : ''} ${
+                                    val > 0 || row.stockBonus[monthIdx] ? 'border-emerald-800/20' : 'border-transparent'
                                   }`}
                                 >
-                                  <span className={`text-2xs font-bold font-mono block ${getCellTextColor(val)}`}>
-                                    {val > 0 ? val.toFixed(2) : '—'}
+                                  <span className={`text-2xs font-bold font-mono block ${getCellTextColor(val)} ${row.stockBonus[monthIdx] ? 'text-brand-purple' : ''}`}>
+                                    {val > 0 ? val.toFixed(3) : row.stockBonus[monthIdx] ? 'BONIF' : '—'}
                                   </span>
                                 </div>
 
                                 {/* Tooltip on hover */}
-                                {isHovered && val > 0 && (
+                                {isHovered && (val > 0 || row.stockBonus[monthIdx]) && (
                                   <div className="absolute z-30 bottom-full left-1/2 -translate-x-1/2 mb-2 bg-dark-card border border-dark-border rounded-xl shadow-2xl p-3 min-w-[180px] pointer-events-none animate-fadeIn">
                                     <div className="text-3xs text-dark-textSecondary font-bold uppercase tracking-wider">{MONTH_LABELS_FULL[monthIdx]} {selectedYear}</div>
-                                    <div className="text-xs font-black text-emerald-400 font-mono mt-1">R$ {val.toFixed(4).replace('.', ',')}</div>
-                                    <div className="text-3xs text-dark-textSecondary mt-1">{row.symbol} • Provento por ação</div>
+                                    {val > 0 && <div className="text-xs font-black text-emerald-400 font-mono mt-1">R$ {val.toFixed(3).replace('.', ',')}</div>}
+                                    {row.stockBonus[monthIdx] && <div className="text-xs font-black text-brand-purple font-mono mt-1">{row.stockLabels[monthIdx]}</div>}
+                                    <div className="text-3xs text-dark-textSecondary mt-1">{row.symbol} • Provento {val > 0 ? 'em dinheiro' : 'em ações'}</div>
                                     <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-2 h-2 bg-dark-card border-r border-b border-dark-border rotate-45" />
                                   </div>
                                 )}
@@ -487,7 +499,7 @@ export const DividendMap: React.FC<DividendMapProps> = ({ onSelectTicker, portfo
                           {/* Annual total */}
                           <td className="px-3 py-3.5 text-center bg-emerald-950/10">
                             <span className={`text-xs font-black font-mono ${row.annualTotal > 0 ? 'text-emerald-400' : 'text-dark-textSecondary/40'}`}>
-                              {row.annualTotal > 0 ? `R$ ${row.annualTotal.toFixed(2).replace('.', ',')}` : '—'}
+                              {row.annualTotal > 0 ? `R$ ${row.annualTotal.toFixed(3).replace('.', ',')}` : '—'}
                             </span>
                           </td>
 
@@ -496,7 +508,7 @@ export const DividendMap: React.FC<DividendMapProps> = ({ onSelectTicker, portfo
                             <span className={`text-xs font-bold font-mono ${
                               row.dy >= 8 ? 'text-emerald-400' : row.dy >= 4 ? 'text-amber-400' : row.dy > 0 ? 'text-dark-textSecondary' : 'text-dark-textSecondary/40'
                             }`}>
-                              {row.dy > 0 ? `${row.dy.toFixed(1)}%` : '—'}
+                              {row.dy > 0 ? `${row.dy.toFixed(3)}%` : '—'}
                             </span>
                           </td>
 
@@ -528,14 +540,14 @@ export const DividendMap: React.FC<DividendMapProps> = ({ onSelectTicker, portfo
                         return (
                           <td key={i} className={`px-1.5 py-4 text-center ${isCurrentMonth ? 'bg-brand-primary/5' : ''}`}>
                             <span className={`text-2xs font-black font-mono ${total > 0 ? 'text-emerald-400' : 'text-dark-textSecondary/30'}`}>
-                              {total > 0 ? total.toFixed(2) : '—'}
+                              {total > 0 ? total.toFixed(3) : '—'}
                             </span>
                           </td>
                         );
                       })}
                       <td className="px-3 py-4 text-center bg-emerald-950/15">
                         <span className="text-sm font-black font-mono text-emerald-400">
-                          R$ {grandTotal.toFixed(2).replace('.', ',')}
+                          R$ {grandTotal.toFixed(3).replace('.', ',')}
                         </span>
                       </td>
                       <td className="px-3 py-4" />
@@ -577,7 +589,7 @@ export const DividendMap: React.FC<DividendMapProps> = ({ onSelectTicker, portfo
                             ? 'text-emerald-400' 
                             : 'text-transparent'
                         }`}>
-                          {total > 0 ? `R$${total.toFixed(1)}` : '·'}
+                          {total > 0 ? `R$${total.toFixed(3)}` : '·'}
                         </span>
                         
                         {/* Bar */}
@@ -610,7 +622,7 @@ export const DividendMap: React.FC<DividendMapProps> = ({ onSelectTicker, portfo
                   <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
                   <span>
                     Mês mais forte: <strong className="text-emerald-400 font-mono">
-                      {MONTH_LABELS[monthlyTotals.indexOf(Math.max(...monthlyTotals))]} (R$ {Math.max(...monthlyTotals).toFixed(2)})
+                      {MONTH_LABELS[monthlyTotals.indexOf(Math.max(...monthlyTotals))]} (R$ {Math.max(...monthlyTotals).toFixed(3)})
                     </strong>
                   </span>
                 </div>
@@ -673,8 +685,8 @@ export const DividendMap: React.FC<DividendMapProps> = ({ onSelectTicker, portfo
           }
 
           const yearTotals = yearsRange.map(yr => {
-            const yearEvents = assetData.events.filter(e => e.year === yr);
-            return yearEvents.reduce((sum, e) => sum + e.amount, 0);
+            const yearEvents = assetData.events.filter(e => e.year === yr && e.type !== 'STOCK');
+            return Number(yearEvents.reduce((sum, e) => sum + e.amount, 0).toFixed(3));
           });
 
           const totalPeriod = yearTotals.reduce((a, b) => a + b, 0);
@@ -728,13 +740,13 @@ export const DividendMap: React.FC<DividendMapProps> = ({ onSelectTicker, portfo
               {/* Resumo */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-dark-card border border-dark-border rounded-2xl p-5 shadow-lg">
-                  <span className="text-3xs font-bold text-dark-textSecondary uppercase tracking-wider block">Total Acumulado</span>
-                  <span className="text-2xl font-black text-emerald-400 font-mono mt-1 block">R$ {totalPeriod.toFixed(2).replace('.', ',')}</span>
+                  <span className="text-3xs font-bold text-dark-textSecondary uppercase tracking-wider block">Total Acumulado (Dinheiro)</span>
+                  <span className="text-2xl font-black text-emerald-400 font-mono mt-1 block">R$ {totalPeriod.toFixed(3).replace('.', ',')}</span>
                   <span className="text-3xs text-dark-textSecondary block mt-0.5">no período selecionado</span>
                 </div>
                 <div className="bg-dark-card border border-dark-border rounded-2xl p-5 shadow-lg">
-                  <span className="text-3xs font-bold text-dark-textSecondary uppercase tracking-wider block">Média Anual</span>
-                  <span className="text-2xl font-black text-emerald-400 font-mono mt-1 block">R$ {avgYear.toFixed(2).replace('.', ',')}</span>
+                  <span className="text-3xs font-bold text-dark-textSecondary uppercase tracking-wider block">Média Anual (Dinheiro)</span>
+                  <span className="text-2xl font-black text-emerald-400 font-mono mt-1 block">R$ {avgYear.toFixed(3).replace('.', ',')}</span>
                   <span className="text-3xs text-dark-textSecondary block mt-0.5">por ano</span>
                 </div>
                 <div className="bg-dark-card border border-dark-border rounded-2xl p-5 shadow-lg">
@@ -775,7 +787,7 @@ export const DividendMap: React.FC<DividendMapProps> = ({ onSelectTicker, portfo
                           <span className={`text-[10px] font-bold font-mono mb-1 transition-opacity ${
                             isZero ? 'text-brand-danger' : 'text-emerald-400 opacity-0 group-hover:opacity-100'
                           }`}>
-                            {isZero ? '🚨 0,00' : `R$ ${total.toFixed(2)}`}
+                            {isZero ? '🚨 0,00' : `R$ ${total.toFixed(3)}`}
                           </span>
                           <div 
                             className={`w-full max-w-[40px] rounded-t-lg transition-all duration-300 relative ${

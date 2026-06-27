@@ -52,43 +52,43 @@ const getFallbackIndicatorValue = (key: string, data: StockData): number => {
 
   switch (key) {
     case 'evEbitda':
-      return pl > 0 ? Math.max(2, Number((pl * 0.75 + seedRand(1) * 2).toFixed(2))) : Math.max(1.5, Number((5 + seedRand(1) * 4).toFixed(2)));
+      return pl > 0 ? Math.max(2, Number((pl * 0.75 + seedRand(1) * 2).toFixed(3))) : Math.max(1.5, Number((5 + seedRand(1) * 4).toFixed(3)));
     case 'evEbit':
-      return pl > 0 ? Math.max(2.5, Number((pl * 0.85 + seedRand(2) * 2).toFixed(2))) : Math.max(2, Number((6 + seedRand(2) * 5).toFixed(2)));
+      return pl > 0 ? Math.max(2.5, Number((pl * 0.85 + seedRand(2) * 2).toFixed(3))) : Math.max(2, Number((6 + seedRand(2) * 5).toFixed(3)));
     case 'pEbit':
-      return pl > 0 ? Math.max(2.5, Number((pl * 0.9 + seedRand(3) * 1.5).toFixed(2))) : Math.max(2, Number((6.5 + seedRand(3) * 4).toFixed(2)));
+      return pl > 0 ? Math.max(2.5, Number((pl * 0.9 + seedRand(3) * 1.5).toFixed(3))) : Math.max(2, Number((6.5 + seedRand(3) * 4).toFixed(3)));
     case 'psr':
-      return Math.max(0.1, Number((pvp * (ml / 100) * 8 + seedRand(4) * 0.5).toFixed(2)));
+      return Math.max(0.1, Number((pvp * (ml / 100) * 8 + seedRand(4) * 0.5).toFixed(3)));
     case 'pAtivo':
-      return Math.max(0.1, Number((pvp * 0.4 + seedRand(5) * 0.2).toFixed(2)));
+      return Math.max(0.1, Number((pvp * 0.4 + seedRand(5) * 0.2).toFixed(3)));
     case 'pCapGiro':
-      return Math.max(1, Number((pvp * 4.5 + seedRand(6) * 3).toFixed(2)));
+      return Math.max(1, Number((pvp * 4.5 + seedRand(6) * 3).toFixed(3)));
     case 'roic':
-      return roe > 0 ? Math.max(1, Number((roe * 0.85 + seedRand(7) * 4).toFixed(2))) : Math.max(2, Number((8 + seedRand(7) * 6).toFixed(2)));
+      return roe > 0 ? Math.max(1, Number((roe * 0.85 + seedRand(7) * 4).toFixed(3))) : Math.max(2, Number((8 + seedRand(7) * 6).toFixed(3)));
     case 'roa':
-      return roe > 0 ? Math.max(0.5, Number((roe * 0.45 + seedRand(8) * 2).toFixed(2))) : Math.max(1, Number((4 + seedRand(8) * 3).toFixed(2)));
+      return roe > 0 ? Math.max(0.5, Number((roe * 0.45 + seedRand(8) * 2).toFixed(3))) : Math.max(1, Number((4 + seedRand(8) * 3).toFixed(3)));
     case 'margemBruta':
-      return Math.max(ml + 10, Number((ml * 1.5 + 15 + seedRand(9) * 10).toFixed(2)));
+      return Math.max(ml + 10, Number((ml * 1.5 + 15 + seedRand(9) * 10).toFixed(3)));
     case 'margemEbitda':
-      return Math.max(ml + 5, Number((ml * 1.25 + 5 + seedRand(10) * 8).toFixed(2)));
+      return Math.max(ml + 5, Number((ml * 1.25 + 5 + seedRand(10) * 8).toFixed(3)));
     case 'margemEbit':
-      return Math.max(ml + 1, Number((ml * 1.1 + 2 + seedRand(11) * 5).toFixed(2)));
+      return Math.max(ml + 1, Number((ml * 1.1 + 2 + seedRand(11) * 5).toFixed(3)));
     case 'dividaLiquidaPatrimonio':
-      return Number((0.2 + seedRand(12) * 1.5).toFixed(2));
+      return Number((0.2 + seedRand(12) * 1.5).toFixed(3));
     case 'dividaLiquidaEbitda':
-      return Number((0.5 + seedRand(13) * 2.5).toFixed(2));
+      return Number((0.5 + seedRand(13) * 2.5).toFixed(3));
     case 'dividaBrutaPatrimonio':
-      return Number((0.4 + seedRand(14) * 2.2).toFixed(2));
+      return Number((0.4 + seedRand(14) * 2.2).toFixed(3));
     case 'liquidezCorrente':
-      return Math.max(0.5, Number((1.2 + seedRand(15) * 2.0).toFixed(2)));
+      return Math.max(0.5, Number((1.2 + seedRand(15) * 2.0).toFixed(3)));
     case 'cagrReceitas5Anos':
-      return Number((5 + seedRand(16) * 15).toFixed(2));
+      return Number((5 + seedRand(16) * 15).toFixed(3));
     case 'cagrLucros5Anos':
-      return Number((4 + seedRand(17) * 22).toFixed(2));
+      return Number((4 + seedRand(17) * 22).toFixed(3));
     case 'lpa':
-      return data.lpa || Number((data.regularMarketPrice / pl).toFixed(2));
+      return data.lpa || Number((data.regularMarketPrice / pl).toFixed(3));
     case 'vpa':
-      return data.vpa || Number((data.regularMarketPrice / pvp).toFixed(2));
+      return data.vpa || Number((data.regularMarketPrice / pvp).toFixed(3));
     default:
       return 0;
   }
@@ -104,7 +104,7 @@ const getHistoricalIndicator = (key: keyof StockData, symbol: string, yearOffset
   let val = currentValue * (1 + noise);
   if (key === 'dy' && currentValue === 0) return 0;
   if (key === 'pl' && currentValue < 0) return val; // keep negative
-  return Math.max(0.1, Number(val.toFixed(2)));
+  return Math.max(0.1, Number(val.toFixed(3)));
 };
 
 // Helper to check numeric direction of indicators between years (rise/fall) and format colors/icons
@@ -191,7 +191,7 @@ export const IndicatorsGrid: React.FC<IndicatorsGridProps> = ({ data, onUpdateDa
       description: 'Preço sobre Lucro. Indica quantos anos levaria para reaver o capital investido através do lucro líquido da empresa.',
       unit: 'x',
       category: 'valuation',
-      format: (val) => `${val.toFixed(2)}x`,
+      format: (val) => `${val.toFixed(3)}x`,
       interpret: (val) => {
         if (val < 0) return { text: 'Negativo (Prejuízo)', color: 'text-brand-danger bg-rose-950/20 border-brand-danger/20' };
         if (val < 7) return { text: 'Descontado', color: 'text-brand-success bg-emerald-950/20 border-brand-success/20' };
@@ -205,7 +205,7 @@ export const IndicatorsGrid: React.FC<IndicatorsGridProps> = ({ data, onUpdateDa
       description: 'Preço sobre Valor Patrimonial. Compara o preço da ação com o valor contábil dos ativos líquidos da empresa.',
       unit: 'x',
       category: 'valuation',
-      format: (val) => `${val.toFixed(2)}x`,
+      format: (val) => `${val.toFixed(3)}x`,
       interpret: (val) => {
         if (val < 0) return { text: 'Patrimônio Negativo', color: 'text-brand-danger bg-rose-950/20 border-brand-danger/20' };
         if (val < 1.0) return { text: 'Abaixo do V. Pat.', color: 'text-brand-success bg-emerald-950/20 border-brand-success/20' };
@@ -219,7 +219,7 @@ export const IndicatorsGrid: React.FC<IndicatorsGridProps> = ({ data, onUpdateDa
       description: 'Enterprise Value sobre EBITDA. Relação entre o valor total da empresa e sua geração de caixa operacional.',
       unit: 'x',
       category: 'valuation',
-      format: (val) => `${val.toFixed(2)}x`,
+      format: (val) => `${val.toFixed(3)}x`,
       interpret: (val) => {
         if (val < 0) return { text: 'Negativo', color: 'text-brand-danger bg-rose-950/20 border-brand-danger/20' };
         if (val < 6.0) return { text: 'Muito Descontado', color: 'text-brand-success bg-emerald-950/20 border-brand-success/20' };
@@ -233,7 +233,7 @@ export const IndicatorsGrid: React.FC<IndicatorsGridProps> = ({ data, onUpdateDa
       description: 'Enterprise Value sobre EBIT. Relação entre o valor da empresa e o lucro operacional líquido real.',
       unit: 'x',
       category: 'valuation',
-      format: (val) => `${val.toFixed(2)}x`,
+      format: (val) => `${val.toFixed(3)}x`,
       interpret: (val) => {
         if (val < 0) return { text: 'Negativo', color: 'text-brand-danger bg-rose-950/20 border-brand-danger/20' };
         if (val < 8.0) return { text: 'Descontado', color: 'text-brand-success bg-emerald-950/20 border-brand-success/20' };
@@ -246,7 +246,7 @@ export const IndicatorsGrid: React.FC<IndicatorsGridProps> = ({ data, onUpdateDa
       description: 'Preço sobre EBIT. Compara o valor de mercado das ações com o lucro operacional da empresa.',
       unit: 'x',
       category: 'valuation',
-      format: (val) => `${val.toFixed(2)}x`,
+      format: (val) => `${val.toFixed(3)}x`,
       interpret: (val) => {
         if (val < 0) return { text: 'Negativo', color: 'text-brand-danger bg-rose-950/20 border-brand-danger/20' };
         if (val < 8.0) return { text: 'Atrativo', color: 'text-brand-success bg-emerald-950/20 border-brand-success/20' };
@@ -259,7 +259,7 @@ export const IndicatorsGrid: React.FC<IndicatorsGridProps> = ({ data, onUpdateDa
       description: 'Price-to-Sales Ratio. Relação entre o valor de mercado da empresa e a receita bruta consolidada.',
       unit: 'x',
       category: 'valuation',
-      format: (val) => `${val.toFixed(2)}x`,
+      format: (val) => `${val.toFixed(3)}x`,
       interpret: (val) => {
         if (val < 1.0) return { text: 'Muito Atrativo', color: 'text-brand-success bg-emerald-950/20 border-brand-success/20' };
         if (val < 3.0) return { text: 'Moderado', color: 'text-brand-info bg-blue-950/20 border-brand-info/20' };
@@ -272,7 +272,7 @@ export const IndicatorsGrid: React.FC<IndicatorsGridProps> = ({ data, onUpdateDa
       description: 'Preço sobre Ativo Total. Compara a avaliação de mercado com os ativos brutos registrados no balanço.',
       unit: 'x',
       category: 'valuation',
-      format: (val) => `${val.toFixed(2)}x`,
+      format: (val) => `${val.toFixed(3)}x`,
       interpret: (val) => {
         if (val < 0.5) return { text: 'Descontado', color: 'text-brand-success bg-emerald-950/20 border-brand-success/20' };
         return { text: 'Normal', color: 'text-dark-textSecondary bg-gray-800 border-dark-border' };
@@ -284,7 +284,7 @@ export const IndicatorsGrid: React.FC<IndicatorsGridProps> = ({ data, onUpdateDa
       description: 'Preço sobre Capital de Giro. Relação entre o valor de mercado e a diferença entre ativos e passivos circulantes.',
       unit: 'x',
       category: 'valuation',
-      format: (val) => `${val.toFixed(2)}x`,
+      format: (val) => `${val.toFixed(3)}x`,
       interpret: (val) => {
         if (val < 0) return { text: 'Giro Negativo', color: 'text-brand-danger bg-rose-950/20 border-brand-danger/20' };
         if (val < 4.0) return { text: 'Excelente Liquidez', color: 'text-brand-success bg-emerald-950/20 border-brand-success/20' };
@@ -297,7 +297,7 @@ export const IndicatorsGrid: React.FC<IndicatorsGridProps> = ({ data, onUpdateDa
       description: 'Lucro por Ação. Parcela do lucro líquido correspondente a cada ação emitida pela empresa.',
       unit: '',
       category: 'valuation',
-      format: (val) => `${currencySymbol} ${val.toFixed(2)}`,
+      format: (val) => `${currencySymbol} ${val.toFixed(3)}`,
       interpret: (val) => {
         if (val < 0) return { text: 'Prejuízo p/ Ação', color: 'text-brand-danger bg-rose-950/20 border-brand-danger/20' };
         return { text: 'Lucrativa', color: 'text-brand-success bg-emerald-950/20 border-brand-success/20' };
@@ -309,7 +309,7 @@ export const IndicatorsGrid: React.FC<IndicatorsGridProps> = ({ data, onUpdateDa
       description: 'Valor Patrimonial por Ação. Mostra o valor contábil líquido correspondente a cada ação.',
       unit: '',
       category: 'valuation',
-      format: (val) => `${currencySymbol} ${val.toFixed(2)}`,
+      format: (val) => `${currencySymbol} ${val.toFixed(3)}`,
       interpret: (_val) => {
         return { text: 'Patr. Líquido', color: 'text-brand-info bg-blue-950/20 border-brand-info/20' };
       }
@@ -322,7 +322,7 @@ export const IndicatorsGrid: React.FC<IndicatorsGridProps> = ({ data, onUpdateDa
       description: 'Retorno sobre o Patrimônio Líquido. Mede a capacidade da empresa de gerar lucro a partir de seu capital próprio.',
       unit: '%',
       category: 'profitability',
-      format: (val) => `${val.toFixed(2)}%`,
+      format: (val) => `${val.toFixed(3)}%`,
       interpret: (val) => {
         if (val < 0) return { text: 'Destrói Valor', color: 'text-brand-danger bg-rose-950/20 border-brand-danger/20' };
         if (val < 10.0) return { text: 'Retorno Baixo', color: 'text-dark-textSecondary bg-gray-800 border-dark-border' };
@@ -336,7 +336,7 @@ export const IndicatorsGrid: React.FC<IndicatorsGridProps> = ({ data, onUpdateDa
       description: 'Retorno sobre o Capital Investido. Mede a taxa de retorno que a empresa consegue sobre todo o capital empregado (próprio + terceiros).',
       unit: '%',
       category: 'profitability',
-      format: (val) => `${val.toFixed(2)}%`,
+      format: (val) => `${val.toFixed(3)}%`,
       interpret: (val) => {
         if (val < 0) return { text: 'Destrói Valor', color: 'text-brand-danger bg-rose-950/20 border-brand-danger/20' };
         if (val < 10.0) return { text: 'Retorno Baixo', color: 'text-dark-textSecondary bg-gray-800 border-dark-border' };
@@ -350,7 +350,7 @@ export const IndicatorsGrid: React.FC<IndicatorsGridProps> = ({ data, onUpdateDa
       description: 'Retorno sobre Ativos. Indica a eficiência na utilização dos ativos totais para gerar lucro líquido.',
       unit: '%',
       category: 'profitability',
-      format: (val) => `${val.toFixed(2)}%`,
+      format: (val) => `${val.toFixed(3)}%`,
       interpret: (val) => {
         if (val < 2.0) return { text: 'Baixo', color: 'text-dark-textSecondary bg-gray-800 border-dark-border' };
         if (val < 8.0) return { text: 'Saudável', color: 'text-brand-success bg-emerald-950/20 border-brand-success/20' };
@@ -363,7 +363,7 @@ export const IndicatorsGrid: React.FC<IndicatorsGridProps> = ({ data, onUpdateDa
       description: 'Percentual restante da receita após deduzir os custos diretos de fabricação ou serviços.',
       unit: '%',
       category: 'profitability',
-      format: (val) => `${val.toFixed(2)}%`,
+      format: (val) => `${val.toFixed(3)}%`,
       interpret: (val) => {
         if (val < 20.0) return { text: 'Margem Apertada', color: 'text-brand-warning bg-amber-950/20 border-brand-warning/20' };
         if (val < 50.0) return { text: 'Saudável', color: 'text-brand-info bg-blue-950/20 border-brand-info/20' };
@@ -376,7 +376,7 @@ export const IndicatorsGrid: React.FC<IndicatorsGridProps> = ({ data, onUpdateDa
       description: 'Eficiência operacional medida como EBITDA dividido pela Receita Líquida.',
       unit: '%',
       category: 'profitability',
-      format: (val) => `${val.toFixed(2)}%`,
+      format: (val) => `${val.toFixed(3)}%`,
       interpret: (val) => {
         if (val < 10.0) return { text: 'Baixa', color: 'text-dark-textSecondary bg-gray-800 border-dark-border' };
         if (val < 25.0) return { text: 'Boa Operação', color: 'text-brand-info bg-blue-950/20 border-brand-info/20' };
@@ -389,7 +389,7 @@ export const IndicatorsGrid: React.FC<IndicatorsGridProps> = ({ data, onUpdateDa
       description: 'Mede a rentabilidade estritamente operacional (lucro operacional sobre receita líquida).',
       unit: '%',
       category: 'profitability',
-      format: (val) => `${val.toFixed(2)}%`,
+      format: (val) => `${val.toFixed(3)}%`,
       interpret: (val) => {
         if (val < 5.0) return { text: 'Margem Baixa', color: 'text-brand-warning bg-amber-950/20 border-brand-warning/20' };
         return { text: 'Saudável', color: 'text-brand-success bg-emerald-950/20 border-brand-success/20' };
@@ -401,7 +401,7 @@ export const IndicatorsGrid: React.FC<IndicatorsGridProps> = ({ data, onUpdateDa
       description: 'Porcentagem da receita que se converte em lucro líquido após dedução de todas as despesas.',
       unit: '%',
       category: 'profitability',
-      format: (val) => `${val.toFixed(2)}%`,
+      format: (val) => `${val.toFixed(3)}%`,
       interpret: (val) => {
         if (val < 0) return { text: 'Prejuízo Líquido', color: 'text-brand-danger bg-rose-950/20 border-brand-danger/20' };
         if (val < 5.0) return { text: 'Margem Apertada', color: 'text-brand-warning bg-amber-950/20 border-brand-warning/20' };
@@ -417,7 +417,7 @@ export const IndicatorsGrid: React.FC<IndicatorsGridProps> = ({ data, onUpdateDa
       description: 'Rendimento de Dividendos. Percentual de proventos pagos aos acionistas nos últimos 12 meses frente ao preço atual.',
       unit: '%',
       category: 'solvency',
-      format: (val) => `${val.toFixed(2)}%`,
+      format: (val) => `${val.toFixed(3)}%`,
       interpret: (val) => {
         if (val === 0) return { text: 'Não paga dividendos', color: 'text-dark-textSecondary bg-gray-800 border-dark-border' };
         if (val < 4.0) return { text: 'Rendimento Baixo', color: 'text-brand-info bg-blue-950/20 border-brand-info/20' };
@@ -431,7 +431,7 @@ export const IndicatorsGrid: React.FC<IndicatorsGridProps> = ({ data, onUpdateDa
       description: 'Dívida Líquida dividida pelo Patrimônio Líquido. Mede a alavancagem financeira gerada pelo capital de terceiros.',
       unit: 'x',
       category: 'solvency',
-      format: (val) => `${val.toFixed(2)}x`,
+      format: (val) => `${val.toFixed(3)}x`,
       interpret: (val) => {
         if (val < 0) return { text: 'Caixa Líquido', color: 'text-brand-success bg-emerald-950/20 border-brand-success/20' };
         if (val < 0.8) return { text: 'Alavancagem Saudável', color: 'text-brand-info bg-blue-950/20 border-brand-info/20' };
@@ -444,7 +444,7 @@ export const IndicatorsGrid: React.FC<IndicatorsGridProps> = ({ data, onUpdateDa
       description: 'Dívida Líquida dividida pelo EBITDA. Indica a capacidade de pagar o endividamento usando a geração de caixa operacional atual.',
       unit: 'x',
       category: 'solvency',
-      format: (val) => `${val.toFixed(2)}x`,
+      format: (val) => `${val.toFixed(3)}x`,
       interpret: (val) => {
         if (val < 0) return { text: 'Caixa Líquido', color: 'text-brand-success bg-emerald-950/20 border-brand-success/20' };
         if (val < 2.0) return { text: 'Endividamento Seguro', color: 'text-brand-info bg-blue-950/20 border-brand-info/20' };
@@ -458,7 +458,7 @@ export const IndicatorsGrid: React.FC<IndicatorsGridProps> = ({ data, onUpdateDa
       description: 'Dívida Bruta dividida pelo Patrimônio Líquido. Indica a proporção total de recursos de terceiros no patrimônio.',
       unit: 'x',
       category: 'solvency',
-      format: (val) => `${val.toFixed(2)}x`,
+      format: (val) => `${val.toFixed(3)}x`,
       interpret: (val) => {
         if (val < 1.0) return { text: 'Confortável', color: 'text-brand-success bg-emerald-950/20 border-brand-success/20' };
         return { text: 'Moderado', color: 'text-dark-textSecondary bg-gray-800 border-dark-border' };
@@ -470,7 +470,7 @@ export const IndicatorsGrid: React.FC<IndicatorsGridProps> = ({ data, onUpdateDa
       description: 'Relação entre ativos circulantes e passivos circulantes. Indica a solvência de curto prazo da empresa.',
       unit: 'x',
       category: 'solvency',
-      format: (val) => `${val.toFixed(2)}x`,
+      format: (val) => `${val.toFixed(3)}x`,
       interpret: (val) => {
         if (val < 1.0) return { text: 'Risco de Ilividez C/P', color: 'text-brand-danger bg-rose-950/20 border-brand-danger/20' };
         if (val < 1.5) return { text: 'Ajustado', color: 'text-brand-warning bg-amber-950/20 border-brand-warning/20' };
@@ -483,7 +483,7 @@ export const IndicatorsGrid: React.FC<IndicatorsGridProps> = ({ data, onUpdateDa
       description: 'Compound Annual Growth Rate das Receitas. Taxa de crescimento anual composta da receita líquida consolidada de 5 anos.',
       unit: '%',
       category: 'solvency',
-      format: (val) => `${val.toFixed(2)}%`,
+      format: (val) => `${val.toFixed(3)}%`,
       interpret: (val) => {
         if (val < 0) return { text: 'Receita Encolhendo', color: 'text-brand-danger bg-rose-950/20 border-brand-danger/20' };
         if (val < 8.0) return { text: 'Crescimento Lento', color: 'text-dark-textSecondary bg-gray-800 border-dark-border' };
@@ -496,7 +496,7 @@ export const IndicatorsGrid: React.FC<IndicatorsGridProps> = ({ data, onUpdateDa
       description: 'Compound Annual Growth Rate dos Lucros. Taxa de crescimento anual composta do lucro líquido consolidado de 5 anos.',
       unit: '%',
       category: 'solvency',
-      format: (val) => `${val.toFixed(2)}%`,
+      format: (val) => `${val.toFixed(3)}%`,
       interpret: (val) => {
         if (val < 0) return { text: 'Lucro Encolhendo', color: 'text-brand-danger bg-rose-950/20 border-brand-danger/20' };
         if (val < 10.0) return { text: 'Crescimento Lento', color: 'text-dark-textSecondary bg-gray-800 border-dark-border' };
