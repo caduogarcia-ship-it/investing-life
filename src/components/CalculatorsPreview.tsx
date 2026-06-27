@@ -271,7 +271,8 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
   };
 
   return (
-    <div className="space-y-8 animate-fadeIn">
+    <>
+    <div className="space-y-8 animate-fadeIn print:hidden">
       {/* ═══════════════════════════════════════════════ */}
       {/* HEADER CARD                                     */}
       {/* ═══════════════════════════════════════════════ */}
@@ -573,20 +574,23 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                     </p>
                   </div>
                 ) : (
-                  <>
-                    <div className="bg-dark-bg/40 p-3 rounded-lg border border-dark-border/30">
-                      <p className="text-xs text-dark-textPrimary font-bold mb-1">g1 & n (Estágio Acelerado)</p>
-                      <p className="text-2xs text-dark-textSecondary leading-relaxed">
-                        Taxa de crescimento anormal (g1) que a empresa consegue manter por uma vantagem competitiva temporária, durante um período finito de anos (n), antes de amadurecer.
-                      </p>
+                  <div className="space-y-3 mt-4">
+                    <div className="bg-dark-bg/40 p-4 rounded-lg border border-dark-border/30 space-y-2">
+                      <p className="text-xs text-brand-purple font-bold">1. O Estágio 1: A "Arrancada" (Crescimento Anormal)</p>
+                      <div className="text-2xs text-dark-textSecondary leading-relaxed space-y-2">
+                        <p><strong className="text-dark-textPrimary">A Lógica:</strong> Aqui a empresa está em expansão acelerada. O numerador projeta os dividendos crescendo a uma taxa forte (g1) ano após ano. O denominador desconta o valor de cada um desses dividendos pela taxa exigida (k) de volta para o presente.</p>
+                        <p><strong className="text-dark-textPrimary">Na prática:</strong> É o somatório puro e simples de fluxos de caixa não uniformes. Em uma planilha, seria o uso direto da função =VPL() para os primeiros {inputs.n} anos.</p>
+                      </div>
                     </div>
-                    <div className="bg-dark-bg/40 p-3 rounded-lg border border-dark-border/30">
-                      <p className="text-xs text-dark-textPrimary font-bold mb-1">g2 (Crescimento Perpétuo)</p>
-                      <p className="text-2xs text-dark-textSecondary leading-relaxed">
-                        A taxa sustentável e conservadora de crescimento (geralmente acompanhando a inflação ou o PIB) que a empresa manterá eternamente após o amadurecimento.
-                      </p>
+                    
+                    <div className="bg-dark-bg/40 p-4 rounded-lg border border-dark-border/30 space-y-2">
+                      <p className="text-xs text-emerald-400 font-bold">2. O Estágio 2: A "Órbita" (Valor Terminal)</p>
+                      <div className="text-2xs text-dark-textSecondary leading-relaxed space-y-2">
+                        <p><strong className="text-dark-textPrimary">A. Empacotando o infinito:</strong> Quando a empresa atinge a maturidade no ano {inputs.n}, ela passa a crescer a uma taxa constante (g2) para sempre. Esse "pacote" de todos os dividendos futuros somados recebe o nome de Valor Terminal (TV).</p>
+                        <p><strong className="text-dark-textPrimary">B. Trazendo para hoje:</strong> O problema é que aquele Valor Terminal calculado é um dinheiro que só existirá no ano {inputs.n}. Nós precisamos trazê-lo para o ano zero (dividindo o montante por (1 + k)^n) para poder somá-lo com os dividendos do Estágio 1.</p>
+                      </div>
                     </div>
-                  </>
+                  </div>
                 )}
               </div>
             </div>
@@ -672,5 +676,106 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
         </div>
       )}
     </div>
+
+      {/* ═══════════════════════════════════════════════ */}
+      {/* LAYOUT DE IMPRESSÃO (PDF EXCLUSIVO)             */}
+      {/* ═══════════════════════════════════════════════ */}
+      <div className="hidden print:block w-full bg-white text-black font-sans">
+        
+        {/* Header do Relatório */}
+        <div className="border-b-2 border-gray-800 pb-6 mb-8 flex justify-between items-end">
+          <div>
+            <h1 className="text-3xl font-black text-gray-900 tracking-tight">RELATÓRIO DE VALUATION</h1>
+            <p className="text-lg text-gray-600 font-bold mt-1">
+              Ativo Analisado: {stockData?.symbol || 'N/A'} {stockData?.longName ? `— ${stockData.longName}` : ''}
+            </p>
+            <p className="text-sm text-gray-500 mt-1">Data da Análise: {new Date().toLocaleDateString('pt-BR')} • Cotação Base: {currencySymbol} {stockData?.regularMarketPrice?.toFixed(2)}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-4xl font-black text-emerald-600 font-mono">
+              {currencySymbol} {calc.p0.toFixed(2)}
+            </p>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1">Preço Justo Projetado (P₀)</p>
+          </div>
+        </div>
+
+        {/* Bloco de Premissas */}
+        <div className="mb-8">
+          <h2 className="text-lg font-black text-gray-800 uppercase tracking-widest border-b border-gray-300 pb-2 mb-4">Premissas Utilizadas</h2>
+          <div className="grid grid-cols-4 gap-4">
+            <div className="bg-gray-50 p-4 border border-gray-200 rounded-lg">
+              <p className="text-xs font-bold text-gray-500 uppercase">Custo (k)</p>
+              <p className="text-xl font-bold font-mono text-gray-900">{calc.kPerc.toFixed(2)}%</p>
+            </div>
+            {valuationMode === 'VARIADO' ? (
+              <>
+                <div className="bg-gray-50 p-4 border border-gray-200 rounded-lg">
+                  <p className="text-xs font-bold text-gray-500 uppercase">A Arrancada (g1)</p>
+                  <p className="text-xl font-bold font-mono text-gray-900">{inputs.g1.toFixed(2)}%</p>
+                </div>
+                <div className="bg-gray-50 p-4 border border-gray-200 rounded-lg">
+                  <p className="text-xs font-bold text-gray-500 uppercase">Duração (n)</p>
+                  <p className="text-xl font-bold font-mono text-gray-900">{inputs.n} anos</p>
+                </div>
+                <div className="bg-gray-50 p-4 border border-gray-200 rounded-lg">
+                  <p className="text-xs font-bold text-gray-500 uppercase">A Órbita (g2)</p>
+                  <p className="text-xl font-bold font-mono text-gray-900">{inputs.g2.toFixed(2)}%</p>
+                </div>
+              </>
+            ) : (
+               <div className="bg-gray-50 p-4 border border-gray-200 rounded-lg col-span-3">
+                  <p className="text-xs font-bold text-gray-500 uppercase">Crescimento Constante (g)</p>
+                  <p className="text-xl font-bold font-mono text-gray-900">{calc.gPerc.toFixed(2)}%</p>
+                </div>
+            )}
+          </div>
+        </div>
+
+        {/* Memorial de Cálculo */}
+        {valuationMode === 'VARIADO' && calc.isValid && (
+          <div className="mb-8">
+            <h2 className="text-lg font-black text-gray-800 uppercase tracking-widest border-b border-gray-300 pb-2 mb-4">O Caminho do Dinheiro</h2>
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex-1 bg-blue-50 p-6 rounded-xl border border-blue-100 text-center">
+                <p className="text-sm font-bold text-blue-800 mb-2">1. A "Arrancada"</p>
+                <p className="text-xs text-blue-600 mb-2">(Valor Presente do Estágio 1)</p>
+                <p className="text-2xl font-black font-mono text-blue-900">{currencySymbol} {calc.vpEstagio1.toFixed(2)}</p>
+              </div>
+              <div className="text-2xl font-black text-gray-400">+</div>
+              <div className="flex-1 bg-teal-50 p-6 rounded-xl border border-teal-100 text-center">
+                <p className="text-sm font-bold text-teal-800 mb-2">2. A "Órbita"</p>
+                <p className="text-xs text-teal-600 mb-2">(Valor Presente do Terminal Value)</p>
+                <p className="text-2xl font-black font-mono text-teal-900">{currencySymbol} {calc.vpTV.toFixed(2)}</p>
+              </div>
+              <div className="text-2xl font-black text-gray-400">=</div>
+              <div className="flex-1 bg-gray-900 p-6 rounded-xl text-center shadow-lg print:border print:border-gray-800 print:bg-white print:text-black">
+                <p className="text-sm font-bold print:text-black text-white mb-2">Preço Justo Final</p>
+                <p className="text-xs print:text-gray-600 text-gray-400 mb-2">(P₀)</p>
+                <p className="text-2xl font-black font-mono print:text-black text-emerald-400">{currencySymbol} {calc.p0.toFixed(2)}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Gráfico no Print */}
+        {calc.isValid && (
+           <div className="mt-8 border border-gray-200 rounded-2xl p-6 bg-white break-inside-avoid">
+             <h3 className="text-base font-bold text-gray-800 mb-4 text-center">
+                Projeção de Dividendos ({valuationMode === 'GORDON' ? 'Crescimento Constante' : 'Estágio 1 + Perpetuidade'})
+             </h3>
+             <div className="h-[300px] w-full">
+               <ResponsiveContainer width="100%" height="100%">
+                 <ComposedChart data={calc.chartData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                   <XAxis dataKey="year" stroke="#9ca3af" tick={{ fill: '#4b5563', fontSize: 11 }} axisLine={false} tickLine={false} />
+                   <YAxis stroke="#9ca3af" tick={{ fill: '#4b5563', fontSize: 11, fontFamily: 'monospace' }} tickFormatter={(val) => `${currencySymbol}${val}`} axisLine={false} tickLine={false} />
+                   <Bar dataKey="dividendo" fill="#059669" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                 </ComposedChart>
+               </ResponsiveContainer>
+             </div>
+           </div>
+        )}
+      </div>
+    </>
   );
 };
