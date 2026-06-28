@@ -111,23 +111,24 @@ const INDEX_CONFIGS: IndexConfig[] = [
   useEffect(() => {
     const fetchIndicesData = async () => {
       try {
-        const token = getApiToken() || 'cgWz89yC3Q8H8JpDMM7sPZ'; // Fallback token
         const fetchedData = await Promise.all(
           INDEX_CONFIGS.map(async (config) => {
             try {
-              const url = `https://brapi.dev/api/quote/${config.symbol}?token=${token}`;
+              const url = `/yahoo-chart/${config.symbol}?range=1d&interval=1m`;
               const res = await fetch(url);
               if (res.ok) {
                 const json = await res.json();
-                if (json.results && json.results.length > 0) {
-                  const result = json.results[0];
-                  const price = result.regularMarketPrice;
-                  const changePct = result.regularMarketChangePercent;
-                  if (price !== undefined) {
+                const result = json.chart?.result?.[0];
+                const meta = result?.meta;
+                if (meta) {
+                  const price = meta.regularMarketPrice ?? meta.chartPreviousClose;
+                  const prevClose = meta.chartPreviousClose ?? price;
+                  const changePct = prevClose ? ((price - prevClose) / prevClose) * 100 : 0;
+                  if (price) {
                     return {
                       name: config.name,
                       value: config.format(price),
-                      change: Number((changePct || 0).toFixed(2))
+                      change: Number(changePct.toFixed(2))
                     };
                   }
                 }
@@ -139,8 +140,23 @@ const INDEX_CONFIGS: IndexConfig[] = [
           })
         );
 
+        // Fetch Selic from BCB
+        let selicRate = '10,50%';
+        try {
+          const selicRes = await fetch('https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/1?formato=json');
+          if (selicRes.ok) {
+            const selicJson = await selicRes.json();
+            if (selicJson && selicJson.length > 0) {
+              const val = parseFloat(selicJson[0].valor);
+              selicRate = `${val.toFixed(2).replace('.', ',')}%`;
+            }
+          }
+        } catch (e) {
+          console.warn('Failed to fetch Selic');
+        }
+
         setIndices(prev => prev.map(idx => {
-          if (idx.name === 'TAXA SELIC') return idx;
+          if (idx.name === 'TAXA SELIC') return { ...idx, value: selicRate, change: 0 };
           const configIndex = INDEX_CONFIGS.findIndex(c => c.name === idx.name);
           if (configIndex !== -1 && fetchedData[configIndex] !== null) {
             return fetchedData[configIndex]!;
@@ -198,16 +214,16 @@ const INDEX_CONFIGS: IndexConfig[] = [
         </div>
       </div>
 
-      <div className="px-4 py-3 lg:px-8 max-w-7xl mx-auto w-full flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="px-4 py-4 lg:px-8 max-w-7xl mx-auto w-full flex flex-col md:flex-row md:items-center md:justify-between gap-5">
         
         {/* Logo and App Name */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-gradient-to-tr from-brand-primary to-brand-purple rounded-xl text-white shadow-md animate-glow-pulse-soft">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-gradient-to-tr from-brand-primary to-brand-purple rounded-xl text-white shadow-md animate-glow-pulse-soft">
               <BarChart2 className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-lg font-bold tracking-tight gradient-text">Investing Life</h1>
+              <h1 className="text-xl md:text-lg font-bold tracking-tight gradient-text">Investing Life</h1>
               <p className="text-xs text-dark-textSecondary font-medium">B3 Stock Analyzer & Tracker</p>
             </div>
           </div>

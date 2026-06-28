@@ -112,7 +112,7 @@ export const TesouroDireto: React.FC = () => {
   return (
     <div className="space-y-8 animate-fadeIn pb-12">
       {/* Header */}
-      <div className="bg-dark-card border border-dark-border rounded-2xl p-6 shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-6" style={{ background: 'linear-gradient(135deg, rgba(17,24,39,1) 0%, rgba(15,23,42,1) 100%)' }}>
+      <div className="bg-dark-card border border-dark-border rounded-2xl p-5 md:p-6 shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-6" style={{ background: 'linear-gradient(135deg, rgba(17,24,39,1) 0%, rgba(15,23,42,1) 100%)' }}>
         <div>
           <h2 className="text-xl font-extrabold text-brand-primary tracking-tight flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
             <Landmark className="w-6 h-6" />
@@ -125,14 +125,14 @@ export const TesouroDireto: React.FC = () => {
       </div>
 
       {/* Control Panel (Simulador) */}
-      <div className="bg-dark-card border border-dark-border rounded-2xl p-6 shadow-xl relative overflow-hidden">
+      <div className="bg-dark-card border border-dark-border rounded-2xl p-5 md:p-6 shadow-xl relative overflow-hidden">
         <div className="absolute top-0 left-0 w-1 h-full bg-brand-purple" />
         <h3 className="text-sm font-bold text-dark-textPrimary mb-4 flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
           <Calculator className="w-4.5 h-4.5 text-brand-purple" />
           Simulador de Cenário Macro (Inputs)
         </h3>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="space-y-1.5">
             <label className="text-3xs font-extrabold text-dark-textSecondary uppercase tracking-wider">Inflação (IPCA) Projetada %</label>
             <div className="relative">
@@ -231,7 +231,7 @@ export const TesouroDireto: React.FC = () => {
 
       {/* Main Table */}
       <div className="bg-dark-card border border-dark-border rounded-2xl shadow-xl overflow-hidden">
-        <div className="p-5 border-b border-dark-border/50 flex justify-between items-center bg-dark-bg/30">
+        <div className="p-4 md:p-5 border-b border-dark-border/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 bg-dark-bg/30">
           <h3 className="text-sm font-bold text-dark-textPrimary flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
             <TrendingUp className="w-4.5 h-4.5 text-brand-primary" />
             Títulos Disponíveis e Cálculo de Rentabilidade

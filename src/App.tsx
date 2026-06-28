@@ -347,10 +347,10 @@ export default function App() {
       <main className="flex-1 max-w-7xl mx-auto w-full px-6 py-10 lg:px-8 space-y-8">
         
         {/* Main Tab Selectors */}
-        <div className="flex bg-dark-card border border-dark-border p-1 rounded-2xl text-xs font-bold uppercase tracking-wider max-w-5xl mx-auto justify-between shadow-md select-none w-full print:hidden">
+        <div className="flex bg-dark-card border border-dark-border p-1.5 rounded-2xl text-xs font-bold uppercase tracking-wider max-w-5xl mx-auto shadow-md select-none w-full print:hidden overflow-x-auto no-scrollbar snap-x items-center gap-1">
           <button
             onClick={() => setActiveTab('analise')}
-            className={`flex-1 py-2.5 rounded-xl transition-all duration-300 cursor-pointer active-scale flex items-center justify-center gap-1.5 ${
+            className={`flex-1 shrink-0 px-4 py-2.5 rounded-xl whitespace-nowrap transition-all duration-300 cursor-pointer active-scale flex items-center justify-center gap-1.5 ${
               activeTab === 'analise' 
                 ? 'text-white' 
                 : 'text-dark-textSecondary hover:text-dark-textPrimary'
@@ -362,7 +362,7 @@ export default function App() {
           </button>
           <button
             onClick={() => setActiveTab('carteira')}
-            className={`flex-1 py-2.5 rounded-xl transition-all duration-300 cursor-pointer active-scale flex items-center justify-center gap-1.5 ${
+            className={`flex-1 shrink-0 px-4 py-2.5 rounded-xl whitespace-nowrap transition-all duration-300 cursor-pointer active-scale flex items-center justify-center gap-1.5 ${
               activeTab === 'carteira' 
                 ? 'text-white' 
                 : 'text-dark-textSecondary hover:text-dark-textPrimary'
@@ -374,7 +374,7 @@ export default function App() {
           </button>
           <button
             onClick={() => setActiveTab('candles')}
-            className={`flex-1 py-2.5 rounded-xl transition-all duration-300 cursor-pointer active-scale flex items-center justify-center gap-1.5 ${
+            className={`flex-1 shrink-0 px-4 py-2.5 rounded-xl whitespace-nowrap transition-all duration-300 cursor-pointer active-scale flex items-center justify-center gap-1.5 ${
               activeTab === 'candles' 
                 ? 'text-white' 
                 : 'text-dark-textSecondary hover:text-dark-textPrimary'
@@ -386,7 +386,7 @@ export default function App() {
           </button>
           <button
             onClick={() => setActiveTab('dividendos')}
-            className={`flex-1 py-2.5 rounded-xl transition-all duration-300 cursor-pointer active-scale flex items-center justify-center gap-1.5 ${
+            className={`flex-1 shrink-0 px-4 py-2.5 rounded-xl whitespace-nowrap transition-all duration-300 cursor-pointer active-scale flex items-center justify-center gap-1.5 ${
               activeTab === 'dividendos' 
                 ? 'text-white' 
                 : 'text-dark-textSecondary hover:text-dark-textPrimary'
@@ -398,7 +398,7 @@ export default function App() {
           </button>
           <button
             onClick={() => setActiveTab('calculos')}
-            className={`flex-1 py-2.5 rounded-xl transition-all duration-300 cursor-pointer active-scale flex items-center justify-center gap-1.5 ${
+            className={`flex-1 shrink-0 px-4 py-2.5 rounded-xl whitespace-nowrap transition-all duration-300 cursor-pointer active-scale flex items-center justify-center gap-1.5 ${
               activeTab === 'calculos' 
                 ? 'text-white' 
                 : 'text-dark-textSecondary hover:text-dark-textPrimary'
@@ -410,7 +410,7 @@ export default function App() {
           </button>
           <button
             onClick={() => setActiveTab('tesouro')}
-            className={`flex-1 py-2.5 rounded-xl transition-all duration-300 cursor-pointer active-scale flex items-center justify-center gap-1.5 ${
+            className={`flex-1 shrink-0 px-4 py-2.5 rounded-xl whitespace-nowrap transition-all duration-300 cursor-pointer active-scale flex items-center justify-center gap-1.5 ${
               activeTab === 'tesouro' 
                 ? 'text-white' 
                 : 'text-dark-textSecondary hover:text-dark-textPrimary'
@@ -422,7 +422,7 @@ export default function App() {
           </button>
           <button
             onClick={() => setActiveTab('rankings')}
-            className={`flex-1 py-2.5 rounded-xl transition-all duration-300 cursor-pointer active-scale flex items-center justify-center gap-1.5 ${
+            className={`flex-1 shrink-0 px-4 py-2.5 rounded-xl whitespace-nowrap transition-all duration-300 cursor-pointer active-scale flex items-center justify-center gap-1.5 ${
               activeTab === 'rankings' 
                 ? 'text-white' 
                 : 'text-dark-textSecondary hover:text-dark-textPrimary'
@@ -434,7 +434,7 @@ export default function App() {
           </button>
           <button
             onClick={() => setActiveTab('recomendadas')}
-            className={`flex-1 py-2.5 rounded-xl transition-all duration-300 cursor-pointer active-scale flex items-center justify-center gap-1.5 ${
+            className={`flex-1 shrink-0 px-4 py-2.5 rounded-xl whitespace-nowrap transition-all duration-300 cursor-pointer active-scale flex items-center justify-center gap-1.5 ${
               activeTab === 'recomendadas' 
                 ? 'text-white' 
                 : 'text-dark-textSecondary hover:text-dark-textPrimary'
@@ -447,7 +447,7 @@ export default function App() {
           {isAdmin && (
             <button
               onClick={() => setActiveTab('admin')}
-              className={`flex-1 py-2.5 rounded-xl transition-all duration-300 cursor-pointer active-scale flex items-center justify-center gap-1.5 ${
+              className={`flex-1 shrink-0 px-4 py-2.5 rounded-xl whitespace-nowrap transition-all duration-300 cursor-pointer active-scale flex items-center justify-center gap-1.5 ${
                 activeTab === 'admin' 
                   ? 'text-white' 
                   : 'text-dark-textSecondary hover:text-dark-textPrimary'

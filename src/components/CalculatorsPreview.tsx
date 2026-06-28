@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Sliders, Calculator, RotateCcw, AlertTriangle, Zap, HelpCircle, Lock, Unlock, Printer, TrendingUp, FileText } from 'lucide-react';
+import { Sliders, Calculator, RotateCcw, AlertTriangle, Zap, HelpCircle, Lock, Unlock, Printer, TrendingUp, FileText, Save, FolderOpen, X, Trash2 } from 'lucide-react';
 import { ResponsiveContainer, ComposedChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import type { StockData } from '../services/api';
 
@@ -148,6 +148,14 @@ interface CalculatorsPreviewProps {
   stockData: StockData | null;
 }
 
+interface SavedCalc {
+  id: string;
+  name: string;
+  mode: 'GORDON' | 'VARIADO';
+  inputs: Record<string, number>;
+  date: string;
+}
+
 export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockData }) => {
   // --- VALUATION MODE TOGGLE ---
   const [valuationMode, setValuationMode] = useState<'GORDON' | 'VARIADO'>('GORDON');
@@ -218,6 +226,45 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
 
   const [growthScenario, setGrowthScenario] = useState<'otimista' | 'pessimista' | 'manual'>('manual');
   const [justifications, setJustifications] = useState(initialJustifications);
+
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
+  const [saveName, setSaveName] = useState('');
+  const [savedCalculations, setSavedCalculations] = useState<SavedCalc[]>(() => {
+    try {
+      const item = localStorage.getItem('investing_life_saved_calcs');
+      return item ? JSON.parse(item) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const handleSaveCalculation = () => {
+    if (!saveName.trim()) return;
+    const newSave: SavedCalc = {
+      id: Math.random().toString(36).substring(2, 9),
+      name: saveName.trim(),
+      mode: valuationMode,
+      inputs: { ...inputs },
+      date: new Date().toISOString()
+    };
+    const updated = [...savedCalculations, newSave];
+    setSavedCalculations(updated);
+    localStorage.setItem('investing_life_saved_calcs', JSON.stringify(updated));
+    setIsSaveModalOpen(false);
+    setSaveName('');
+  };
+
+  const handleLoadCalculation = (calc: SavedCalc) => {
+    setInputs(calc.inputs as any);
+    setIsLoadModalOpen(false);
+  };
+
+  const handleDeleteCalculation = (id: string) => {
+    const updated = savedCalculations.filter(c => c.id !== id);
+    setSavedCalculations(updated);
+    localStorage.setItem('investing_life_saved_calcs', JSON.stringify(updated));
+  };
 
   // Sync initial state
   useEffect(() => {
@@ -384,28 +431,31 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
       const chartData = [];
       
       if (isValid) {
-        let currentD = inputs.d0;
-        
-        // Estágio 1 (Crescimento Acelerado)
+        // Use exact compound formula (matches what's shown in step-by-step display)
+        const g1Dec = g1;   // already in decimal
+        const g2Dec = g2;   // already in decimal
+
+        // Estágio 1 (Crescimento Acelerado) - usando fórmula de potência exata
         for (let t = 1; t <= n; t++) {
-          currentD = currentD * (1 + g1); // Dt
-          const pvDt = currentD / Math.pow(1 + k, t);
+          const dt = inputs.d0 * Math.pow(1 + g1Dec, t); // DIV_t = D0 * (1+g1)^t
+          const pvDt = dt / Math.pow(1 + k, t);
           vpEstagio1 += pvDt;
-          chartData.push({ year: `Ano ${t}`, dividendo: Number(currentD.toFixed(2)) });
+          chartData.push({ year: `Ano ${t}`, dividendo: Number(dt.toFixed(4)) });
         }
 
-        // Estágio 2 (Perpetuidade)
-        const dNPlus1 = currentD * (1 + g2);
-        const tvN = dNPlus1 / (k - g2);
-        vpTV = tvN / Math.pow(1 + k, n);
+        // Estágio 2 (Perpetuidade) - DIV_N exato por potência, depois Gordon
+        const divN = inputs.d0 * Math.pow(1 + g1Dec, n); // DIV_N exacto
+        const dNPlus1 = divN * (1 + g2Dec);              // DIV_(N+1)
+        const tvN = dNPlus1 / (k - g2Dec);               // P_N = Gordon
+        vpTV = tvN / Math.pow(1 + k, n);                 // VP(P_N)
         
         p0 = vpEstagio1 + vpTV;
         
         // Projetar +5 anos no gráfico para ilustrar a perpetuidade
         let currentDStage2 = dNPlus1;
         for (let t = n + 1; t <= n + 5; t++) {
-          chartData.push({ year: `Ano ${t}`, dividendo: Number(currentDStage2.toFixed(2)) });
-          currentDStage2 = currentDStage2 * (1 + g2);
+          chartData.push({ year: `Ano ${t}`, dividendo: Number(currentDStage2.toFixed(4)) });
+          currentDStage2 = currentDStage2 * (1 + g2Dec);
         }
       }
 
@@ -505,6 +555,64 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                 <Zap className="w-3.5 h-3.5" />
                 Pessimista
               </button>
+              <button
+                type="button"
+                onClick={() => setIsSaveModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wider cursor-pointer select-none active-scale transition-all text-blue-400 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20"
+              >
+                <Save className="w-3.5 h-3.5" />
+                Salvar Cálculo
+              </button>
+              
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setIsLoadModalOpen(!isLoadModalOpen)}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wider cursor-pointer select-none active-scale transition-all text-amber-400 bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20"
+                >
+                  <FolderOpen className="w-3.5 h-3.5" />
+                  Carregar Salvos ({savedCalculations.filter(c => c.mode === valuationMode).length})
+                </button>
+
+                {/* DROPDOWN: Carregar Cálculo */}
+                {isLoadModalOpen && (
+                  <>
+                    {/* Overlay invisível para fechar ao clicar fora */}
+                    <div className="fixed inset-0 z-40" onClick={() => setIsLoadModalOpen(false)} />
+                    
+                    <div className="absolute top-full left-0 mt-3 z-50 w-[320px] bg-dark-card/80 backdrop-blur-md border border-dark-border rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[50vh] animate-fadeIn">
+                      <div className="flex justify-between items-center p-4 border-b border-dark-border/50">
+                        <h3 className="text-sm font-bold text-dark-textPrimary" style={{ fontFamily: 'Outfit, sans-serif' }}>Meus Cálculos Salvos</h3>
+                        <button onClick={() => setIsLoadModalOpen(false)} className="text-dark-textSecondary hover:text-dark-textPrimary transition-colors">
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <div className="p-4 overflow-y-auto space-y-2 flex-1 no-scrollbar">
+                        {savedCalculations.filter(c => c.mode === valuationMode).length === 0 ? (
+                          <div className="text-center py-6 text-dark-textSecondary text-xs">
+                            Nenhum cálculo salvo.
+                          </div>
+                        ) : (
+                          savedCalculations.filter(c => c.mode === valuationMode).map(calc => (
+                            <div key={calc.id} className="flex items-center justify-between p-3 bg-dark-bg/60 border border-dark-border/50 rounded-xl hover:border-brand-primary/50 transition-colors group cursor-pointer" onClick={() => handleLoadCalculation(calc)}>
+                              <div className="flex-1 min-w-0 pr-3">
+                                <h4 className="text-xs font-bold text-dark-textPrimary truncate">{calc.name}</h4>
+                                <span className="text-[10px] text-dark-textSecondary mt-0.5 block">
+                                  {new Date(calc.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              </div>
+                              <button onClick={(e) => { e.stopPropagation(); handleDeleteCalculation(calc.id); }} className="p-2 text-dark-textSecondary hover:text-rose-400 hover:bg-rose-400/10 rounded-lg transition-colors shrink-0" title="Excluir">
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
               <span className="text-[10px] text-dark-textSecondary ml-auto flex items-center gap-1">
                 <Lock className="w-3 h-3" /> Valores com cadeado não serão afetados
               </span>
@@ -653,10 +761,10 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                               <div key={year} className="bg-dark-bg/60 p-4 rounded-xl border border-dark-border/50">
                                 <span className="text-[10px] font-bold text-dark-textSecondary uppercase block">Ano {year} (DIV_{year})</span>
                                 <span className="text-2xs font-bold text-dark-textSecondary block mt-1">
-                                  {formatCurrency(prevVal)} × (1 + {inputs.g1.toFixed(1)}%)
+                                  {prevVal.toFixed(4)} × (1 + {inputs.g1.toFixed(4)}%)
                                 </span>
                                 <span className="text-base font-black text-emerald-400 block mt-0.5">
-                                  {formatCurrency(val)}
+                                  = {val.toFixed(4)}
                                 </span>
                               </div>
                             );
@@ -681,14 +789,23 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                         
                         <div className="bg-dark-bg/60 p-4 rounded-xl border border-dark-border/50 space-y-3">
                           {(() => {
-                            const divN = inputs.d0 * Math.pow(1 + inputs.g1 / 100, inputs.n);
-                            const pN = (divN * (1 + inputs.g2 / 100)) / (inputs.ke / 100 - inputs.g2 / 100);
+                            const g1Dec = inputs.g1 / 100;
+                            const g2Dec = inputs.g2 / 100;
+                            const kDec  = inputs.ke  / 100;
+                            const divN  = inputs.d0 * Math.pow(1 + g1Dec, inputs.n); // full precision
+                            const pN    = (divN * (1 + g2Dec)) / (kDec - g2Dec);     // full precision
                             return (
                               <>
                                 <div>
-                                  <span className="text-[10px] font-bold text-dark-textSecondary uppercase block">Valores Substituídos</span>
-                                  <p className="text-xs font-bold text-dark-textPrimary mt-1">
-                                    P_{inputs.n} = [{formatCurrency(divN)} × (1 + {inputs.g2.toFixed(1)}%)] / ({inputs.ke.toFixed(2)}% - {inputs.g2.toFixed(1)}%)
+                                  <span className="text-[10px] font-bold text-dark-textSecondary uppercase block">Valores Substituídos (4 casas decimais)</span>
+                                  <p className="text-xs font-bold text-dark-textPrimary mt-1 font-mono">
+                                    P_{inputs.n} = [{divN.toFixed(4)} × (1 + {(inputs.g2).toFixed(4)}%)] / ({(inputs.ke).toFixed(4)}% - {(inputs.g2).toFixed(4)}%)
+                                  </p>
+                                  <p className="text-2xs text-dark-textSecondary mt-1 font-mono">
+                                    = [{divN.toFixed(4)} × {(1 + g2Dec).toFixed(6)}] / {(kDec - g2Dec).toFixed(6)}
+                                  </p>
+                                  <p className="text-2xs text-dark-textSecondary mt-0.5 font-mono">
+                                    = {(divN * (1 + g2Dec)).toFixed(4)} / {(kDec - g2Dec).toFixed(6)}
                                   </p>
                                 </div>
                                 
@@ -696,6 +813,7 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                                   <span className="text-[10px] font-bold text-dark-textSecondary uppercase">Valor de Venda Terminal (P_{inputs.n})</span>
                                   <span className="text-lg font-black text-brand-primary">
                                     {formatCurrency(pN)}
+                                    <span className="text-xs font-mono text-dark-textSecondary ml-2">({pN.toFixed(4)})</span>
                                   </span>
                                 </div>
                               </>
@@ -732,26 +850,26 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                             let vpSum = 0;
                             const steps = [];
 
-                            // Estágio 1
+                            // Estágio 1 - usa potência exata (consistente com cálculo principal)
                             for (let t = 1; t <= n; t++) {
-                              const dt = d0 * Math.pow(1 + g1, t);
+                              const dt = d0 * Math.pow(1 + g1, t); // potência exata, sem acumulação
                               const vpDt = dt / Math.pow(1 + r, t);
                               vpSum += vpDt;
                               steps.push({
                                 label: `VP de DIV_${t}`,
-                                valStr: `${formatCurrency(dt)} / ${Math.pow(1 + r, t).toFixed(4)}`,
+                                valStr: `${dt.toFixed(4)} / ${Math.pow(1 + r, t).toFixed(6)}`,
                                 vp: vpDt
                               });
                             }
 
-                            // Estágio 2
-                            const divN = d0 * Math.pow(1 + g1, n);
+                            // Estágio 2 - usa potência exata
+                            const divN = d0 * Math.pow(1 + g1, n); // full precision
                             const pN = (divN * (1 + g2)) / (r - g2);
                             const vpPN = pN / Math.pow(1 + r, n);
                             vpSum += vpPN;
                             steps.push({
                               label: `VP de P_${n} (TV)`,
-                              valStr: `${formatCurrency(pN)} / ${Math.pow(1 + r, n).toFixed(4)}`,
+                              valStr: `${pN.toFixed(4)} / ${Math.pow(1 + r, n).toFixed(6)}`,
                               vp: vpPN
                             });
 
@@ -1249,6 +1367,46 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
           </div>
         </div>
       </div>
+
+      {/* MODAL: Salvar Cálculo */}
+      {isSaveModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn print:hidden">
+          <div className="bg-dark-card border border-dark-border rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center p-5 border-b border-dark-border/50">
+              <h3 className="text-lg font-bold text-dark-textPrimary" style={{ fontFamily: 'Outfit, sans-serif' }}>Salvar Cálculo</h3>
+              <button onClick={() => setIsSaveModalOpen(false)} className="text-dark-textSecondary hover:text-dark-textPrimary transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-dark-textSecondary uppercase tracking-wider mb-2">Nome do Cálculo</label>
+                <input
+                  type="text"
+                  value={saveName}
+                  onChange={(e) => setSaveName(e.target.value)}
+                  placeholder="Ex: Cenário Conservador PETR4"
+                  className="w-full bg-dark-bg border border-dark-border focus:border-brand-primary focus:ring-1 focus:ring-brand-primary outline-none rounded-xl py-3 px-4 text-sm text-dark-textPrimary transition-all"
+                  autoFocus
+                />
+                <p className="text-3xs text-dark-textSecondary mt-2">
+                  Será salvo apenas para a aba de <strong>{valuationMode === 'GORDON' ? 'Gordon' : 'Crescimento Variado'}</strong>.
+                </p>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button onClick={() => setIsSaveModalOpen(false)} className="flex-1 py-3 rounded-xl border border-dark-border text-dark-textSecondary hover:bg-dark-bg transition-colors font-bold text-xs uppercase tracking-wider">
+                  Cancelar
+                </button>
+                <button onClick={handleSaveCalculation} className="flex-1 py-3 rounded-xl bg-brand-primary hover:bg-brand-purple text-white transition-colors font-bold text-xs uppercase tracking-wider shadow-lg shadow-brand-primary/20">
+                  Salvar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* (Modal de carregar foi movido para virar dropdown logo abaixo do botão) */}
     </>
   );
 };
