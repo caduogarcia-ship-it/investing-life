@@ -87,16 +87,6 @@
   .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl, .shadow-2xl, .shadow-premium {
     box-shadow: none !important;
   }
-
-  /* Remove all "vibecoding" gradients globally */
-  .bg-gradient-to-r, .bg-gradient-to-tr, .bg-gradient-to-br, .bg-gradient-to-b, .bg-gradient-to-l, .bg-gradient-to-tl, .bg-gradient-to-bl {
-    background-image: none !important;
-  }
-
-  /* Remove glassmorphism */
-  .backdrop-blur-sm, .backdrop-blur-md, .backdrop-blur-lg, .backdrop-blur-xl, .backdrop-blur-2xl, .backdrop-blur {
-    backdrop-filter: none !important;
-  }
 }
 
 :root {
