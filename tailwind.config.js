@@ -9,24 +9,31 @@ export default {
     extend: {
       colors: {
         dark: {
-          bg: '#0F172A',       // Softer Slate 900 background
-          card: '#1E293B',     // Softer Slate 800 card
-          cardHover: '#334155',// Card hover
-          border: '#334155',   // Slate border
+          bg: '#0B1426',       // Deep Navy
+          card: '#141E30',     // Premium Card Dark
+          cardHover: '#1E293B',// Card hover
+          border: '#1E293B',   // Subtle border
           textPrimary: '#F8FAFC', // White text
           textSecondary: '#94A3B8', // Gray text
         },
         brand: {
-          primary: '#3B82F6',   // Blue
+          primary: '#6366F1',   // Indigo
           success: '#10B981',   // Emerald
           danger: '#EF4444',    // Red
           warning: '#F59E0B',   // Amber
-          info: '#3B82F6',      // Blue
-          purple: '#60A5FA'     // Light Blue
+          info: '#6366F1',      // Indigo
+          purple: '#8B5CF6'     // Violet
         }
       },
       fontFamily: {
-        sans: ['Inter', 'Plus Jakarta Sans', 'sans-serif'],
+        sans: ['Geist', 'Inter', 'Outfit', 'sans-serif'],
+      },
+      boxShadow: {
+        'premium': '0 1px 2px rgba(10, 20, 40, 0.3), 0 4px 12px rgba(99, 102, 241, 0.08), 0 12px 40px rgba(10, 20, 40, 0.25)',
+        'premium-hover': '0 1px 2px rgba(10, 20, 40, 0.3), 0 8px 24px rgba(99, 102, 241, 0.12), 0 16px 48px rgba(10, 20, 40, 0.3)'
+      },
+      transitionTimingFunction: {
+        'organic': 'cubic-bezier(0.22, 1, 0.36, 1)',
       }
     },
   },

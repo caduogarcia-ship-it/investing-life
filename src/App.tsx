@@ -361,7 +361,7 @@ export default function App() {
 
         {/* Error Alert */}
         {error && (activeTab === 'analise' || activeTab === 'candles') && (
-          <div className="p-4.5 bg-rose-950/20 border border-brand-danger/30 text-brand-danger rounded-2xl flex items-center gap-3.5 shadow-lg">
+          <div className="p-4.5 bg-rose-950/20 border border-brand-danger/30 text-brand-danger rounded-xl flex items-center gap-3.5 shadow-premium">
             <AlertCircle className="w-5 h-5 shrink-0" />
             <div className="flex-1 text-sm">{error}</div>
             <button 
@@ -375,7 +375,7 @@ export default function App() {
 
         {/* Watchlist Strip (Horizontal Watchlist Bar) - Displayed in Analysis Detail and Candles Tabs */}
         {((activeTab === 'analise' && showDetail) || activeTab === 'candles') && (
-          <div className="bg-dark-card border border-dark-border rounded-2xl p-5 shadow-lg flex items-center gap-4 overflow-x-auto select-none no-scrollbar print:hidden">
+          <div className="bg-dark-card border border-dark-border rounded-xl p-5 shadow-premium flex items-center gap-4 overflow-x-auto select-none no-scrollbar print:hidden">
             <div className="flex items-center gap-2 text-xs font-bold text-dark-textSecondary uppercase tracking-wider shrink-0 pr-4 border-r border-dark-border/40">
               <FolderHeart className="w-4.5 h-4.5 text-brand-purple" />
               <span>Painel de Estudos</span>
@@ -474,13 +474,13 @@ export default function App() {
           <CandleAnalysis ticker={ticker} />
         ) : loading ? (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-pulse">
-            <div className="lg:col-span-4 h-64 bg-dark-card border border-dark-border rounded-2xl" />
-            <div className="lg:col-span-8 h-64 bg-dark-card border border-dark-border rounded-2xl" />
-            <div className="lg:col-span-12 h-28 bg-dark-card border border-dark-border rounded-2xl" />
+            <div className="lg:col-span-4 h-64 bg-dark-card border border-dark-border rounded-xl" />
+            <div className="lg:col-span-8 h-64 bg-dark-card border border-dark-border rounded-xl" />
+            <div className="lg:col-span-12 h-28 bg-dark-card border border-dark-border rounded-xl" />
           </div>
         ) : tickerNotFound ? (
           <div className="max-w-3xl mx-auto py-12 px-4 text-center space-y-8 animate-fadeIn">
-            <div className="inline-flex p-4.5 bg-brand-purple/10 border border-brand-purple/20 text-brand-purple rounded-3xl shadow-lg relative">
+            <div className="inline-flex p-4.5 bg-brand-purple/10 border border-brand-purple/20 text-brand-purple rounded-3xl shadow-premium relative">
               <Compass className="w-10 h-10 animate-pulse" />
             </div>
             
@@ -500,7 +500,7 @@ export default function App() {
                   <button
                     key={suggestion.symbol}
                     onClick={() => setTicker(suggestion.symbol)}
-                    className="p-5 bg-dark-card border border-dark-border hover:border-brand-primary/45 rounded-2xl text-left transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-brand-primary/5 group flex items-center justify-between"
+                    className="p-5 bg-dark-card border border-dark-border hover:border-brand-primary/45 rounded-xl text-left transition-all hover:-translate-y-1 hover:shadow-premium hover:shadow-brand-primary/5 group flex items-center justify-between"
                   >
                     <div className="space-y-1 truncate pr-3">
                       <span className="font-mono font-black text-lg text-dark-textPrimary group-hover:text-brand-primary transition-colors tracking-wide">

@@ -294,7 +294,7 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
       {/* ═══════════════════════════════════════════════ */}
       {/* HEADER CARD                                     */}
       {/* ═══════════════════════════════════════════════ */}
-      <div className="relative overflow-hidden rounded-2xl border border-dark-border shadow-xl" style={{ background: 'linear-gradient(135deg, rgba(17,24,39,0.95), rgba(15,18,30,0.98))' }}>
+      <div className="relative overflow-hidden rounded-xl border border-dark-border shadow-xl" style={{ background: 'linear-gradient(135deg, rgba(17,24,39,0.95), rgba(15,18,30,0.98))' }}>
         <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%)' }} />
         
         <div className="relative z-10 p-7 flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -319,7 +319,7 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                 onClick={() => setValuationMode('GORDON')}
                 className={`px-5 py-2.5 rounded-lg text-xs font-extrabold uppercase tracking-wider transition-all duration-300 cursor-pointer ${
                   valuationMode === 'GORDON'
-                    ? 'text-white shadow-lg'
+                    ? 'text-white shadow-premium'
                     : 'text-dark-textSecondary hover:text-dark-textPrimary'
                 }`}
                 style={valuationMode === 'GORDON' ? { background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', boxShadow: '0 4px 14px rgba(99,102,241,0.35)' } : {}}
@@ -330,7 +330,7 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                 onClick={() => setValuationMode('VARIADO')}
                 className={`px-5 py-2.5 rounded-lg text-xs font-extrabold uppercase tracking-wider transition-all duration-300 cursor-pointer ${
                   valuationMode === 'VARIADO'
-                    ? 'text-white shadow-lg'
+                    ? 'text-white shadow-premium'
                     : 'text-dark-textSecondary hover:text-dark-textPrimary'
                 }`}
                 style={valuationMode === 'VARIADO' ? { background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', boxShadow: '0 4px 14px rgba(99,102,241,0.35)' } : {}}
@@ -356,7 +356,7 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
           <div className="lg:col-span-2 space-y-6">
             
             {/* Auto-fill Preset Buttons */}
-            <div className="flex flex-wrap items-center gap-3 bg-dark-card border border-dark-border p-4 rounded-2xl shadow-sm">
+            <div className="flex flex-wrap items-center gap-3 bg-dark-card border border-dark-border p-4 rounded-xl shadow-sm">
               <button
                 type="button"
                 onClick={() => setIsSaveModalOpen(true)}
@@ -382,7 +382,7 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                     {/* Overlay invisível para fechar ao clicar fora */}
                     <div className="fixed inset-0 z-40" onClick={() => setIsLoadModalOpen(false)} />
                     
-                    <div className="absolute top-full left-0 mt-3 z-50 w-[320px] bg-dark-card/80 backdrop-blur-md border border-dark-border rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[50vh] animate-fadeIn">
+                    <div className="absolute top-full left-0 mt-3 z-50 w-[320px] bg-dark-card/80 backdrop-blur-md border border-dark-border rounded-xl shadow-premium overflow-hidden flex flex-col max-h-[50vh] animate-fadeIn">
                       <div className="flex justify-between items-center p-4 border-b border-dark-border/50">
                         <h3 className="text-sm font-bold text-dark-textPrimary" style={{ fontFamily: 'Outfit, sans-serif' }}>Meus Cálculos Salvos</h3>
                         <button onClick={() => setIsLoadModalOpen(false)} className="text-dark-textSecondary hover:text-dark-textPrimary transition-colors">
@@ -420,7 +420,7 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
               </span>
             </div>
 
-            <div className="bg-dark-card border border-dark-border rounded-2xl shadow-lg overflow-hidden">
+            <div className="bg-dark-card border border-dark-border rounded-xl shadow-premium overflow-hidden">
               <div className="px-6 py-4 flex items-center gap-2.5" style={{ borderBottom: '1px solid rgba(31,41,55,0.6)', background: 'linear-gradient(90deg, rgba(99,102,241,0.04), transparent)' }}>
                 <div className="p-1.5 rounded-lg" style={{ background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.2)' }}>
                   <Sliders className="w-4 h-4 text-brand-purple" />
@@ -528,7 +528,7 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                 </div>
 
                 {!calc.isValid ? (
-                  <div className="bg-brand-danger/10 border-2 border-brand-danger/30 rounded-2xl p-5 shadow-lg">
+                  <div className="bg-brand-danger/10 border-2 border-brand-danger/30 rounded-xl p-5 shadow-premium">
                     <div className="flex items-center gap-3">
                       <AlertTriangle className="w-6 h-6 text-brand-danger shrink-0" />
                       <div>
@@ -542,7 +542,7 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                 ) : (
                   <div className="space-y-6">
                     {/* Passo 1 Card */}
-                    <div className="bg-dark-card border border-dark-border rounded-2xl p-6 shadow-lg space-y-4">
+                    <div className="bg-dark-card border border-dark-border rounded-xl p-6 shadow-premium space-y-4">
                       <div className="flex items-center gap-2 border-b border-dark-border/40 pb-3">
                         <span className="w-6 h-6 rounded-md flex items-center justify-center text-2xs font-black text-brand-purple bg-brand-purple/10 border border-brand-purple/20">1</span>
                         <h4 className="text-xs font-black text-dark-textPrimary uppercase tracking-wider" style={{ fontFamily: 'Outfit, sans-serif' }}>
@@ -577,7 +577,7 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                     </div>
 
                     {/* Passo 2 Card */}
-                    <div className="bg-dark-card border border-dark-border rounded-2xl p-6 shadow-lg space-y-4">
+                    <div className="bg-dark-card border border-dark-border rounded-xl p-6 shadow-premium space-y-4">
                       <div className="flex items-center gap-2 border-b border-dark-border/40 pb-3">
                         <span className="w-6 h-6 rounded-md flex items-center justify-center text-2xs font-black text-brand-primary bg-brand-primary/10 border border-brand-primary/20">2</span>
                         <h4 className="text-xs font-black text-dark-textPrimary uppercase tracking-wider" style={{ fontFamily: 'Outfit, sans-serif' }}>
@@ -627,7 +627,7 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                     </div>
 
                     {/* Passo 3 Card */}
-                    <div className="bg-dark-card border border-dark-border rounded-2xl p-6 shadow-lg space-y-4">
+                    <div className="bg-dark-card border border-dark-border rounded-xl p-6 shadow-premium space-y-4">
                       <div className="flex items-center gap-2 border-b border-dark-border/40 pb-3">
                         <span className="w-6 h-6 rounded-md flex items-center justify-center text-2xs font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">3</span>
                         <h4 className="text-xs font-black text-dark-textPrimary uppercase tracking-wider" style={{ fontFamily: 'Outfit, sans-serif' }}>
@@ -695,7 +695,7 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                                   </p>
                                 </div>
 
-                                <div className="flex flex-col items-center justify-center p-6 bg-emerald-500/10 border-2 border-emerald-500/20 rounded-2xl shadow-[0_0_15px_rgba(16,185,129,0.15)] text-center gap-2 mt-4">
+                                <div className="flex flex-col items-center justify-center p-6 bg-emerald-500/10 border-2 border-emerald-500/20 rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.15)] text-center gap-2 mt-4">
                                   <span className="text-xs font-black text-emerald-400 uppercase tracking-widest">
                                     Preço Justo Final (P₀)
                                   </span>
@@ -727,7 +727,7 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                 </div>
 
                 {!calc.isValid ? (
-                  <div className="bg-brand-danger/10 border-2 border-brand-danger/30 rounded-2xl p-5 shadow-lg">
+                  <div className="bg-brand-danger/10 border-2 border-brand-danger/30 rounded-xl p-5 shadow-premium">
                     <div className="flex items-center gap-3">
                       <AlertTriangle className="w-6 h-6 text-brand-danger shrink-0" />
                       <div>
@@ -740,7 +740,7 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                   </div>
                 ) : (
                   <div className="space-y-6">
-                    <div className="bg-dark-card border border-dark-border rounded-2xl p-6 shadow-lg space-y-4">
+                    <div className="bg-dark-card border border-dark-border rounded-xl p-6 shadow-premium space-y-4">
                       <div className="flex items-center gap-2 border-b border-dark-border/40 pb-3">
                         <span className="w-6 h-6 rounded-md flex items-center justify-center text-2xs font-black text-brand-primary bg-brand-primary/10 border border-brand-primary/20">1</span>
                         <h4 className="text-xs font-black text-dark-textPrimary uppercase tracking-wider" style={{ fontFamily: 'Outfit, sans-serif' }}>
@@ -779,7 +779,7 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                             </p>
                           </div>
 
-                          <div className="flex flex-col items-center justify-center p-6 bg-emerald-500/10 border-2 border-emerald-500/20 rounded-2xl shadow-[0_0_15px_rgba(16,185,129,0.15)] text-center gap-2 mt-4">
+                          <div className="flex flex-col items-center justify-center p-6 bg-emerald-500/10 border-2 border-emerald-500/20 rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.15)] text-center gap-2 mt-4">
                             <span className="text-xs font-black text-emerald-400 uppercase tracking-widest">
                               Preço Justo Final (P₀)
                             </span>
@@ -796,7 +796,7 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
             )}
 
             {/* Bloco de Justificativas Editáveis */}
-            <div className="bg-dark-card border border-dark-border rounded-2xl p-6 shadow-lg space-y-5 animate-fadeIn">
+            <div className="bg-dark-card border border-dark-border rounded-xl p-6 shadow-premium space-y-5 animate-fadeIn">
               <div className="flex items-center justify-between border-b border-dark-border/40 pb-3">
                 <div className="flex items-center gap-2">
                   <span className="p-1.5 rounded-lg bg-brand-primary/10 border border-brand-primary/20">
@@ -883,7 +883,7 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
           <div className="space-y-6">
             
             {/* Painel de Resultados Intermediários */}
-            <div className="bg-dark-card border border-dark-border rounded-2xl p-6 shadow-lg space-y-6">
+            <div className="bg-dark-card border border-dark-border rounded-xl p-6 shadow-premium space-y-6">
               <h3 className="text-xs font-extrabold text-dark-textSecondary uppercase tracking-wider text-center border-b border-dark-border/40 pb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
                 Valores Calculados em 2º Plano
               </h3>
@@ -916,7 +916,7 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
 
             {/* Painel de Erro ou Preço Justo */}
             {!calc.isValid ? (
-              <div className="bg-brand-danger/10 border-2 border-brand-danger/30 rounded-2xl p-6 shadow-xl animate-fadeIn">
+              <div className="bg-brand-danger/10 border-2 border-brand-danger/30 rounded-xl p-6 shadow-xl animate-fadeIn">
                 <div className="flex flex-col items-center text-center gap-4">
                   <div className="w-16 h-16 rounded-full bg-brand-danger/20 flex items-center justify-center border border-brand-danger/30 shadow-[0_0_15px_rgba(239,68,68,0.3)]">
                     <AlertTriangle className="w-8 h-8 text-brand-danger" />
@@ -933,7 +933,7 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                 </div>
               </div>
             ) : (
-              <div className="relative rounded-2xl p-1 overflow-hidden group shadow-2xl animate-fadeIn">
+              <div className="relative rounded-xl p-1 overflow-hidden group shadow-premium animate-fadeIn">
                 {/* Animated border gradient */}
                 <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 via-brand-primary to-brand-purple opacity-70 group-hover:opacity-100 transition-opacity duration-500" />
                 <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 via-brand-primary to-brand-purple blur-md opacity-30 group-hover:opacity-60 transition-opacity duration-500" />
@@ -958,7 +958,7 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
             )}
 
             {/* Glossário Dinâmico */}
-            <div className="bg-dark-card border border-dark-border rounded-2xl p-6 shadow-lg space-y-4">
+            <div className="bg-dark-card border border-dark-border rounded-xl p-6 shadow-premium space-y-4">
               <h3 className="text-xs font-extrabold text-brand-purple uppercase tracking-wider border-b border-dark-border/40 pb-2 mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
                 Fundamentação do Modelo
               </h3>
@@ -1001,7 +1001,7 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
             {/* Print / Export PDF Button */}
             <button
               onClick={() => window.print()}
-              className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl text-sm font-extrabold uppercase tracking-wider text-white shadow-lg transition-all hover:scale-[1.02] active:scale-95 print:hidden"
+              className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl text-sm font-extrabold uppercase tracking-wider text-white shadow-premium transition-all hover:scale-[1.02] active:scale-95 print:hidden"
               style={{ background: 'linear-gradient(135deg, #10b981, #059669)', boxShadow: '0 4px 14px rgba(16,185,129,0.35)' }}
             >
               <Printer className="w-5 h-5" />
@@ -1014,7 +1014,7 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
       {/* GRÁFICO FINAL                                   */}
       {/* ═══════════════════════════════════════════════ */}
       {calc.isValid && (
-        <div className="bg-dark-card border border-dark-border rounded-2xl p-6 shadow-lg animate-fadeIn">
+        <div className="bg-dark-card border border-dark-border rounded-xl p-6 shadow-premium animate-fadeIn">
           <div className="flex items-center gap-3 mb-8">
             <div className="p-2 bg-brand-primary/10 rounded-lg border border-brand-primary/20">
               <Calculator className="w-5 h-5 text-brand-primary" />
@@ -1151,7 +1151,7 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                 <p className="text-2xl font-black font-mono text-teal-900">{currencySymbol} {calc.vpTV.toFixed(2)}</p>
               </div>
               <div className="text-2xl font-black text-gray-400">=</div>
-              <div className="flex-1 bg-gray-900 p-6 rounded-xl text-center shadow-lg print:border print:border-gray-800 print:bg-white print:text-black">
+              <div className="flex-1 bg-gray-900 p-6 rounded-xl text-center shadow-premium print:border print:border-gray-800 print:bg-white print:text-black">
                 <p className="text-sm font-bold print:text-black text-white mb-2">Preço Justo Final</p>
                 <p className="text-xs print:text-gray-600 text-gray-400 mb-2">(P₀)</p>
                 <p className="text-2xl font-black font-mono print:text-black text-emerald-400">{currencySymbol} {calc.p0.toFixed(2)}</p>
@@ -1162,7 +1162,7 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
 
         {/* Gráfico no Print */}
         {calc.isValid && (
-           <div className="mt-8 border border-gray-200 rounded-2xl p-6 bg-white break-inside-avoid">
+           <div className="mt-8 border border-gray-200 rounded-xl p-6 bg-white break-inside-avoid">
              <h3 className="text-base font-bold text-gray-800 mb-4 text-center">
                 Projeção de Dividendos ({valuationMode === 'GORDON' ? 'Crescimento Constante' : 'Estágio 1 + Perpetuidade'})
              </h3>
@@ -1256,7 +1256,7 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
       {/* MODAL: Salvar Cálculo */}
       {isSaveModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn print:hidden">
-          <div className="bg-dark-card border border-dark-border rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
+          <div className="bg-dark-card border border-dark-border rounded-xl shadow-premium w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center p-5 border-b border-dark-border/50">
               <h3 className="text-lg font-bold text-dark-textPrimary" style={{ fontFamily: 'Outfit, sans-serif' }}>Salvar Cálculo</h3>
               <button onClick={() => setIsSaveModalOpen(false)} className="text-dark-textSecondary hover:text-dark-textPrimary transition-colors">
@@ -1282,7 +1282,7 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                 <button onClick={() => setIsSaveModalOpen(false)} className="flex-1 py-3 rounded-xl border border-dark-border text-dark-textSecondary hover:bg-dark-bg transition-colors font-bold text-xs uppercase tracking-wider">
                   Cancelar
                 </button>
-                <button onClick={handleSaveCalculation} className="flex-1 py-3 rounded-xl bg-brand-primary hover:bg-brand-purple text-white transition-colors font-bold text-xs uppercase tracking-wider shadow-lg shadow-brand-primary/20">
+                <button onClick={handleSaveCalculation} className="flex-1 py-3 rounded-xl bg-brand-primary hover:bg-brand-purple text-white transition-colors font-bold text-xs uppercase tracking-wider shadow-premium shadow-brand-primary/20">
                   Salvar
                 </button>
               </div>

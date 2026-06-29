@@ -62,7 +62,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <div 
-      className={`h-screen bg-gradient-to-r from-dark-card/95 to-dark-card/20 backdrop-blur-xl border-r border-dark-border/30 flex flex-col transition-all duration-300 ease-in-out select-none relative z-50 shadow-2xl ${
+      className={`h-screen bg-gradient-to-r from-dark-card/95 to-dark-card/20 backdrop-blur-xl border-r border-dark-border/30 flex flex-col transition-all duration-300 ease-in-out select-none relative z-50 shadow-premium ${
         isExpanded ? 'w-64' : 'w-20'
       }`}
       style={{ fontFamily: 'Outfit, sans-serif' }}
@@ -70,14 +70,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Toggle Button */}
       <button 
         onClick={() => setIsExpanded(!isExpanded)}
-        className="absolute -right-3 top-6 bg-dark-bg border border-dark-border text-dark-textSecondary hover:text-white rounded-full p-1.5 shadow-lg z-50 transition-colors"
+        className="absolute -right-3 top-6 bg-dark-bg border border-dark-border text-dark-textSecondary hover:text-white rounded-full p-1.5 shadow-premium z-50 transition-colors"
       >
         {isExpanded ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
       </button>
 
       {/* Logo Area */}
       <div className={`p-6 flex items-center ${isExpanded ? 'justify-start' : 'justify-center'} border-b border-dark-border/40 gap-3`}>
-        <div className="p-2 bg-gradient-to-tr from-brand-primary to-brand-purple rounded-xl shadow-lg shrink-0">
+        <div className="p-2 bg-gradient-to-tr from-brand-primary to-brand-purple rounded-xl shadow-premium shrink-0">
           <BarChart2 className="w-5 h-5 text-white" />
         </div>
         {isExpanded && (

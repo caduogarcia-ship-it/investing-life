@@ -136,7 +136,7 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({
   return (
     <div className="space-y-8 animate-fadeIn">
       {showGuide && (
-        <div className="bg-gradient-to-r from-brand-primary/10 to-brand-purple/5 border border-brand-primary/20 rounded-2xl p-6 relative shadow-lg animate-fadeIn">
+        <div className="bg-gradient-to-r from-brand-primary/10 to-brand-purple/5 border border-brand-primary/20 rounded-xl p-6 relative shadow-premium animate-fadeIn">
           <button
             onClick={() => {
               setShowGuide(false);
@@ -207,7 +207,7 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({
       )}
 
       {/* Top Banner and Aggregates */}
-      <div className="bg-dark-card border border-dark-border rounded-2xl p-6 shadow-lg flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+      <div className="bg-dark-card border border-dark-border rounded-xl p-6 shadow-premium flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
         <div>
           <span style={{ fontSize: '11px', fontFamily: 'Outfit, sans-serif', color: '#94a3b8', fontWeight: 600 }}>{getGreeting()}, investidor</span>
           <h2 className="text-xl font-extrabold text-dark-textPrimary tracking-tight" style={{ fontFamily: 'Outfit, sans-serif' }}>Painel Geral de Ativos</h2>
@@ -217,7 +217,7 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({
         <div className="flex items-center gap-3.5 w-full lg:w-auto">
           <button
             onClick={onOpenAddModal}
-            className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-5 py-3 bg-brand-primary text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-brand-primary/10 hover:shadow-brand-primary/20 transition-all cursor-pointer active-scale"
+            className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-5 py-3 bg-brand-primary text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-premium shadow-brand-primary/10 hover:shadow-brand-primary/20 transition-all cursor-pointer active-scale"
           >
             <Plus className="w-4 h-4" />
             Adicionar Ativo
@@ -228,14 +228,14 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({
       {/* Aggregate Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {/* Card 1: Watchlist Count */}
-        <div className="bg-dark-card border border-dark-border rounded-2xl p-5 shadow-md hover-lift" style={{ borderTop: '2px solid #8b5cf6' }}>
+        <div className="bg-dark-card border border-dark-border rounded-xl p-5 shadow-md hover-lift" style={{ borderTop: '2px solid #8b5cf6' }}>
           <span className="text-3xs font-bold text-dark-textSecondary uppercase tracking-wider block" style={{ fontFamily: 'Outfit, sans-serif' }}>Ativos em Estudo</span>
           <span className="text-2xl font-black text-dark-textPrimary font-mono mt-1 block" style={{ fontFamily: 'JetBrains Mono, monospace' }}>{watchlist.length}</span>
           <span className="text-4xs text-dark-textSecondary block mt-0.5" style={{ fontFamily: 'Outfit, sans-serif' }}>tickers monitorados</span>
         </div>
 
         {/* Card 2: Portfolio Cost */}
-        <div className="bg-dark-card border border-dark-border rounded-2xl p-5 shadow-md hover-lift" style={{ borderTop: '2px solid #6366f1' }}>
+        <div className="bg-dark-card border border-dark-border rounded-xl p-5 shadow-md hover-lift" style={{ borderTop: '2px solid #6366f1' }}>
           <span className="text-3xs font-bold text-dark-textSecondary uppercase tracking-wider block" style={{ fontFamily: 'Outfit, sans-serif' }}>Total Investido (Custo)</span>
           <span className="text-2xl font-black text-dark-textPrimary font-mono mt-1 block" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
             R$ {totalCost.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -244,7 +244,7 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({
         </div>
 
         {/* Card 3: Portfolio Current Value */}
-        <div className="bg-dark-card border border-dark-border rounded-2xl p-5 shadow-md hover-lift" style={{ borderTop: '2px solid #10b981' }}>
+        <div className="bg-dark-card border border-dark-border rounded-xl p-5 shadow-md hover-lift" style={{ borderTop: '2px solid #10b981' }}>
           <span className="text-3xs font-bold text-dark-textSecondary uppercase tracking-wider block" style={{ fontFamily: 'Outfit, sans-serif' }}>Valor Atual da Carteira</span>
           <span className="text-2xl font-black text-brand-primary font-mono mt-1 block" style={{ fontFamily: 'JetBrains Mono, monospace' }}>
             R$ {totalCurrent.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -253,7 +253,7 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({
         </div>
 
         {/* Card 4: Profit/Loss */}
-        <div className="bg-dark-card border border-dark-border rounded-2xl p-5 shadow-md hover-lift" style={{ borderTop: `2px solid ${totalProfit >= 0 ? '#10b981' : '#ef4444'}` }}>
+        <div className="bg-dark-card border border-dark-border rounded-xl p-5 shadow-md hover-lift" style={{ borderTop: `2px solid ${totalProfit >= 0 ? '#10b981' : '#ef4444'}` }}>
           <span className="text-3xs font-bold text-dark-textSecondary uppercase tracking-wider block" style={{ fontFamily: 'Outfit, sans-serif' }}>Retorno Consolidado (P&L)</span>
           <span className={`text-2xl font-black font-mono mt-1 block ${totalProfit >= 0 ? 'text-brand-success' : 'text-brand-danger'}`} style={{ fontFamily: 'JetBrains Mono, monospace' }}>
             R$ {totalProfit.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -268,7 +268,7 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
         
         {/* Watchlist Section */}
-        <div className="bg-dark-card border border-dark-border rounded-2xl p-6 shadow-xl flex flex-col justify-between space-y-6">
+        <div className="bg-dark-card border border-dark-border rounded-xl p-6 shadow-premium flex flex-col justify-between space-y-6">
           <div className="flex items-center justify-between border-b border-dark-border/45 pb-3">
             <h3 className="text-sm font-bold text-dark-textPrimary flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
               <Bookmark className="w-4.5 h-4.5 text-brand-purple" />
@@ -355,7 +355,7 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({
         </div>
 
         {/* Portfolio Section */}
-        <div className="bg-dark-card border border-dark-border rounded-2xl p-6 shadow-xl flex flex-col justify-between space-y-6">
+        <div className="bg-dark-card border border-dark-border rounded-xl p-6 shadow-premium flex flex-col justify-between space-y-6">
           <div className="flex items-center justify-between border-b border-dark-border/45 pb-3">
             <h3 className="text-sm font-bold text-dark-textPrimary flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
               <Briefcase className="w-4.5 h-4.5 text-brand-primary" />
@@ -465,14 +465,14 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({
         </div>
 
         {loadingMoves && marketMoves.length === 0 ? (
-          <div className="py-20 text-center flex flex-col items-center gap-2 bg-dark-card border border-dark-border rounded-2xl">
+          <div className="py-20 text-center flex flex-col items-center gap-2 bg-dark-card border border-dark-border rounded-xl">
             <Loader2 className="w-8 h-8 text-brand-primary animate-spin" />
             <span className="text-3xs font-bold text-dark-textSecondary">Consultando cotações e variações da B3...</span>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
             {/* Maiores Altas */}
-            <div className="bg-dark-card border border-dark-border rounded-2xl p-6 shadow-xl flex flex-col justify-between space-y-6">
+            <div className="bg-dark-card border border-dark-border rounded-xl p-6 shadow-premium flex flex-col justify-between space-y-6">
               <div className="flex items-center justify-between border-b border-dark-border/45 pb-3">
                 <h4 className="text-xs font-bold text-brand-success flex items-center gap-1.5" style={{ fontFamily: 'Outfit, sans-serif' }}>
                   <ArrowUpRight className="w-4.5 h-4.5" />
@@ -523,7 +523,7 @@ export const HomeOverview: React.FC<HomeOverviewProps> = ({
             </div>
 
             {/* Maiores Quedas */}
-            <div className="bg-dark-card border border-dark-border rounded-2xl p-6 shadow-xl flex flex-col justify-between space-y-6">
+            <div className="bg-dark-card border border-dark-border rounded-xl p-6 shadow-premium flex flex-col justify-between space-y-6">
               <div className="flex items-center justify-between border-b border-dark-border/45 pb-3">
                 <h4 className="text-xs font-bold text-brand-danger flex items-center gap-1.5" style={{ fontFamily: 'Outfit, sans-serif' }}>
                   <ArrowDownRight className="w-4.5 h-4.5" />
