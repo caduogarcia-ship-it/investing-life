@@ -713,6 +713,88 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                 )}
               </div>
             )}
+
+            {/* Cards de Passo a Passo do Crescimento Constante (Gordon) */}
+            {valuationMode === 'GORDON' && (
+              <div className="space-y-6 animate-fadeIn">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                    <TrendingUp className="w-5 h-5 text-emerald-400" />
+                  </div>
+                  <h3 className="text-sm font-extrabold text-dark-textPrimary uppercase tracking-wider" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                    Demonstração Passo a Passo do Cálculo (Crescimento Constante)
+                  </h3>
+                </div>
+
+                {!calc.isValid ? (
+                  <div className="bg-brand-danger/10 border-2 border-brand-danger/30 rounded-2xl p-5 shadow-lg">
+                    <div className="flex items-center gap-3">
+                      <AlertTriangle className="w-6 h-6 text-brand-danger shrink-0" />
+                      <div>
+                        <h4 className="text-xs font-black text-brand-danger uppercase tracking-wide">Premissa Inválida para o Passo a Passo</h4>
+                        <p className="text-2xs text-dark-textSecondary mt-1 leading-relaxed">
+                          O Custo de Capital (k) deve ser estritamente maior que a Taxa de Crescimento Constante (g) para que o modelo de Gordon seja aplicável.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="bg-dark-card border border-dark-border rounded-2xl p-6 shadow-lg space-y-4">
+                      <div className="flex items-center gap-2 border-b border-dark-border/40 pb-3">
+                        <span className="w-6 h-6 rounded-md flex items-center justify-center text-2xs font-black text-brand-primary bg-brand-primary/10 border border-brand-primary/20">1</span>
+                        <h4 className="text-xs font-black text-dark-textPrimary uppercase tracking-wider" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                          Passo 1: Aplicação da Fórmula de Gordon
+                        </h4>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <div className="bg-dark-bg/40 p-3 rounded-lg border border-dark-border/30">
+                          <p className="text-xs font-bold text-dark-textSecondary font-mono">Fórmula de Gordon: P₀ = D₁ / (k - g)</p>
+                        </div>
+                        
+                        <div className="bg-dark-bg/60 p-4 rounded-xl border border-dark-border/50 space-y-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div className="bg-dark-bg/55 p-3 rounded-lg border border-dark-border/40">
+                              <span className="text-[9px] font-bold text-dark-textSecondary uppercase block">Dividendo Projetado (D₁)</span>
+                              <span className="text-sm font-extrabold text-dark-textPrimary block mt-0.5">{formatCurrency(inputs.d1)}</span>
+                            </div>
+                            <div className="bg-dark-bg/55 p-3 rounded-lg border border-dark-border/40">
+                              <span className="text-[9px] font-bold text-dark-textSecondary uppercase block">Custo de Capital (k)</span>
+                              <span className="text-sm font-extrabold text-brand-danger block mt-0.5">{calc.kPerc.toFixed(4)}%</span>
+                            </div>
+                            <div className="bg-dark-bg/55 p-3 rounded-lg border border-dark-border/40">
+                              <span className="text-[9px] font-bold text-dark-textSecondary uppercase block">Crescimento Constante (g)</span>
+                              <span className="text-sm font-extrabold text-brand-success block mt-0.5">{calc.gPerc.toFixed(4)}%</span>
+                            </div>
+                          </div>
+
+                          <div className="bg-dark-bg/60 p-4 rounded-xl border border-dark-border/50 space-y-2 mt-4">
+                            <span className="text-[10px] font-bold text-dark-textSecondary uppercase block">Resolução Matemática</span>
+                            <p className="text-xs font-bold text-dark-textSecondary leading-relaxed font-mono">
+                              P₀ = {formatCurrency(inputs.d1)} / ({(calc.kPerc / 100).toFixed(4)} - {(calc.gPerc / 100).toFixed(4)})
+                            </p>
+                            <p className="text-xs font-bold text-dark-textSecondary leading-relaxed font-mono">
+                              P₀ = {formatCurrency(inputs.d1)} / {((calc.kPerc - calc.gPerc) / 100).toFixed(6)}
+                            </p>
+                          </div>
+
+                          <div className="flex flex-col items-center justify-center p-6 bg-emerald-500/10 border-2 border-emerald-500/20 rounded-2xl shadow-[0_0_15px_rgba(16,185,129,0.15)] text-center gap-2 mt-4">
+                            <span className="text-xs font-black text-emerald-400 uppercase tracking-widest">
+                              Preço Justo Final (P₀)
+                            </span>
+                            <span className="text-4xl font-black text-emerald-400 font-mono">
+                              {formatCurrency(calc.p0)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Bloco de Justificativas Editáveis */}
             <div className="bg-dark-card border border-dark-border rounded-2xl p-6 shadow-lg space-y-5 animate-fadeIn">
               <div className="flex items-center justify-between border-b border-dark-border/40 pb-3">
