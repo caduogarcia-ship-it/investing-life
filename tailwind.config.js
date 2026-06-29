@@ -9,12 +9,12 @@ export default {
     extend: {
       colors: {
         dark: {
-          bg: '#000000',       // Pure Black
-          card: '#09090B',     // Zinc 950
-          cardHover: '#18181B',// Zinc 900
-          border: '#27272A',   // Zinc 800
-          textPrimary: '#FAFAFA', // Zinc 50
-          textSecondary: '#A1A1AA', // Zinc 400
+          bg: '#1E2430',       // Cor de chumbo principal
+          card: '#13171F',     // Chumbo escuro para os cartões
+          cardHover: '#1B212D',// Hover dos cartões
+          border: '#2A3441',   // Bordas visíveis
+          textPrimary: '#FAFAFA', 
+          textSecondary: '#94A3B8', // Slate 400
         },
         brand: {
           primary: '#3B82F6',   // Vivid Blue

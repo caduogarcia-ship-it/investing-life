@@ -74,15 +74,7 @@
     font-variant-numeric: tabular-nums;
   }
 
-  /* Force Terminal/Institutional flat design globally */
-  .rounded-md, .rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl, .rounded-full {
-    border-radius: 4px !important;
-  }
-  
-  /* Buttons can be slightly rounded or flat, let's keep everything 4px */
-  button {
-    border-radius: 2px !important;
-  }
+  /* Removido o block de force terminal/institutional design para permitir bordas arredondadas novamente */
 
   .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl, .shadow-2xl, .shadow-premium {
     box-shadow: none !important;
