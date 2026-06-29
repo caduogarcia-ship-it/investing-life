@@ -172,6 +172,13 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
     g1: false, n: false, g2: false, d0: false, g: false, ke: false
   });
   const [justifications, setJustifications] = useState(initialJustifications);
+  const [currentPriceInput, setCurrentPriceInput] = useState<string>('');
+
+  useEffect(() => {
+    if (stockData?.regularMarketPrice) {
+      setCurrentPriceInput(stockData.regularMarketPrice.toString());
+    }
+  }, [stockData?.regularMarketPrice]);
 
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
@@ -1012,19 +1019,56 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                 <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 via-brand-primary to-brand-purple opacity-70 group-hover:opacity-100 transition-opacity duration-500" />
                 <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 via-brand-primary to-brand-purple blur-md opacity-30 group-hover:opacity-60 transition-opacity duration-500" />
                 
-                <div className="relative bg-dark-card w-full h-full rounded-[14px] p-6 flex flex-col items-center text-center justify-center gap-3">
+                <div className="relative bg-dark-card w-full h-full rounded-[14px] p-6 flex flex-col items-center text-center justify-center gap-4">
                   <h3 className="text-sm font-black text-dark-textSecondary uppercase tracking-wider" style={{ fontFamily: 'Outfit, sans-serif' }}>
                     Preço Justo da Ação (P₀)
                   </h3>
                   
-                  <div className="flex items-baseline gap-2">
+                  <div className="flex items-baseline justify-center gap-2">
                     <span className="text-xl font-bold text-dark-textSecondary/60">{currencySymbol}</span>
                     <span className="text-5xl font-black font-mono text-transparent bg-clip-text bg-gradient-to-br from-emerald-300 to-emerald-500 drop-shadow-sm">
                       {calc.p0.toFixed(2)}
                     </span>
                   </div>
+
+                  <div className="w-full max-w-sm mx-auto mt-2 p-5 bg-dark-bg/60 border border-dark-border/80 rounded-xl space-y-4 shadow-sm">
+                    <div className="flex flex-col items-center gap-2">
+                      <label className="text-xs font-bold text-dark-textSecondary uppercase tracking-wider">Cotação Atual do Ativo (Para Comparação)</label>
+                      <div className="flex items-center justify-center bg-dark-bg border border-dark-border/60 focus-within:border-brand-purple rounded-lg px-4 py-2 w-40 transition-colors">
+                        <span className="text-dark-textSecondary text-sm font-mono mr-2">{currencySymbol}</span>
+                        <input 
+                          type="number" step="0.01" min="0" 
+                          value={currentPriceInput}
+                          onChange={(e) => setCurrentPriceInput(e.target.value)}
+                          placeholder="Ex: 25.50"
+                          className="w-full bg-transparent text-center font-mono text-sm outline-none border-none p-0 focus:ring-0 focus:outline-none text-dark-textPrimary placeholder:text-dark-textSecondary/40"
+                        />
+                      </div>
+                    </div>
+
+                    {(() => {
+                      const currentPriceNum = parseFloat(currentPriceInput);
+                      if (!isNaN(currentPriceNum) && currentPriceNum > 0 && calc.isValid) {
+                        const isCheap = currentPriceNum < calc.p0;
+                        const isExpensive = currentPriceNum > calc.p0;
+                        const difference = Math.abs(((calc.p0 - currentPriceNum) / currentPriceNum) * 100);
+                        
+                        return (
+                          <div className={`p-4 rounded-lg border animate-fadeIn flex flex-col items-center justify-center ${isCheap ? 'bg-emerald-500/10 border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]' : isExpensive ? 'bg-brand-danger/10 border-brand-danger/20 shadow-[0_0_15px_rgba(239,68,68,0.1)]' : 'bg-brand-primary/10 border-brand-primary/20'}`}>
+                            <p className={`text-xs font-black uppercase tracking-wider flex items-center gap-2 ${isCheap ? 'text-emerald-400' : isExpensive ? 'text-brand-danger' : 'text-brand-primary'}`}>
+                              {isCheap ? '🟢 BARATO (DESCONTO)' : isExpensive ? '🔴 CARO (ÁGIO)' : '⚪ NO PREÇO JUSTO'}
+                            </p>
+                            <p className="text-base font-bold mt-2 text-dark-textPrimary font-mono">
+                              Margem de Segurança: <span className={isCheap ? 'text-emerald-400' : isExpensive ? 'text-brand-danger' : ''}>{isCheap ? '+' : isExpensive ? '-' : ''}{difference.toFixed(2)}%</span>
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
+                  </div>
                   
-                  <div className="text-2xs text-dark-textSecondary font-medium mt-2 bg-dark-bg/80 px-3 py-1.5 rounded-lg border border-dark-border">
+                  <div className="text-2xs text-dark-textSecondary font-medium mt-2 bg-dark-bg/80 px-3 py-1.5 rounded-lg border border-dark-border inline-block">
                     {valuationMode === 'GORDON' ? 'P₀ = D₁ / (k - g)' : 'P₀ = VP(Estágio 1) + VP(Perpetuidade)'}
                   </div>
                 </div>
