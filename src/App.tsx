@@ -347,7 +347,7 @@ export default function App() {
         />
       </div>
       
-      <div className="w-full flex flex-col h-full overflow-hidden">
+      <div className="w-full flex flex-col h-full overflow-hidden pl-20">
         {/* Header */}
         <div className="print:hidden">
           <Header
