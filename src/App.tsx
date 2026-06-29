@@ -9,6 +9,8 @@ import { StrategyThesis } from './components/StrategyThesis';
 import { NewsAndConsensus } from './components/NewsAndConsensus';
 import { SettingsModal } from './components/SettingsModal';
 import { Footer } from './components/Footer';
+import { Sidebar } from './components/Sidebar';
+import type { TabType } from './components/Sidebar';
 import { Portfolio } from './components/Portfolio';
 import { CandleAnalysis } from './components/CandleAnalysis';
 import { DividendMap } from './components/DividendMap';
@@ -17,7 +19,7 @@ import { RecommendedPortfolios } from './components/RecommendedPortfolios';
 import { QuickCompare } from './components/QuickCompare';
 import { fetchStockData, getSimilarTickers } from './services/api';
 import type { StockData, B3Ticker } from './services/api';
-import { AlertCircle, FolderHeart, Compass, ArrowRight, LineChart, Wallet, CandlestickChart, DollarSign, Trophy, Star, Calculator, Shield, Landmark } from 'lucide-react';
+import { AlertCircle, FolderHeart, Compass, ArrowRight } from 'lucide-react';
 import { Login } from './components/Login';
 import { HomeOverview } from './components/HomeOverview';
 import { AddAssetModal } from './components/AddAssetModal';
@@ -48,7 +50,7 @@ export default function App() {
   const [watchlist, setWatchlist] = useState<string[]>(['PETR4', 'VALE3', 'WEGE3', 'CURY3', 'TEND3', 'ITUB4']);
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
 
-  const [activeTab, setActiveTab] = useState<'analise' | 'carteira' | 'candles' | 'dividendos' | 'rankings' | 'recomendadas' | 'calculos' | 'tesouro' | 'admin'>(() => {
+  const [activeTab, setActiveTab] = useState<TabType>(() => {
     const saved = localStorage.getItem('b3_active_tab');
     return (saved as any) || 'analise';
   });
@@ -333,132 +335,29 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-dark-bg text-dark-textPrimary flex flex-col font-sans selection:bg-brand-primary/30 selection:text-white">
-      {/* Header */}
-      <div className="print:hidden">
-        <Header
-          onSearch={handleSearch}
+    <div className="h-screen w-full bg-dark-bg text-dark-textPrimary font-sans selection:bg-brand-primary/30 selection:text-white overflow-hidden relative">
+      <div className="print:hidden absolute left-0 top-0 h-full z-50">
+        <Sidebar 
+          activeTab={activeTab} 
+          setActiveTab={setActiveTab} 
+          isAdmin={isAdmin}
           onOpenSettings={() => setIsSettingsOpen(true)}
-          loading={loading}
           onLogout={handleLogout}
+          isLoggedIn={isLoggedIn}
         />
       </div>
-
-      <main className="flex-1 max-w-7xl mx-auto w-full px-6 py-10 lg:px-8 space-y-8">
-        
-        {/* Main Tab Selectors */}
-        <div className="flex bg-dark-card border border-dark-border p-1.5 rounded-2xl text-xs font-bold uppercase tracking-wider max-w-5xl mx-auto shadow-md select-none w-full print:hidden overflow-x-auto no-scrollbar snap-x items-center gap-1">
-          <button
-            onClick={() => setActiveTab('analise')}
-            className={`flex-1 shrink-0 px-4 py-2.5 rounded-xl whitespace-nowrap transition-all duration-300 cursor-pointer active-scale flex items-center justify-center gap-1.5 ${
-              activeTab === 'analise' 
-                ? 'text-white' 
-                : 'text-dark-textSecondary hover:text-dark-textPrimary'
-            }`}
-            style={activeTab === 'analise' ? { background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', boxShadow: '0 4px 15px rgba(99,102,241,0.3)', fontFamily: 'Outfit, sans-serif' } : { fontFamily: 'Outfit, sans-serif' }}
-          >
-            <LineChart className="w-3.5 h-3.5" />
-            Análise de Ativo
-          </button>
-          <button
-            onClick={() => setActiveTab('carteira')}
-            className={`flex-1 shrink-0 px-4 py-2.5 rounded-xl whitespace-nowrap transition-all duration-300 cursor-pointer active-scale flex items-center justify-center gap-1.5 ${
-              activeTab === 'carteira' 
-                ? 'text-white' 
-                : 'text-dark-textSecondary hover:text-dark-textPrimary'
-            }`}
-            style={activeTab === 'carteira' ? { background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', boxShadow: '0 4px 15px rgba(99,102,241,0.3)', fontFamily: 'Outfit, sans-serif' } : { fontFamily: 'Outfit, sans-serif' }}
-          >
-            <Wallet className="w-3.5 h-3.5" />
-            Minha Carteira
-          </button>
-          <button
-            onClick={() => setActiveTab('candles')}
-            className={`flex-1 shrink-0 px-4 py-2.5 rounded-xl whitespace-nowrap transition-all duration-300 cursor-pointer active-scale flex items-center justify-center gap-1.5 ${
-              activeTab === 'candles' 
-                ? 'text-white' 
-                : 'text-dark-textSecondary hover:text-dark-textPrimary'
-            }`}
-            style={activeTab === 'candles' ? { background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', boxShadow: '0 4px 15px rgba(99,102,241,0.3)', fontFamily: 'Outfit, sans-serif' } : { fontFamily: 'Outfit, sans-serif' }}
-          >
-            <CandlestickChart className="w-3.5 h-3.5" />
-            Análise Gráfica
-          </button>
-          <button
-            onClick={() => setActiveTab('dividendos')}
-            className={`flex-1 shrink-0 px-4 py-2.5 rounded-xl whitespace-nowrap transition-all duration-300 cursor-pointer active-scale flex items-center justify-center gap-1.5 ${
-              activeTab === 'dividendos' 
-                ? 'text-white' 
-                : 'text-dark-textSecondary hover:text-dark-textPrimary'
-            }`}
-            style={activeTab === 'dividendos' ? { background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', boxShadow: '0 4px 15px rgba(99,102,241,0.3)', fontFamily: 'Outfit, sans-serif' } : { fontFamily: 'Outfit, sans-serif' }}
-          >
-            <DollarSign className="w-3.5 h-3.5" />
-            Mapa de Dividendos
-          </button>
-          <button
-            onClick={() => setActiveTab('calculos')}
-            className={`flex-1 shrink-0 px-4 py-2.5 rounded-xl whitespace-nowrap transition-all duration-300 cursor-pointer active-scale flex items-center justify-center gap-1.5 ${
-              activeTab === 'calculos' 
-                ? 'text-white' 
-                : 'text-dark-textSecondary hover:text-dark-textPrimary'
-            }`}
-            style={activeTab === 'calculos' ? { background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', boxShadow: '0 4px 15px rgba(99,102,241,0.3)', fontFamily: 'Outfit, sans-serif' } : { fontFamily: 'Outfit, sans-serif' }}
-          >
-            <Calculator className="w-3.5 h-3.5" />
-            Cálculos
-          </button>
-          <button
-            onClick={() => setActiveTab('tesouro')}
-            className={`flex-1 shrink-0 px-4 py-2.5 rounded-xl whitespace-nowrap transition-all duration-300 cursor-pointer active-scale flex items-center justify-center gap-1.5 ${
-              activeTab === 'tesouro' 
-                ? 'text-white' 
-                : 'text-dark-textSecondary hover:text-dark-textPrimary'
-            }`}
-            style={activeTab === 'tesouro' ? { background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', boxShadow: '0 4px 15px rgba(99,102,241,0.3)', fontFamily: 'Outfit, sans-serif' } : { fontFamily: 'Outfit, sans-serif' }}
-          >
-            <Landmark className="w-3.5 h-3.5" />
-            Tesouro
-          </button>
-          <button
-            onClick={() => setActiveTab('rankings')}
-            className={`flex-1 shrink-0 px-4 py-2.5 rounded-xl whitespace-nowrap transition-all duration-300 cursor-pointer active-scale flex items-center justify-center gap-1.5 ${
-              activeTab === 'rankings' 
-                ? 'text-white' 
-                : 'text-dark-textSecondary hover:text-dark-textPrimary'
-            }`}
-            style={activeTab === 'rankings' ? { background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', boxShadow: '0 4px 15px rgba(99,102,241,0.3)', fontFamily: 'Outfit, sans-serif' } : { fontFamily: 'Outfit, sans-serif' }}
-          >
-            <Trophy className="w-3.5 h-3.5" />
-            Rankings
-          </button>
-          <button
-            onClick={() => setActiveTab('recomendadas')}
-            className={`flex-1 shrink-0 px-4 py-2.5 rounded-xl whitespace-nowrap transition-all duration-300 cursor-pointer active-scale flex items-center justify-center gap-1.5 ${
-              activeTab === 'recomendadas' 
-                ? 'text-white' 
-                : 'text-dark-textSecondary hover:text-dark-textPrimary'
-            }`}
-            style={activeTab === 'recomendadas' ? { background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', boxShadow: '0 4px 15px rgba(99,102,241,0.3)', fontFamily: 'Outfit, sans-serif' } : { fontFamily: 'Outfit, sans-serif' }}
-          >
-            <Star className="w-3.5 h-3.5" />
-            Recomendações
-          </button>
-          {isAdmin && (
-            <button
-              onClick={() => setActiveTab('admin')}
-              className={`flex-1 shrink-0 px-4 py-2.5 rounded-xl whitespace-nowrap transition-all duration-300 cursor-pointer active-scale flex items-center justify-center gap-1.5 ${
-                activeTab === 'admin' 
-                  ? 'text-white' 
-                  : 'text-dark-textSecondary hover:text-dark-textPrimary'
-              }`}
-              style={activeTab === 'admin' ? { background: 'linear-gradient(135deg, #ef4444, #f59e0b)', boxShadow: '0 4px 15px rgba(239,68,68,0.3)', fontFamily: 'Outfit, sans-serif' } : { fontFamily: 'Outfit, sans-serif' }}
-            >
-              <Shield className="w-3.5 h-3.5" />
-              Admin
-            </button>
-          )}
+      
+      <div className="w-full flex flex-col h-full overflow-hidden">
+        {/* Header */}
+        <div className="print:hidden">
+          <Header
+            onSearch={handleSearch}
+            loading={loading}
+          />
         </div>
+
+        <main className="flex-1 overflow-y-auto px-6 py-10 lg:px-8">
+          <div className="max-w-7xl mx-auto w-full space-y-8">
 
         {/* Error Alert */}
         {error && (activeTab === 'analise' || activeTab === 'candles') && (
@@ -711,7 +610,9 @@ export default function App() {
           </div>
         )}
         </div>
-      </main>
+          </div>
+        </main>
+      </div>
 
       {/* API Settings Modal */}
       <SettingsModal

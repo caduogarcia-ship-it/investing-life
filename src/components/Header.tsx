@@ -1,13 +1,11 @@
 // src/components/Header.tsx
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Settings, RefreshCw, BarChart2, LogOut } from 'lucide-react';
-import { getApiToken, searchTickers, getTickerCategory } from '../services/api';
+import { Search, RefreshCw, BarChart2 } from 'lucide-react';
+import { searchTickers, getTickerCategory } from '../services/api';
 
 interface HeaderProps {
   onSearch: (ticker: string) => void;
-  onOpenSettings: () => void;
   loading: boolean;
-  onLogout?: () => void;
 }
 
 interface IndexData {
@@ -29,7 +27,9 @@ const INDEX_CONFIGS: IndexConfig[] = [
   { name: 'S&P 500', symbol: '^GSPC', format: (p) => Math.round(p).toLocaleString('pt-BR') },
   { name: 'NASDAQ', symbol: '^IXIC', format: (p) => Math.round(p).toLocaleString('pt-BR') },
   { name: 'BITCOIN (BTC)', symbol: 'BTC-USD', format: (p) => `U$ ${Math.round(p).toLocaleString('pt-BR')}` }
-];export const Header: React.FC<HeaderProps> = ({ onSearch, onOpenSettings, loading, onLogout }) => {
+];
+
+export const Header: React.FC<HeaderProps> = ({ onSearch, loading }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState<Array<{ symbol: string; name: string; category?: string }>>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -171,8 +171,6 @@ const INDEX_CONFIGS: IndexConfig[] = [
     fetchIndicesData();
   }, []);
 
-  const hasToken = getApiToken().length > 0;
-
   // Helper to group suggestions by category
   const groupedSuggestions = suggestions.reduce((acc, item) => {
     const cat = item.category || 'Outros';
@@ -226,25 +224,6 @@ const INDEX_CONFIGS: IndexConfig[] = [
               <h1 className="text-xl md:text-lg font-bold tracking-tight gradient-text">Investing Life</h1>
               <p className="text-xs text-dark-textSecondary font-medium">B3 Stock Analyzer & Tracker</p>
             </div>
-          </div>
-
-          {/* Settings & Logout Trigger for Mobile */}
-          <div className="flex items-center gap-1.5 md:hidden">
-            <button
-              onClick={onOpenSettings}
-              className="p-2 text-dark-textSecondary hover:text-dark-textPrimary hover:bg-dark-cardHover rounded-lg transition-colors border border-transparent hover:border-dark-border"
-            >
-              <Settings className={`w-5 h-5 ${hasToken ? 'text-brand-success' : ''}`} />
-            </button>
-            {onLogout && (
-              <button
-                onClick={onLogout}
-                title="Sair"
-                className="p-2 text-dark-textSecondary hover:text-brand-danger hover:bg-dark-cardHover rounded-lg transition-colors border border-transparent hover:border-dark-border"
-              >
-                <LogOut className="w-5 h-5" />
-              </button>
-            )}
           </div>
         </div>
 
@@ -301,31 +280,6 @@ const INDEX_CONFIGS: IndexConfig[] = [
               </div>
             )}
           </form>
-
-          {/* Settings Trigger for Desktop */}
-          <button
-            onClick={onOpenSettings}
-            title={hasToken ? 'API Token Ativo' : 'Configurar Token API'}
-            className={`hidden md:block p-2.5 text-dark-textSecondary hover:text-dark-textPrimary bg-dark-card border border-dark-border hover:border-gray-700 rounded-xl transition-all relative ${
-              hasToken ? 'border-brand-success/30 hover:border-brand-success/50' : ''
-            }`}
-          >
-            <Settings className="w-4 h-4" />
-            {hasToken && (
-              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-brand-success ring-2 ring-dark-card animate-pulse" />
-            )}
-          </button>
-
-          {/* Logout Trigger for Desktop */}
-          {onLogout && (
-            <button
-              onClick={onLogout}
-              title="Sair da Conta"
-              className="hidden md:block p-2.5 text-dark-textSecondary hover:text-brand-danger bg-dark-card border border-dark-border hover:border-gray-700 rounded-xl transition-all cursor-pointer"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          )}
         </div>
 
       </div>

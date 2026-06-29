@@ -59,7 +59,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           await signIn(cleanEmail, password);
           onLoginSuccess(cleanEmail);
         } catch {
-          setSuccessMsg('Conta criada com sucesso! Faça login para continuar.');
+          setSuccessMsg('Conta criada! Se o Supabase estiver pedindo confirmação, verifique seu e-mail. Caso contrário, faça login.');
           setMode('login');
         }
       } else {
@@ -69,7 +69,9 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     } catch (err: any) {
       const msg = err?.message || 'Erro desconhecido';
       if (msg.includes('Invalid login credentials')) {
-        setError('E-mail ou senha incorretos. Verifique seus dados ou crie uma conta.');
+        setError('Acesso negado: Senha/Email incorretos OU sua conta ainda não foi confirmada por e-mail.');
+      } else if (msg.includes('Email not confirmed')) {
+        setError('Sua conta foi criada, mas você precisa confirmar o e-mail antes de logar.');
       } else if (msg.includes('User already registered')) {
         setError('Este e-mail já está cadastrado. Faça login normalmente.');
         setMode('login');

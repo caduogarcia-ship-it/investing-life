@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Sliders, Calculator, RotateCcw, AlertTriangle, Zap, HelpCircle, Lock, Unlock, Printer, TrendingUp, FileText, Save, FolderOpen, X, Trash2 } from 'lucide-react';
+import { Sliders, Calculator, RotateCcw, AlertTriangle, HelpCircle, Lock, Printer, TrendingUp, FileText, Save, FolderOpen, X, Trash2 } from 'lucide-react';
 import { ResponsiveContainer, ComposedChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import type { StockData } from '../services/api';
 
@@ -10,29 +10,13 @@ interface LockableInputProps {
   max: number;
   step: number;
   unit: string;
-  isLocked: boolean;
-  onToggleLock: () => void;
   onChange: (val: number) => void;
   tooltip?: string;
   disabled?: boolean;
-  disableLock?: boolean;
-  statusText?: string;
 }
 
 const LockableInput: React.FC<LockableInputProps> = ({
-  label,
-  value,
-  min,
-  max,
-  step,
-  unit,
-  isLocked,
-  onToggleLock,
-  onChange,
-  tooltip,
-  disabled,
-  disableLock,
-  statusText
+  label, value, min, max, step, unit, onChange, tooltip, disabled
 }) => {
   const [localVal, setLocalVal] = useState<string>('');
   const [isFocused, setIsFocused] = useState(false);
@@ -60,24 +44,15 @@ const LockableInput: React.FC<LockableInputProps> = ({
     }
   };
 
-  const isDisabled = disabled !== undefined ? disabled : isLocked;
-  const isLockBtnDisabled = disableLock !== undefined ? disableLock : false;
+  const isDisabled = disabled || false;
 
   return (
     <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(31,41,55,0.5)' }}>
-      <div className="h-[2px]" style={{ background: isLocked ? 'linear-gradient(90deg, #ef4444, #f87171)' : 'linear-gradient(90deg, #6366f1, #8b5cf6)' }} />
+      <div className="h-[2px]" style={{ background: 'linear-gradient(90deg, #6366f1, #8b5cf6)' }} />
       <div className="p-3.5 space-y-3" style={{ background: 'rgba(9,13,22,0.35)' }}>
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-sm font-bold text-dark-textSecondary">{label}</span>
-            {statusText && (
-              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
-                statusText.includes('Inativo') ? 'bg-brand-danger/10 text-brand-danger border border-brand-danger/10 opacity-70' :
-                statusText === 'Calculado' ? 'bg-brand-primary/20 text-brand-primary border border-brand-primary/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-              }`}>
-                {statusText}
-              </span>
-            )}
             {tooltip && (
               <span title={tooltip}>
                 <HelpCircle className="w-3 h-3 text-dark-textSecondary/50" />
@@ -86,18 +61,7 @@ const LockableInput: React.FC<LockableInputProps> = ({
           </div>
           
           <div className="flex items-center gap-2">
-            <button 
-              onClick={onToggleLock}
-              disabled={isLockBtnDisabled}
-              className={`p-1.5 rounded-lg transition-colors ${
-                isLockBtnDisabled ? 'opacity-30 cursor-not-allowed text-dark-textSecondary/30' :
-                isLocked ? 'bg-brand-danger/20 text-brand-danger' : 'bg-dark-bg/60 text-dark-textSecondary hover:text-dark-textPrimary'
-              }`}
-              title={isLockBtnDisabled ? "Inativo" : isLocked ? "Destravar valor" : "Travar valor contra Auto-Preenchimento"}
-            >
-              {isLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
-            </button>
-            <div className={`flex items-center bg-dark-bg/80 border ${isDisabled ? 'border-brand-danger/20' : 'border-dark-border/60 focus-within:border-brand-purple'} rounded-lg px-2.5 py-1`}>
+            <div className={`flex items-center bg-dark-bg/80 border border-dark-border/60 focus-within:border-brand-purple rounded-lg px-2.5 py-1`}>
               <input 
                 type="number" step={step} min={min} max={max} 
                 value={localVal}
@@ -116,7 +80,7 @@ const LockableInput: React.FC<LockableInputProps> = ({
           value={value}
           disabled={isDisabled}
           onChange={handleSliderChange}
-          className={`w-full h-1.5 rounded-full appearance-none accent-brand-purple ${isDisabled ? 'bg-brand-danger/10 opacity-30 cursor-not-allowed' : 'bg-dark-bg cursor-pointer'}`}
+          className={`w-full h-1.5 rounded-full appearance-none accent-brand-purple ${isDisabled ? 'opacity-30 cursor-not-allowed' : 'bg-dark-bg cursor-pointer'}`}
         />
       </div>
     </div>
@@ -161,70 +125,24 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
   const [valuationMode, setValuationMode] = useState<'GORDON' | 'VARIADO'>('GORDON');
 
   const recommendedParams = useMemo(() => {
-    if (!stockData) {
-      return {
-        rf: 10.75,
-        beta: 1.0,
-        erp: 5.50,
-        roe: 12.0,
-        payout: 40.0,
-        d1: 1.35,
-        g1: 10.0, // Default 10%
-        n: 3,     // Fixed at 3 years
-        g2: 4.0,  // Default 4%
-        d0: 1.00, // Default DIV0 1.00
-        g: 7.20,
-        ke: 12.41, // Default Ke 12.41%
-      };
-    }
-
-    const price = stockData.regularMarketPrice || 30.00;
-    const dy = stockData.dy || 4.5;
-    const roe = stockData.roe || 12.0;
-    const beta = stockData.volatility ? Number((stockData.volatility / 25).toFixed(2)) : 1.0; 
-    
-    // Check if US stock or B3 BDR
-    const isUS = stockData.currency === 'USD' || /^[A-Z]{1,5}$/.test(stockData.symbol) || stockData.symbol.endsWith('34');
-    const rf = isUS ? 4.25 : 10.75; 
-    const erp = isUS ? 4.50 : 5.50; // Damodaran Equity Risk Premium
-
-    // Payout estimation from DY & ROE
-    let payout = 45.0;
-    if (roe > 0) {
-      payout = Math.min(95, Math.max(10, Number(((dy / roe) * 100).toFixed(1))));
-    }
-    
-    const d0 = price * (dy / 100);
-    // Simple projection for D1
-    const ret = 1 - (payout / 100);
-    const gEst = (roe / 100) * ret;
-    const d1 = d0 * (1 + gEst);
-    const keCalculated = rf + beta * erp;
-
     return {
-      rf: Number(rf.toFixed(2)),
-      beta: Math.max(0.5, Math.min(2.5, beta)),
-      erp: Number(erp.toFixed(2)),
-      roe: Number(roe.toFixed(2)),
-      payout: Number(payout.toFixed(2)),
-      d1: Number(d1.toFixed(2)),
-      g1: Number(Math.max(5, Math.min(30, (roe * 1.5))).toFixed(2)),
-      n: 3,     // Fixed at 3 years
-      g2: Number(Math.max(2, Math.min(gEst * 100, rf - 2)).toFixed(2)),
-      d0: Number(d0.toFixed(2)),
-      g: Number((gEst * 100).toFixed(2)),
-      ke: Number(keCalculated.toFixed(2)),
+      rf: 0,
+      beta: 0,
+      erp: 0,
+      roe: 0,
+      payout: 0,
+      d1: 0,
+      g1: 0,
+      n: 3,
+      g2: 0,
+      d0: 0,
+      g: 0,
+      ke: 0,
     };
-  }, [stockData]);
+  }, []);
 
   // --- INTERACTIVE / CUSTOMIZABLE STATES ---
   const [inputs, setInputs] = useState(recommendedParams);
-  const [locks, setLocks] = useState({
-    rf: false, beta: false, erp: false, roe: false, payout: false, d1: false,
-    g1: false, n: false, g2: false, d0: false, g: false, ke: false
-  });
-
-  const [growthScenario, setGrowthScenario] = useState<'otimista' | 'pessimista' | 'manual'>('manual');
   const [justifications, setJustifications] = useState(initialJustifications);
 
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
@@ -269,66 +187,17 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
   // Sync initial state
   useEffect(() => {
     setInputs(recommendedParams);
-    setLocks({ 
-      rf: false, beta: false, erp: false, roe: false, payout: false, d1: false,
-      g1: false, n: false, g2: false, d0: false, g: false, ke: false 
-    });
     setJustifications(initialJustifications);
-    setGrowthScenario('manual');
   }, [recommendedParams]);
 
   // --- HANDLERS ---
   const handleInputChange = (key: keyof typeof inputs, value: number) => {
-    setInputs(prev => {
-      const next = { ...prev, [key]: value };
-      if ((key === 'roe' || key === 'payout') && !locks.g) {
-        const ret = 1 - (next.payout / 100);
-        const gEst = (next.roe / 100) * ret;
-        next.g = Number((gEst * 100).toFixed(2));
-      }
-      if ((key === 'rf' || key === 'beta' || key === 'erp') && !locks.ke) {
-        next.ke = Number((next.rf + next.beta * next.erp).toFixed(2));
-      }
-      return next;
-    });
-    setGrowthScenario('manual');
-  };
-
-  const toggleLock = (key: keyof typeof locks) => {
-    setLocks(prev => {
-      const nextLocks = { ...prev, [key]: !prev[key] };
-      // If unlocking g, recalculate it immediately to sync
-      if (key === 'g' && !nextLocks.g) {
-        setInputs(prevInputs => {
-          const ret = 1 - (prevInputs.payout / 100);
-          const gEst = (prevInputs.roe / 100) * ret;
-          return {
-            ...prevInputs,
-            g: Number((gEst * 100).toFixed(2))
-          };
-        });
-      }
-      // If unlocking ke, recalculate it immediately to sync
-      if (key === 'ke' && !nextLocks.ke) {
-        setInputs(prevInputs => {
-          return {
-            ...prevInputs,
-            ke: Number((prevInputs.rf + prevInputs.beta * prevInputs.erp).toFixed(2))
-          };
-        });
-      }
-      return nextLocks;
-    });
+    setInputs(prev => ({ ...prev, [key]: value }));
   };
 
   const handleReset = () => {
     setInputs(recommendedParams);
-    setLocks({ 
-      rf: false, beta: false, erp: false, roe: false, payout: false, d1: false,
-      g1: false, n: false, g2: false, d0: false, g: false, ke: false 
-    });
     setJustifications(initialJustifications);
-    setGrowthScenario('manual');
   };
 
   const updateJustificationText = (key: keyof typeof initialJustifications, text: string) => {
@@ -343,54 +212,6 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
       ...prev,
       [key]: { ...prev[key], active: !prev[key].active }
     }));
-  };
-
-  const handleScenario = (scenario: 'otimista' | 'pessimista') => {
-    setGrowthScenario(scenario);
-    setInputs(prev => {
-      const next = { ...prev };
-      if (scenario === 'otimista') {
-        if (!locks.rf) next.rf = Math.max(2, prev.rf * 0.9);
-        if (!locks.beta) next.beta = Math.max(0.4, prev.beta * 0.85);
-        if (!locks.erp) next.erp = Math.min(15, prev.erp * 1.05);
-        if (!locks.roe) next.roe = Math.min(50, prev.roe * 1.2);
-        if (!locks.payout) next.payout = Math.max(10, prev.payout * 0.8);
-        if (!locks.d1) next.d1 = prev.d1 * 1.15;
-        if (!locks.g1) next.g1 = Math.min(40, prev.g1 * 1.25);
-        if (!locks.n) next.n = 3;
-        if (!locks.g2) next.g2 = Math.min(10, prev.g2 * 1.15);
-        if (!locks.d0) next.d0 = prev.d0 * 1.1;
-        if (locks.g) {
-          next.g = Math.min(15, prev.g * 1.1);
-        }
-      } else {
-        if (!locks.rf) next.rf = Math.min(20, prev.rf * 1.1);
-        if (!locks.beta) next.beta = Math.min(3.0, prev.beta * 1.15);
-        if (!locks.erp) next.erp = Math.max(2, prev.erp * 0.95);
-        if (!locks.roe) next.roe = Math.max(2, prev.roe * 0.8);
-        if (!locks.payout) next.payout = Math.min(95, prev.payout * 1.2);
-        if (!locks.d1) next.d1 = Math.max(0, prev.d1 * 0.85);
-        if (!locks.g1) next.g1 = Math.max(0, prev.g1 * 0.75);
-        if (!locks.n) next.n = 3;
-        if (!locks.g2) next.g2 = Math.max(0, prev.g2 * 0.8);
-        if (!locks.d0) next.d0 = Math.max(0, prev.d0 * 0.9);
-        if (locks.g) {
-          next.g = Math.max(0, prev.g * 0.9);
-        }
-      }
-
-      // If g is not locked, recalculate it based on the scenario's new ROE/Payout
-      if (!locks.g) {
-        const ret = 1 - (next.payout / 100);
-        const gEst = (next.roe / 100) * ret;
-        next.g = Number((gEst * 100).toFixed(2));
-      }
-      // If ke is not locked, recalculate it based on the scenario's new CAPM parameters
-      if (!locks.ke) {
-        next.ke = Number((next.rf + next.beta * next.erp).toFixed(2));
-      }
-      return next;
-    });
   };
 
   // --- ENGINE DE CÁLCULO ---
@@ -536,25 +357,6 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
             
             {/* Auto-fill Preset Buttons */}
             <div className="flex flex-wrap items-center gap-3 bg-dark-card border border-dark-border p-4 rounded-2xl shadow-sm">
-              <span className="text-xs font-bold text-dark-textSecondary uppercase tracking-wider" style={{ fontFamily: 'Outfit, sans-serif' }}>Preenchimento Rápido:</span>
-              <button
-                type="button"
-                onClick={() => handleScenario('otimista')}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wider cursor-pointer select-none active-scale transition-all ${growthScenario === 'otimista' ? 'text-white shadow-lg' : 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20'}`}
-                style={growthScenario === 'otimista' ? { background: 'linear-gradient(135deg, #10b981, #059669)', boxShadow: '0 3px 12px rgba(16,185,129,0.3)' } : {}}
-              >
-                <Zap className="w-3.5 h-3.5" />
-                Otimista
-              </button>
-              <button
-                type="button"
-                onClick={() => handleScenario('pessimista')}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-wider cursor-pointer select-none active-scale transition-all ${growthScenario === 'pessimista' ? 'text-white shadow-lg' : 'text-rose-400 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20'}`}
-                style={growthScenario === 'pessimista' ? { background: 'linear-gradient(135deg, #ef4444, #dc2626)', boxShadow: '0 3px 12px rgba(239,68,68,0.3)' } : {}}
-              >
-                <Zap className="w-3.5 h-3.5" />
-                Pessimista
-              </button>
               <button
                 type="button"
                 onClick={() => setIsSaveModalOpen(true)}
@@ -638,9 +440,9 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <LockableInput label="Rf (Livre Risco)" value={inputs.rf} min={1} max={25} step={0.1} unit="%" isLocked={locks.rf} onToggleLock={() => toggleLock('rf')} onChange={(val) => handleInputChange('rf', val)} tooltip="Taxa Livre de Risco" />
-                    <LockableInput label="Beta (β)" value={inputs.beta} min={0.1} max={4.0} step={0.05} unit="" isLocked={locks.beta} onToggleLock={() => toggleLock('beta')} onChange={(val) => handleInputChange('beta', val)} tooltip="Volatilidade do Ativo vs Mercado" />
-                    <LockableInput label="ERP (Prêmio de Risco)" value={inputs.erp} min={1} max={15} step={0.05} unit="%" isLocked={locks.erp} onToggleLock={() => toggleLock('erp')} onChange={(val) => handleInputChange('erp', val)} tooltip="Equity Risk Premium (Prêmio de Risco do Mercado - Damodaran)" />
+                    <LockableInput label="Rf (Livre Risco)" value={inputs.rf} min={0} max={25} step={0.1} unit="%" onChange={(val) => handleInputChange('rf', val)} tooltip="Taxa Livre de Risco" />
+                    <LockableInput label="Beta (β)" value={inputs.beta} min={0} max={4.0} step={0.05} unit="" onChange={(val) => handleInputChange('beta', val)} tooltip="Volatilidade do Ativo vs Mercado" />
+                    <LockableInput label="ERP (Prêmio de Risco)" value={inputs.erp} min={0} max={15} step={0.05} unit="%" onChange={(val) => handleInputChange('erp', val)} tooltip="Equity Risk Premium" />
                   </div>
                 </div>
 
@@ -653,9 +455,9 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                         <span className="text-sm font-extrabold text-brand-primary uppercase tracking-wider">Variáveis Fundamentais (g)</span>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <LockableInput label="ROE" value={inputs.roe} min={1} max={60} step={0.5} unit="%" isLocked={locks.roe} onToggleLock={() => toggleLock('roe')} onChange={(val) => handleInputChange('roe', val)} tooltip="Return on Equity" disabled={locks.g} disableLock={locks.g} statusText={locks.g ? "Inativo (g Manual)" : undefined} />
-                        <LockableInput label="Payout Ratio" value={inputs.payout} min={0} max={100} step={1} unit="%" isLocked={locks.payout} onToggleLock={() => toggleLock('payout')} onChange={(val) => handleInputChange('payout', val)} tooltip="Porcentagem do Lucro Distribuída" disabled={locks.g} disableLock={locks.g} statusText={locks.g ? "Inativo (g Manual)" : undefined} />
-                        <LockableInput label="Taxa de Crescimento (g)" value={inputs.g} min={0} max={15} step={0.05} unit="%" isLocked={locks.g} onToggleLock={() => toggleLock('g')} onChange={(val) => handleInputChange('g', val)} tooltip="Taxa de Crescimento Constante. Destrave (🔓) para calcular automaticamente de ROE x Retenção ou trave (🔒) para digitar um valor manual (ex: inflação de 4%)." disabled={!locks.g} disableLock={false} statusText={locks.g ? "Manual" : "Calculado"} />
+                        <LockableInput label="ROE" value={inputs.roe} min={0} max={60} step={0.5} unit="%" onChange={(val) => handleInputChange('roe', val)} tooltip="Return on Equity" />
+                        <LockableInput label="Payout Ratio" value={inputs.payout} min={0} max={100} step={1} unit="%" onChange={(val) => handleInputChange('payout', val)} tooltip="Porcentagem do Lucro Distribuída" />
+                        <LockableInput label="Taxa de Crescimento (g)" value={inputs.g} min={0} max={15} step={0.05} unit="%" onChange={(val) => handleInputChange('g', val)} tooltip="Taxa de Crescimento Constante Manual" />
                       </div>
                     </div>
 
@@ -666,7 +468,8 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                         <span className="text-sm font-extrabold text-emerald-400 uppercase tracking-wider">Variável de Fluxo (Base)</span>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <LockableInput label="Dividendo Esperado (D1)" value={inputs.d1} min={0.01} max={100} step={0.05} unit={currencySymbol} isLocked={locks.d1} onToggleLock={() => toggleLock('d1')} onChange={(val) => handleInputChange('d1', val)} tooltip="Dividendo Projetado para o Ano 1" />
+                        <LockableInput label="Dividendo Esperado (D1)" value={inputs.d1} min={0} max={100} step={0.05} unit={currencySymbol} onChange={(val) => handleInputChange('d1', val)} tooltip="Dividendo Projetado para o Ano 1" />
+                        <LockableInput label="Custo de Capital (R ou Ke)" value={inputs.ke} min={0} max={30} step={0.05} unit="%" onChange={(val) => handleInputChange('ke', val)} tooltip="Custo de Capital Exigido (R ou Ke)" />
                       </div>
                     </div>
                   </>
@@ -679,11 +482,11 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                         <span className="text-sm font-extrabold text-brand-primary uppercase tracking-wider">Variáveis de Entrada ({inputs.n} Anos + Perpétuo)</span>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <LockableInput label="Dividendo Atual (DIV0)" value={inputs.d0} min={0.01} max={100} step={0.05} unit="R$" isLocked={locks.d0} onToggleLock={() => toggleLock('d0')} onChange={(val) => handleInputChange('d0', val)} tooltip="Dividendo atual pago pela ação (DIV0)" />
-                        <LockableInput label="Duração Estágio 1 (n)" value={inputs.n} min={1} max={15} step={1} unit="anos" isLocked={locks.n} onToggleLock={() => toggleLock('n')} onChange={(val) => handleInputChange('n', val)} tooltip="Duração do período de crescimento acelerado/anormal (n)" />
-                        <LockableInput label={`Cresc. Estágio 1 (g1)`} value={inputs.g1} min={0} max={100} step={0.5} unit="%" isLocked={locks.g1} onToggleLock={() => toggleLock('g1')} onChange={(val) => handleInputChange('g1', val)} tooltip={`Taxa de Crescimento para os próximos ${inputs.n} anos (g1)`} />
-                        <LockableInput label="Cresc. Perpétuo (g2)" value={inputs.g2} min={0} max={15} step={0.1} unit="%" isLocked={locks.g2} onToggleLock={() => toggleLock('g2')} onChange={(val) => handleInputChange('g2', val)} tooltip="Taxa constante de crescimento na perpetuidade (g2)" />
-                        <LockableInput label="Custo de Capital (R ou Ke)" value={inputs.ke} min={1} max={30} step={0.05} unit="%" isLocked={locks.ke} onToggleLock={() => toggleLock('ke')} onChange={(val) => handleInputChange('ke', val)} tooltip="Custo de Capital Exigido (R ou Ke). Destrave (🔓) para calcular usando CAPM ou trave (🔒) para digitar um valor fixo." disabled={false} disableLock={false} statusText={locks.ke ? "Manual" : "Calculado"} />
+                        <LockableInput label="Dividendo Atual (DIV0)" value={inputs.d0} min={0} max={100} step={0.05} unit="R$" onChange={(val) => handleInputChange('d0', val)} tooltip="Dividendo atual pago pela ação (DIV0)" />
+                        <LockableInput label="Duração Estágio 1 (n)" value={inputs.n} min={1} max={15} step={1} unit="anos" onChange={(val) => handleInputChange('n', val)} tooltip="Duração do período de crescimento acelerado/anormal (n)" />
+                        <LockableInput label={`Cresc. Estágio 1 (g1)`} value={inputs.g1} min={0} max={100} step={0.5} unit="%" onChange={(val) => handleInputChange('g1', val)} tooltip={`Taxa de Crescimento para os próximos ${inputs.n} anos (g1)`} />
+                        <LockableInput label="Cresc. Perpétuo (g2)" value={inputs.g2} min={0} max={15} step={0.1} unit="%" onChange={(val) => handleInputChange('g2', val)} tooltip="Taxa constante de crescimento na perpetuidade (g2)" />
+                        <LockableInput label="Custo de Capital (R ou Ke)" value={inputs.ke} min={0} max={30} step={0.05} unit="%" onChange={(val) => handleInputChange('ke', val)} tooltip="Custo de Capital Exigido (R ou Ke) Manual" />
                       </div>
                     </div>
                   </>
