@@ -9,28 +9,29 @@ export default {
     extend: {
       colors: {
         dark: {
-          bg: '#0B1426',       // Deep Navy
-          card: '#141E30',     // Premium Card Dark
-          cardHover: '#1E293B',// Card hover
-          border: '#1E293B',   // Subtle border
-          textPrimary: '#F8FAFC', // White text
-          textSecondary: '#94A3B8', // Gray text
+          bg: '#000000',       // Pure Black
+          card: '#09090B',     // Zinc 950
+          cardHover: '#18181B',// Zinc 900
+          border: '#27272A',   // Zinc 800
+          textPrimary: '#FAFAFA', // Zinc 50
+          textSecondary: '#A1A1AA', // Zinc 400
         },
         brand: {
-          primary: '#6366F1',   // Indigo
-          success: '#10B981',   // Emerald
-          danger: '#EF4444',    // Red
-          warning: '#F59E0B',   // Amber
-          info: '#6366F1',      // Indigo
-          purple: '#8B5CF6'     // Violet
+          primary: '#3B82F6',   // Vivid Blue
+          success: '#22C55E',   // Vivid Green
+          danger: '#EF4444',    // Vivid Red
+          warning: '#EAB308',   // Yellow
+          info: '#3B82F6',      
+          purple: '#8B5CF6'     
+
         }
       },
       fontFamily: {
-        sans: ['Geist', 'Inter', 'Outfit', 'sans-serif'],
+        sans: ['Inter', 'Geist', 'Outfit', 'sans-serif'],
       },
       boxShadow: {
-        'premium': '0 1px 2px rgba(10, 20, 40, 0.3), 0 4px 12px rgba(99, 102, 241, 0.08), 0 12px 40px rgba(10, 20, 40, 0.25)',
-        'premium-hover': '0 1px 2px rgba(10, 20, 40, 0.3), 0 8px 24px rgba(99, 102, 241, 0.12), 0 16px 48px rgba(10, 20, 40, 0.3)'
+        'premium': 'none',
+        'premium-hover': '0 4px 12px rgba(0, 0, 0, 0.5)'
       },
       transitionTimingFunction: {
         'organic': 'cubic-bezier(0.22, 1, 0.36, 1)',

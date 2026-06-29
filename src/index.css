@@ -1,19 +1,19 @@
 @import "tailwindcss";
 
 @theme {
-  --color-dark-bg: #0B1426;       /* Deep Navy background */
-  --color-dark-card: #141E30;     /* Premium Card Dark */
-  --color-dark-cardHover: #1E293B;/* Card hover state */
-  --color-dark-border: #1E293B;   /* Subtle border */
-  --color-dark-textPrimary: #F8FAFC;
-  --color-dark-textSecondary: #94A3B8;
+  --color-dark-bg: #000000;       /* Pure Black background */
+  --color-dark-card: #09090B;     /* Zinc 950 for panels */
+  --color-dark-cardHover: #18181B;/* Zinc 900 for hover */
+  --color-dark-border: #27272A;   /* Subtle grid borders */
+  --color-dark-textPrimary: #FAFAFA;
+  --color-dark-textSecondary: #A1A1AA;
   
-  --color-brand-primary: #6366F1;  /* Indigo primary brand color */
-  --color-brand-success: #10B981;  /* Soft Green for positive metrics */
-  --color-brand-danger: #EF4444;   /* Soft Red for negative/risk metrics */
-  --color-brand-warning: #F59E0B;
-  --color-brand-info: #6366F1;
-  --color-brand-purple: #8B5CF6;   /* Violet branding accent */
+  --color-brand-primary: #3B82F6;  /* Vivid Blue */
+  --color-brand-success: #22C55E;  /* Vivid Green */
+  --color-brand-danger: #EF4444;   /* Vivid Red */
+  --color-brand-warning: #EAB308;
+  --color-brand-info: #3B82F6;
+  --color-brand-purple: #8B5CF6;   /* Vivid Violet */
   
   /* Overwrite indigo, purple, violet to be shades of blue to dynamically swap the theme colors globally */
   --color-indigo-50: #eff6ff;
@@ -52,11 +52,11 @@
   --color-violet-900: #0c4a6e;
   --color-violet-950: #082f49;
   
-  --font-sans: 'Geist', 'Inter', 'Outfit', 'Plus Jakarta Sans', sans-serif;
+  --font-sans: 'Inter', 'Geist', 'Plus Jakarta Sans', sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
   
-  --shadow-premium: 0 1px 2px rgba(10, 20, 40, 0.3), 0 4px 12px rgba(99, 102, 241, 0.08), 0 12px 40px rgba(10, 20, 40, 0.25);
-  --shadow-premium-hover: 0 1px 2px rgba(10, 20, 40, 0.3), 0 8px 24px rgba(99, 102, 241, 0.12), 0 16px 48px rgba(10, 20, 40, 0.3);
+  --shadow-premium: none;
+  --shadow-premium-hover: 0 4px 12px rgba(0, 0, 0, 0.5);
   
   --ease-organic: cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -72,6 +72,30 @@
 @layer utilities {
   .tabular-nums {
     font-variant-numeric: tabular-nums;
+  }
+
+  /* Force Terminal/Institutional flat design globally */
+  .rounded-md, .rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl, .rounded-full {
+    border-radius: 4px !important;
+  }
+  
+  /* Buttons can be slightly rounded or flat, let's keep everything 4px */
+  button {
+    border-radius: 2px !important;
+  }
+
+  .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl, .shadow-2xl, .shadow-premium {
+    box-shadow: none !important;
+  }
+
+  /* Remove all "vibecoding" gradients globally */
+  .bg-gradient-to-r, .bg-gradient-to-tr, .bg-gradient-to-br, .bg-gradient-to-b, .bg-gradient-to-l, .bg-gradient-to-tl, .bg-gradient-to-bl {
+    background-image: none !important;
+  }
+
+  /* Remove glassmorphism */
+  .backdrop-blur-sm, .backdrop-blur-md, .backdrop-blur-lg, .backdrop-blur-xl, .backdrop-blur-2xl, .backdrop-blur {
+    backdrop-filter: none !important;
   }
 }
 
