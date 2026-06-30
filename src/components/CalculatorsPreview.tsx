@@ -838,7 +838,7 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                                         return (
                                           <div className={`relative overflow-hidden flex-1 p-8 flex flex-col items-center justify-center text-center transition-all duration-500 ${bgColor}`}>
                                             {upside <= -15 && (
-                                              <AlertTriangle className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-rose-950/40 w-56 h-56 pointer-events-none" strokeWidth={1} />
+                                              <AlertTriangle className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-[55%] text-rose-950/40 w-44 h-44 pointer-events-none" strokeWidth={3} />
                                             )}
                                             {confetti && <div className="relative z-10 text-3xl animate-bounce mb-3">{confetti}</div>}
                                             <span className={`relative z-10 text-lg font-black uppercase tracking-wider mb-2 ${textColor}`}>
