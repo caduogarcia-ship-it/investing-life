@@ -997,15 +997,18 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                                         }
 
                                         return (
-                                          <div className={`flex-1 p-8 flex flex-col items-center justify-center text-center transition-all duration-500 ${bgColor}`}>
-                                            {confetti && <div className="text-3xl animate-bounce mb-3">{confetti}</div>}
-                                            <span className={`text-lg font-black uppercase tracking-wider mb-2 ${textColor}`}>
+                                          <div className={`relative overflow-hidden flex-1 p-8 flex flex-col items-center justify-center text-center transition-all duration-500 ${bgColor}`}>
+                                            {upside <= -15 && (
+                                              <AlertTriangle className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-[55%] text-rose-950/40 w-44 h-44 pointer-events-none" strokeWidth={3} />
+                                            )}
+                                            {confetti && <div className="relative z-10 text-3xl animate-bounce mb-3">{confetti}</div>}
+                                            <span className={`relative z-10 text-lg font-black uppercase tracking-wider mb-2 ${textColor}`}>
                                               {statusText}
                                             </span>
-                                            <span className={`text-4xl font-black font-mono ${textColor}`}>
+                                            <span className={`relative z-10 text-4xl font-black font-mono ${textColor}`}>
                                               {upside > 0 ? '+' : ''}{upside.toFixed(2)}%
                                             </span>
-                                            <span className={`text-[10px] font-bold uppercase mt-1 opacity-70 ${textColor}`}>
+                                            <span className={`relative z-10 text-[10px] font-bold uppercase mt-1 opacity-70 ${textColor}`}>
                                               {upside > 0 ? 'Potencial de Valorização' : 'Risco de Queda'}
                                             </span>
                                           </div>
