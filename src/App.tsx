@@ -24,6 +24,7 @@ import { Login } from './components/Login';
 import { HomeOverview } from './components/HomeOverview';
 import { AddAssetModal } from './components/AddAssetModal';
 import type { PortfolioItem } from './components/Portfolio';
+import { Client } from './types/crm';
 import { CalculatorsPreview } from './components/CalculatorsPreview';
 import { AdminHub } from './components/AdminHub';
 import { TesouroDireto } from './components/TesouroDireto';
@@ -48,7 +49,16 @@ export default function App() {
   const [showDetail, setShowDetail] = useState(false);
   
   const [watchlist, setWatchlist] = useState<string[]>(['PETR4', 'VALE3', 'WEGE3', 'CURY3', 'TEND3', 'ITUB4']);
-  const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [activeClientId, setActiveClientId] = useState<string | null>(null);
+
+  // Load from LocalStorage
+  useEffect(() => {
+    const savedClients = localStorage.getItem('b3_analise_clients');
+    if (savedClients) {
+      setClients(JSON.parse(savedClients));
+    }
+  }, []);
 
   const [activeTab, setActiveTab] = useState<TabType>(() => {
     const saved = localStorage.getItem('b3_active_tab');
@@ -416,7 +426,7 @@ export default function App() {
         {activeTab === 'analise' && !showDetail ? (
           <HomeOverview 
             watchlist={watchlist}
-            portfolio={portfolio}
+            portfolio={[]} // Removed legacy global portfolio dependency
             onSelectTicker={(sym) => {
               setTicker(sym);
               setShowDetail(true);
@@ -424,24 +434,36 @@ export default function App() {
             onRemoveWatchlist={(sym) => {
               setWatchlist(prev => prev.filter(s => s !== sym));
             }}
-            onRemovePortfolio={(sym) => {
-              setPortfolio(prev => prev.filter(s => s.symbol !== sym));
-            }}
+            onRemovePortfolio={() => {}}
             onOpenAddModal={() => setIsAddModalOpen(true)}
           />
         ) : activeTab === 'carteira' ? (
-          <Portfolio 
-            onSelectTicker={(sym) => {
-              setTicker(sym);
-              setShowDetail(true);
-              setActiveTab('analise');
-            }}
-            portfolio={portfolio}
-            setPortfolio={setPortfolio}
-          />
+          activeClientId ? (
+            <Portfolio 
+              onSelectTicker={(sym) => {
+                setTicker(sym);
+                setShowDetail(true);
+                setActiveTab('analise');
+              }}
+              client={clients.find(c => c.id === activeClientId)!}
+              onUpdateClient={(updated) => {
+                const newClients = clients.map(c => c.id === updated.id ? updated : c);
+                setClients(newClients);
+                localStorage.setItem('b3_analise_clients', JSON.stringify(newClients));
+              }}
+              onBackToDashboard={() => setActiveClientId(null)}
+            />
+          ) : (
+            <ClientDashboard 
+              clients={clients}
+              setClients={setClients}
+              onSelectClient={setActiveClientId}
+            />
+          )
         ) : activeTab === 'dividendos' ? (
           <DividendMap 
-            portfolio={portfolio}
+            portfolio={[]}
+
             onSelectTicker={(sym) => {
               setTicker(sym);
               setShowDetail(true);

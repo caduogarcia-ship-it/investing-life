@@ -4,20 +4,13 @@ import { Plus, Trash2, TrendingUp, TrendingDown, Briefcase, PlusCircle, ArrowUpR
 import { ALL_B3_TICKERS, fetchStockData, searchTickers, getTickerCategory, getTickerStrategy, getTickerSector } from '../services/api';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis } from 'recharts';
 
-export interface PortfolioItem {
-  symbol: string;
-  quantity: number;
-  averagePrice: number;
-  currentPrice: number;
-  longName: string;
-  change30d?: number;
-  change60d?: number;
-}
+import { Client, PortfolioItem } from '../types/crm';
 
 interface PortfolioProps {
   onSelectTicker: (symbol: string) => void;
-  portfolio: PortfolioItem[];
-  setPortfolio: React.Dispatch<React.SetStateAction<PortfolioItem[]>>;
+  client: Client;
+  onUpdateClient: (updatedClient: Client) => void;
+  onBackToDashboard: () => void;
 }
 
 const COLORS = [
@@ -31,18 +24,25 @@ const COLORS = [
   '#84cc16'  // Lime
 ];
 
-export const Portfolio: React.FC<PortfolioProps> = ({ onSelectTicker, portfolio, setPortfolio }) => {
+export const Portfolio: React.FC<PortfolioProps> = ({ onSelectTicker, client, onUpdateClient, onBackToDashboard }) => {
+  const portfolio = client.portfolio || [];
   const [loading, setLoading] = useState(false);
   const [perfPeriod, setPerfPeriod] = useState<'30d' | '60d' | 'total'>('total');
   const [activeTickerIndex, setActiveTickerIndex] = useState<number | null>(null);
   const [activeSectorIndex, setActiveSectorIndex] = useState<number | null>(null);
   const [activeStrategyIndex, setActiveStrategyIndex] = useState<number | null>(null);
+  const [activeMicroIndex, setActiveMicroIndex] = useState<number | null>(null);
   
   // Form states
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSymbol, setSelectedSymbol] = useState('');
   const [quantity, setQuantity] = useState('100');
   const [averagePrice, setAveragePrice] = useState('30.00');
+  
+  // New CRM fields
+  const [macroCategory, setMacroCategory] = useState<'Renda Fixa' | 'Renda Variável'>('Renda Variável');
+  const [location, setLocation] = useState<'Brasil' | 'Exterior'>('Brasil');
+  const [microCategory, setMicroCategory] = useState<string>('Segurança');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<typeof ALL_B3_TICKERS>([]);
 
@@ -85,10 +85,10 @@ export const Portfolio: React.FC<PortfolioProps> = ({ onSelectTicker, portfolio,
         );
         
         // Only update state and storage if values actually changed
+        // Only update state if values actually changed
         const hasChanged = JSON.stringify(updated) !== JSON.stringify(portfolio);
         if (hasChanged) {
-          setPortfolio(updated);
-          localStorage.setItem('b3_analise_portfolio', JSON.stringify(updated));
+          onUpdateClient({ ...client, portfolio: updated });
         }
       } catch (e) {
         console.warn('Failed to update portfolio prices', e);
@@ -99,7 +99,7 @@ export const Portfolio: React.FC<PortfolioProps> = ({ onSelectTicker, portfolio,
 
     updatePrices();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [client.id]);
 
   // Sync suggestions
   useEffect(() => {
@@ -156,34 +156,34 @@ export const Portfolio: React.FC<PortfolioProps> = ({ onSelectTicker, portfolio,
       currentPrice: curPrice,
       longName,
       change30d,
-      change60d
+      change60d,
+      macroCategory,
+      location,
+      microCategory
     };
 
-    setPortfolio(prev => {
-      // Check if item already exists
-      const existingIdx = prev.findIndex(item => item.symbol === selectedSymbol);
-      let updated = [];
-      if (existingIdx > -1) {
-        // Average cost calculation
-        const existing = prev[existingIdx];
-        const newQty = existing.quantity + qty;
-        const newAvg = ((existing.quantity * existing.averagePrice) + (qty * avgPrice)) / newQty;
-        
-        updated = [...prev];
-        updated[existingIdx] = {
-          ...existing,
-          quantity: newQty,
-          averagePrice: Number(newAvg.toFixed(2)),
-          currentPrice: curPrice,
-          change30d: change30d || existing.change30d,
-          change60d: change60d || existing.change60d
-        };
-      } else {
-        updated = [...prev, newItem];
-      }
-      localStorage.setItem('b3_analise_portfolio', JSON.stringify(updated));
-      return updated;
-    });
+    let updated = [];
+    const existingIdx = portfolio.findIndex(item => item.symbol === selectedSymbol);
+    if (existingIdx > -1) {
+      const existing = portfolio[existingIdx];
+      const newQty = existing.quantity + qty;
+      const newAvg = ((existing.quantity * existing.averagePrice) + (qty * avgPrice)) / newQty;
+      
+      updated = [...portfolio];
+      updated[existingIdx] = {
+        ...existing,
+        quantity: newQty,
+        averagePrice: Number(newAvg.toFixed(2)),
+        currentPrice: curPrice,
+        macroCategory,
+        location,
+        microCategory
+      };
+    } else {
+      updated = [...portfolio, newItem];
+    }
+    
+    onUpdateClient({ ...client, portfolio: updated });
 
     // Reset Form
     setSelectedSymbol('');
@@ -195,8 +195,7 @@ export const Portfolio: React.FC<PortfolioProps> = ({ onSelectTicker, portfolio,
 
   const handleDeleteItem = (symbol: string) => {
     const updated = portfolio.filter(item => item.symbol !== symbol);
-    setPortfolio(updated);
-    localStorage.setItem('b3_analise_portfolio', JSON.stringify(updated));
+    onUpdateClient({ ...client, portfolio: updated });
   };
 
   // Math metrics
@@ -268,17 +267,15 @@ export const Portfolio: React.FC<PortfolioProps> = ({ onSelectTicker, portfolio,
     })).sort((a: any, b: any) => b.value - a.value);
   }, [resolvedPortfolio]);
 
-  // Allocation by sector
-  const sectorData = useMemo(() => {
+  // Allocation by Macro Category (Fixa vs Variável)
+  const macroData = useMemo(() => {
     const groups: Record<string, { value: number; count: number; items: string[] }> = {};
     resolvedPortfolio.forEach((item: any) => {
-      const sec = item.sector;
-      if (!groups[sec]) {
-        groups[sec] = { value: 0, count: 0, items: [] };
-      }
-      groups[sec].value += item.value;
-      groups[sec].count += 1;
-      groups[sec].items.push(item.symbol);
+      const cat = item.macroCategory || 'Não classificado';
+      if (!groups[cat]) groups[cat] = { value: 0, count: 0, items: [] };
+      groups[cat].value += item.value;
+      groups[cat].count += 1;
+      groups[cat].items.push(item.symbol);
     });
     return Object.entries(groups).map(([name, data]) => ({
       name,
@@ -287,17 +284,32 @@ export const Portfolio: React.FC<PortfolioProps> = ({ onSelectTicker, portfolio,
     })).sort((a: any, b: any) => b.value - a.value);
   }, [resolvedPortfolio]);
 
-  // Allocation by strategy
-  const strategyData = useMemo(() => {
+  // Allocation by Location (Brasil vs Exterior)
+  const locationData = useMemo(() => {
     const groups: Record<string, { value: number; count: number; items: string[] }> = {};
     resolvedPortfolio.forEach((item: any) => {
-      const strat = item.strategy;
-      if (!groups[strat]) {
-        groups[strat] = { value: 0, count: 0, items: [] };
-      }
-      groups[strat].value += item.value;
-      groups[strat].count += 1;
-      groups[strat].items.push(item.symbol);
+      const loc = item.location || 'Não classificado';
+      if (!groups[loc]) groups[loc] = { value: 0, count: 0, items: [] };
+      groups[loc].value += item.value;
+      groups[loc].count += 1;
+      groups[loc].items.push(item.symbol);
+    });
+    return Object.entries(groups).map(([name, data]) => ({
+      name,
+      value: Number(data.value.toFixed(2)),
+      description: `${data.count} ativo(s) (${data.items.join(', ')})`
+    })).sort((a: any, b: any) => b.value - a.value);
+  }, [resolvedPortfolio]);
+
+  // Allocation by Micro Category (Sub-Estratégia)
+  const microData = useMemo(() => {
+    const groups: Record<string, { value: number; count: number; items: string[] }> = {};
+    resolvedPortfolio.forEach((item: any) => {
+      const micro = item.microCategory || 'Não classificado';
+      if (!groups[micro]) groups[micro] = { value: 0, count: 0, items: [] };
+      groups[micro].value += item.value;
+      groups[micro].count += 1;
+      groups[micro].items.push(item.symbol);
     });
     return Object.entries(groups).map(([name, data]) => ({
       name,
@@ -372,8 +384,16 @@ export const Portfolio: React.FC<PortfolioProps> = ({ onSelectTicker, portfolio,
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
+                <div className="flex items-center gap-3 mb-2">
+                  <button onClick={onBackToDashboard} className="text-3xs font-bold text-dark-textSecondary hover:text-brand-primary uppercase transition-colors">
+                    ← Voltar ao CRM
+                  </button>
+                  <span className="px-2 py-0.5 bg-brand-primary/20 text-brand-primary rounded-md text-[10px] font-bold">
+                    CLIENTE: {client.name}
+                  </span>
+                </div>
                 <h3 className="text-lg font-bold text-dark-textPrimary tracking-tight">Ativos em Carteira</h3>
-                <p className="text-xs text-dark-textSecondary font-medium">Gerencie sua carteira pessoal de investimentos na B3</p>
+                <p className="text-xs text-dark-textSecondary font-medium">Estratégia: {client.strategy} | Custódia: {client.assetLocation}</p>
               </div>
               {loading && <span className="text-4xs text-brand-primary animate-pulse uppercase tracking-wider font-bold">Atualizando Cotações...</span>}
             </div>
@@ -520,6 +540,65 @@ export const Portfolio: React.FC<PortfolioProps> = ({ onSelectTicker, portfolio,
                 />
               </div>
 
+              {/* Macro & Location */}
+              <div className="col-span-1 sm:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+                <div>
+                  <label className="block text-3xs font-bold text-dark-textSecondary uppercase tracking-wider mb-1.5">Classe de Ativo</label>
+                  <select
+                    value={macroCategory}
+                    onChange={(e) => setMacroCategory(e.target.value as any)}
+                    className="w-full bg-dark-bg border border-dark-border focus:border-brand-primary outline-none py-2 px-3.5 rounded-xl text-sm font-bold text-dark-textPrimary"
+                  >
+                    <option value="Renda Variável">Renda Variável</option>
+                    <option value="Renda Fixa">Renda Fixa</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-3xs font-bold text-dark-textSecondary uppercase tracking-wider mb-1.5">Mercado (Localização)</label>
+                  <select
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value as any)}
+                    className="w-full bg-dark-bg border border-dark-border focus:border-brand-primary outline-none py-2 px-3.5 rounded-xl text-sm font-bold text-dark-textPrimary"
+                  >
+                    <option value="Brasil">Nacional (Brasil)</option>
+                    <option value="Exterior">Exterior</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-3xs font-bold text-dark-textSecondary uppercase tracking-wider mb-1.5">Sub-Categoria (Estratégia)</label>
+                  <select
+                    value={microCategory}
+                    onChange={(e) => setMicroCategory(e.target.value)}
+                    className="w-full bg-dark-bg border border-dark-border focus:border-brand-primary outline-none py-2 px-3.5 rounded-xl text-sm font-bold text-dark-textPrimary"
+                  >
+                    {macroCategory === 'Renda Fixa' ? (
+                      <>
+                        <option value="Inflação Média">Inflação Média</option>
+                        <option value="Inflação Curta">Inflação Curta</option>
+                        <option value="Pré Curta">Pré Curta</option>
+                        <option value="High Yield">High Yield</option>
+                        <option value="High Grade">High Grade</option>
+                        <option value="Liquidez">Liquidez</option>
+                      </>
+                    ) : location === 'Exterior' ? (
+                      <>
+                        <option value="Ações em Geral">Ações em Geral</option>
+                        <option value="Renda Fixa">Renda Fixa ETF</option>
+                        <option value="Metais Preciosos">Metais Preciosos</option>
+                        <option value="Mercados Emergentes">Mercados Emergentes</option>
+                        <option value="Tecnologia">Tecnologia</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="Segurança">Segurança</option>
+                        <option value="Dividendo">Dividendo</option>
+                        <option value="Crescimento">Crescimento</option>
+                      </>
+                    )}
+                  </select>
+                </div>
+              </div>
+
             </div>
 
             <div className="flex justify-end pt-2">
@@ -626,21 +705,21 @@ export const Portfolio: React.FC<PortfolioProps> = ({ onSelectTicker, portfolio,
                 </div>
               </div>
 
-              {/* 2. Allocation by Sector */}
+              {/* 2. Allocation by Macro */}
               <div className="bg-dark-card border border-dark-border rounded-2xl p-6 shadow-xl space-y-4">
                 <div>
                   <h4 className="text-sm font-extrabold text-dark-textPrimary uppercase tracking-wider flex items-center justify-between">
-                    <span>Setores</span>
-                    <span className="text-2xs text-brand-purple lowercase font-normal">por setor</span>
+                    <span>Macro Alocação</span>
+                    <span className="text-2xs text-brand-purple lowercase font-normal">fixa vs variável</span>
                   </h4>
-                  <p className="text-[10px] text-dark-textSecondary">Distribuição patrimonial segmentada por setores econômicos da bolsa</p>
+                  <p className="text-[10px] text-dark-textSecondary">Distribuição do patrimônio entre classes principais de ativos</p>
                 </div>
                 
                 <div className="h-48 relative flex items-center justify-center">
                   <ResponsiveContainer width="100%" height={180}>
                     <PieChart>
                       <Pie
-                        data={sectorData}
+                        data={macroData}
                         cx="50%"
                         cy="50%"
                         innerRadius={50}
@@ -650,7 +729,7 @@ export const Portfolio: React.FC<PortfolioProps> = ({ onSelectTicker, portfolio,
                         onMouseEnter={(_: any, index: number) => setActiveSectorIndex(index)}
                         onMouseLeave={() => setActiveSectorIndex(null)}
                       >
-                        {sectorData.map((_: any, index: number) => (
+                        {macroData.map((_: any, index: number) => (
                           <Cell 
                             key={`cell-${index}`} 
                             fill={COLORS[(index + 3) % COLORS.length]} 
@@ -664,15 +743,15 @@ export const Portfolio: React.FC<PortfolioProps> = ({ onSelectTicker, portfolio,
 
                   {/* Center Label */}
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none">
-                    {activeSectorIndex !== null && sectorData[activeSectorIndex] ? (
+                    {activeSectorIndex !== null && macroData[activeSectorIndex] ? (
                       <div className="flex flex-col items-center text-center max-w-[100px]">
-                        <span className="text-[9px] font-black text-brand-purple uppercase tracking-wider truncate w-full">{sectorData[activeSectorIndex].name}</span>
-                        <span className="text-sm font-black text-dark-textPrimary font-mono mt-0.5">{((sectorData[activeSectorIndex].value / totalCurrentValue) * 100).toFixed(1)}%</span>
+                        <span className="text-[9px] font-black text-brand-purple uppercase tracking-wider truncate w-full">{macroData[activeSectorIndex].name}</span>
+                        <span className="text-sm font-black text-dark-textPrimary font-mono mt-0.5">{((macroData[activeSectorIndex].value / totalCurrentValue) * 100).toFixed(1)}%</span>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center text-center">
-                        <span className="text-[8px] font-bold text-dark-textSecondary uppercase tracking-wider">Setores</span>
-                        <span className="text-[11px] font-black text-dark-textPrimary font-mono mt-0.5">{sectorData.length} Áreas</span>
+                        <span className="text-[8px] font-bold text-dark-textSecondary uppercase tracking-wider">Classes</span>
+                        <span className="text-[11px] font-black text-dark-textPrimary font-mono mt-0.5">{macroData.length} Tipos</span>
                       </div>
                     )}
                   </div>
@@ -680,7 +759,7 @@ export const Portfolio: React.FC<PortfolioProps> = ({ onSelectTicker, portfolio,
 
                 {/* Legend list */}
                 <div className="max-h-40 overflow-y-auto space-y-1.5 pt-2 border-t border-dark-border/40 select-none">
-                  {sectorData.map((item: any, idx: number) => {
+                  {macroData.map((item: any, idx: number) => {
                     const percent = totalCurrentValue > 0 ? (item.value / totalCurrentValue) * 100 : 0;
                     return (
                       <div 
@@ -707,21 +786,21 @@ export const Portfolio: React.FC<PortfolioProps> = ({ onSelectTicker, portfolio,
                 </div>
               </div>
 
-              {/* 3. Allocation by Strategy */}
+              {/* 3. Allocation by Location */}
               <div className="bg-dark-card border border-dark-border rounded-2xl p-6 shadow-xl space-y-4">
                 <div>
                   <h4 className="text-sm font-extrabold text-dark-textPrimary uppercase tracking-wider flex items-center justify-between">
-                    <span>Estratégias</span>
-                    <span className="text-2xs text-brand-success lowercase font-normal">por tese</span>
+                    <span>Localização</span>
+                    <span className="text-2xs text-brand-success lowercase font-normal">país</span>
                   </h4>
-                  <p className="text-[10px] text-dark-textSecondary">Participação ponderada sob teses de investimento (ex: dividendos ou crescimento)</p>
+                  <p className="text-[10px] text-dark-textSecondary">Participação ponderada por local de exposição do ativo</p>
                 </div>
                 
                 <div className="h-48 relative flex items-center justify-center">
                   <ResponsiveContainer width="100%" height={180}>
                     <PieChart>
                       <Pie
-                        data={strategyData}
+                        data={locationData}
                         cx="50%"
                         cy="50%"
                         innerRadius={50}
@@ -731,7 +810,7 @@ export const Portfolio: React.FC<PortfolioProps> = ({ onSelectTicker, portfolio,
                         onMouseEnter={(_: any, index: number) => setActiveStrategyIndex(index)}
                         onMouseLeave={() => setActiveStrategyIndex(null)}
                       >
-                        {strategyData.map((_: any, index: number) => (
+                        {locationData.map((_: any, index: number) => (
                           <Cell 
                             key={`cell-${index}`} 
                             fill={COLORS[(index + 6) % COLORS.length]} 
@@ -745,15 +824,15 @@ export const Portfolio: React.FC<PortfolioProps> = ({ onSelectTicker, portfolio,
 
                   {/* Center Label */}
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none">
-                    {activeStrategyIndex !== null && strategyData[activeStrategyIndex] ? (
+                    {activeStrategyIndex !== null && locationData[activeStrategyIndex] ? (
                       <div className="flex flex-col items-center text-center max-w-[100px]">
-                        <span className="text-[9px] font-black text-brand-success uppercase tracking-wider truncate w-full">{strategyData[activeStrategyIndex].name}</span>
-                        <span className="text-sm font-black text-dark-textPrimary font-mono mt-0.5">{((strategyData[activeStrategyIndex].value / totalCurrentValue) * 100).toFixed(1)}%</span>
+                        <span className="text-[9px] font-black text-brand-success uppercase tracking-wider truncate w-full">{locationData[activeStrategyIndex].name}</span>
+                        <span className="text-sm font-black text-dark-textPrimary font-mono mt-0.5">{((locationData[activeStrategyIndex].value / totalCurrentValue) * 100).toFixed(1)}%</span>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center text-center">
-                        <span className="text-[8px] font-bold text-dark-textSecondary uppercase tracking-wider">Teses</span>
-                        <span className="text-[11px] font-black text-dark-textPrimary font-mono mt-0.5">{strategyData.length} Estilos</span>
+                        <span className="text-[8px] font-bold text-dark-textSecondary uppercase tracking-wider">Locais</span>
+                        <span className="text-[11px] font-black text-dark-textPrimary font-mono mt-0.5">{locationData.length} Regiões</span>
                       </div>
                     )}
                   </div>
@@ -761,7 +840,7 @@ export const Portfolio: React.FC<PortfolioProps> = ({ onSelectTicker, portfolio,
 
                 {/* Legend list */}
                 <div className="max-h-40 overflow-y-auto space-y-1.5 pt-2 border-t border-dark-border/40 select-none">
-                  {strategyData.map((item: any, idx: number) => {
+                  {locationData.map((item: any, idx: number) => {
                     const percent = totalCurrentValue > 0 ? (item.value / totalCurrentValue) * 100 : 0;
                     return (
                       <div 
@@ -775,6 +854,87 @@ export const Portfolio: React.FC<PortfolioProps> = ({ onSelectTicker, portfolio,
                         <div className="flex items-center justify-between text-3xs font-semibold text-dark-textSecondary">
                           <div className="flex items-center gap-1.5">
                             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[(idx + 6) % COLORS.length] }} />
+                            <span className="font-mono text-dark-textPrimary font-bold">{item.name}</span>
+                          </div>
+                          <span className="font-mono text-dark-textPrimary">{percent.toFixed(1)}%</span>
+                        </div>
+                        <span className="text-[9px] text-dark-textSecondary/80 pl-3.5 truncate block w-full">
+                          {item.description}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 4. Allocation by Micro Category */}
+              <div className="bg-dark-card border border-dark-border rounded-2xl p-6 shadow-xl space-y-4">
+                <div>
+                  <h4 className="text-sm font-extrabold text-dark-textPrimary uppercase tracking-wider flex items-center justify-between">
+                    <span>Estratégia Micro</span>
+                    <span className="text-2xs text-brand-warning lowercase font-normal">sub-classe</span>
+                  </h4>
+                  <p className="text-[10px] text-dark-textSecondary">Distribuição cirúrgica em categorias como High Yield, Crescimento, Tecnologia, etc.</p>
+                </div>
+                
+                <div className="h-48 relative flex items-center justify-center">
+                  <ResponsiveContainer width="100%" height={180}>
+                    <PieChart>
+                      <Pie
+                        data={microData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={65}
+                        paddingAngle={2}
+                        dataKey="value"
+                        onMouseEnter={(_: any, index: number) => setActiveMicroIndex(index)}
+                        onMouseLeave={() => setActiveMicroIndex(null)}
+                      >
+                        {microData.map((_: any, index: number) => (
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill={COLORS[(index + 1) % COLORS.length]} 
+                            style={{ cursor: 'pointer', outline: 'none' }}
+                            opacity={activeMicroIndex === null || activeMicroIndex === index ? 1 : 0.6}
+                          />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+
+                  {/* Center Label */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none">
+                    {activeMicroIndex !== null && microData[activeMicroIndex] ? (
+                      <div className="flex flex-col items-center text-center max-w-[100px]">
+                        <span className="text-[9px] font-black text-brand-warning uppercase tracking-wider truncate w-full">{microData[activeMicroIndex].name}</span>
+                        <span className="text-sm font-black text-dark-textPrimary font-mono mt-0.5">{((microData[activeMicroIndex].value / totalCurrentValue) * 100).toFixed(1)}%</span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center text-center">
+                        <span className="text-[8px] font-bold text-dark-textSecondary uppercase tracking-wider">Sub-Classes</span>
+                        <span className="text-[11px] font-black text-dark-textPrimary font-mono mt-0.5">{microData.length} Teses</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Legend list */}
+                <div className="max-h-40 overflow-y-auto space-y-1.5 pt-2 border-t border-dark-border/40 select-none">
+                  {microData.map((item: any, idx: number) => {
+                    const percent = totalCurrentValue > 0 ? (item.value / totalCurrentValue) * 100 : 0;
+                    return (
+                      <div 
+                        key={item.name} 
+                        className={`flex flex-col p-1 rounded-lg transition-colors cursor-pointer ${
+                          activeMicroIndex === idx ? 'bg-dark-cardHover/50' : ''
+                        }`}
+                        onMouseEnter={() => setActiveMicroIndex(idx)}
+                        onMouseLeave={() => setActiveMicroIndex(null)}
+                      >
+                        <div className="flex items-center justify-between text-3xs font-semibold text-dark-textSecondary">
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[(idx + 1) % COLORS.length] }} />
                             <span className="font-mono text-dark-textPrimary font-bold">{item.name}</span>
                           </div>
                           <span className="font-mono text-dark-textPrimary">{percent.toFixed(1)}%</span>
