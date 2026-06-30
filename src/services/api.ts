@@ -2426,4 +2426,18 @@ export async function fetchMarketMoves(): Promise<MarketMove[]> {
     return [];
   }
 }
+export async function fetchUSDBRL(): Promise<number> {
+  try {
+    const res = await fetch('https://economia.awesomeapi.com.br/last/USD-BRL');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.USDBRL && data.USDBRL.ask) {
+        return parseFloat(data.USDBRL.ask);
+      }
+    }
+  } catch (e) {
+    console.error('Failed to fetch USD/BRL rate', e);
+  }
+  return 5.50; // Fallback
+}
 

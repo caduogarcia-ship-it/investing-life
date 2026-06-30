@@ -1,7 +1,7 @@
 // src/components/Portfolio.tsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, Trash2, TrendingUp, TrendingDown, Briefcase, PlusCircle, ArrowUpRight, DollarSign } from 'lucide-react';
-import { ALL_B3_TICKERS, fetchStockData, searchTickers, getTickerCategory, getTickerStrategy, getTickerSector } from '../services/api';
+import { ALL_B3_TICKERS, fetchStockData, searchTickers, getTickerCategory, getTickerStrategy, getTickerSector, fetchUSDBRL } from '../services/api';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis } from 'recharts';
 
 import { Client, PortfolioItem } from '../types/crm';
@@ -27,6 +27,12 @@ const COLORS = [
 export const Portfolio: React.FC<PortfolioProps> = ({ onSelectTicker, client, onUpdateClient, onBackToDashboard }) => {
   const portfolio = client.portfolio || [];
   const [loading, setLoading] = useState(false);
+  const [usdRate, setUsdRate] = useState(5.50);
+  
+  useEffect(() => {
+    fetchUSDBRL().then(rate => setUsdRate(rate));
+  }, []);
+
   const [perfPeriod, setPerfPeriod] = useState<'30d' | '60d' | 'total'>('total');
   const [activeTickerIndex, setActiveTickerIndex] = useState<number | null>(null);
   const [activeSectorIndex, setActiveSectorIndex] = useState<number | null>(null);
@@ -199,8 +205,16 @@ export const Portfolio: React.FC<PortfolioProps> = ({ onSelectTicker, client, on
   };
 
   // Math metrics
-  const totalCost = portfolio.reduce((sum, item) => sum + (item.quantity * item.averagePrice), 0);
-  const totalCurrentValue = portfolio.reduce((sum, item) => sum + (item.quantity * item.currentPrice), 0);
+  // Math metrics (converting exterior items from USD to BRL for total sum)
+  const totalCost = portfolio.reduce((sum, item) => {
+    const cost = item.quantity * item.averagePrice;
+    return sum + (item.location === 'Exterior' ? cost * usdRate : cost);
+  }, 0);
+  
+  const totalCurrentValue = portfolio.reduce((sum, item) => {
+    const val = item.quantity * item.currentPrice;
+    return sum + (item.location === 'Exterior' ? val * usdRate : val);
+  }, 0);
   const totalPnL = totalCurrentValue - totalCost;
   const totalPnLPercent = totalCost > 0 ? (totalPnL / totalCost) * 100 : 0;
 
@@ -247,7 +261,8 @@ export const Portfolio: React.FC<PortfolioProps> = ({ onSelectTicker, client, on
       const category = getTickerCategory(item.symbol, item.longName);
       const strategy = getTickerStrategy(item.symbol);
       const sector = getTickerSector(item.symbol);
-      const value = Number((item.quantity * item.currentPrice).toFixed(2));
+      const rawValue = item.quantity * item.currentPrice;
+      const value = item.location === 'Exterior' ? Number((rawValue * usdRate).toFixed(2)) : Number(rawValue.toFixed(2));
       return {
         ...item,
         category,
@@ -416,10 +431,17 @@ export const Portfolio: React.FC<PortfolioProps> = ({ onSelectTicker, client, on
                   </thead>
                   <tbody className="divide-y divide-dark-border/30 text-xs font-medium">
                     {portfolio.map((item) => {
-                      const cost = item.quantity * item.averagePrice;
-                      const value = item.quantity * item.currentPrice;
+                      const rawCost = item.quantity * item.averagePrice;
+                      const rawValue = item.quantity * item.currentPrice;
+                      const isForeign = item.location === 'Exterior';
+                      const cost = isForeign ? rawCost * usdRate : rawCost;
+                      const value = isForeign ? rawValue * usdRate : rawValue;
                       const pnl = value - cost;
                       const pnlPercent = cost > 0 ? (pnl / cost) * 100 : 0;
+                      
+                      const formatCurrency = (val: number, isUSD: boolean = false) => 
+                        isUSD ? `US$ ${val.toFixed(2).replace('.', ',')}` : `R$ ${val.toFixed(2).replace('.', ',')}`;
+
                       return (
                         <tr key={item.symbol} className="hover:bg-dark-cardHover/30 transition-colors group">
                           {/* Symbol & Name */}
@@ -437,13 +459,25 @@ export const Portfolio: React.FC<PortfolioProps> = ({ onSelectTicker, client, on
                           {/* Quantity */}
                           <td className="py-4 font-mono font-bold text-dark-textPrimary">{item.quantity}</td>
                           {/* Average Price */}
-                          <td className="py-4 font-mono text-dark-textSecondary">R$ {item.averagePrice.toFixed(2).replace('.', ',')}</td>
+                          <td className="py-4 font-mono text-dark-textSecondary text-xs">
+                            {formatCurrency(item.averagePrice, isForeign)}
+                            {isForeign && <span className="block text-3xs text-dark-textSecondary/50 mt-0.5">≅ {formatCurrency(item.averagePrice * usdRate)}</span>}
+                          </td>
                           {/* Current Price */}
-                          <td className="py-4 font-mono text-dark-textPrimary">R$ {item.currentPrice.toFixed(2).replace('.', ',')}</td>
+                          <td className="py-4 font-mono text-dark-textPrimary text-xs">
+                            {formatCurrency(item.currentPrice, isForeign)}
+                            {isForeign && <span className="block text-3xs text-dark-textSecondary/50 mt-0.5">≅ {formatCurrency(item.currentPrice * usdRate)}</span>}
+                          </td>
                           {/* Total Cost */}
-                          <td className="py-4 font-mono text-dark-textSecondary">R$ {cost.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                          <td className="py-4 font-mono text-dark-textSecondary text-xs">
+                            {isForeign && <span className="block text-3xs text-dark-textSecondary/50 mb-0.5">{formatCurrency(rawCost, true)}</span>}
+                            {formatCurrency(cost)}
+                          </td>
                           {/* Total Value */}
-                          <td className="py-4 font-mono font-bold text-dark-textPrimary">R$ {value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                          <td className="py-4 font-mono font-bold text-dark-textPrimary text-xs">
+                            {isForeign && <span className="block text-3xs text-brand-primary/50 mb-0.5">{formatCurrency(rawValue, true)}</span>}
+                            {formatCurrency(value)}
+                          </td>
                           {/* PNL */}
                           <td className="py-4">
                             <span className={`font-mono font-bold ${pnl >= 0 ? 'text-brand-success' : 'text-brand-danger'}`}>
@@ -529,7 +563,9 @@ export const Portfolio: React.FC<PortfolioProps> = ({ onSelectTicker, client, on
 
               {/* Average Price */}
               <div>
-                <label className="block text-3xs font-bold text-dark-textSecondary uppercase tracking-wider mb-1.5">Preço Médio (BRL)</label>
+                <label className="block text-3xs font-bold text-dark-textSecondary uppercase tracking-wider mb-1.5">
+                  Preço Médio {location === 'Exterior' ? '(USD)' : '(BRL)'}
+                </label>
                 <input
                   type="number"
                   step="0.01"
