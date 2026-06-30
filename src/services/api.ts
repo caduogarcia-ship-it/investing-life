@@ -1578,6 +1578,8 @@ async function fetchInvestidor10Data(symbol: string): Promise<Partial<StockData>
               indicators.pvp = parseValue(valStr);
             } else if (title.includes('DY') || title.includes('DIVIDEND YIELD')) {
               indicators.dy = parseValue(valStr);
+            } else if (title.includes('COTAÇÃO')) {
+              indicators.regularMarketPrice = parseValue(valStr);
             }
           }
         });
@@ -1830,8 +1832,15 @@ export async function fetchStockData(symbol: string): Promise<StockData> {
   let investidor10Data: Partial<StockData> | null = null;
   try {
     investidor10Data = await fetchInvestidor10Data(cleanSymbol);
-    if (investidor10Data && investidor10Data.longName) {
-      longName = investidor10Data.longName;
+    if (investidor10Data) {
+      if (investidor10Data.longName) {
+        longName = investidor10Data.longName;
+      }
+      if (!loadedViaYahoo && investidor10Data.regularMarketPrice) {
+        regularMarketPrice = investidor10Data.regularMarketPrice;
+        high = Number((regularMarketPrice * 1.02).toFixed(2));
+        low = Number((regularMarketPrice * 0.98).toFixed(2));
+      }
     }
   } catch (err) {
     console.warn('Investidor10 parser fetch failed', err);
