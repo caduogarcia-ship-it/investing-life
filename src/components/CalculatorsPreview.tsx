@@ -808,37 +808,44 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                                     {(() => {
                                       const currentPriceNum = parseFloat(currentPriceInput);
                                       if (!isNaN(currentPriceNum) && currentPriceNum > 0) {
-                                        const percDiff = ((currentPriceNum - vpSum) / vpSum) * 100;
-                                        const isCheap = percDiff < 0;
+                                        // Upside Potential: quanto a ação pode subir para chegar no preço justo
+                                        const upside = ((vpSum - currentPriceNum) / currentPriceNum) * 100;
                                         
                                         let bgColor = 'bg-dark-card border-t md:border-t-0 md:border-l border-emerald-500/20';
                                         let textColor = 'text-brand-primary';
                                         let statusText = 'NO PREÇO JUSTO';
                                         let confetti = '';
 
-                                        if (isCheap) {
+                                        if (upside >= 15) {
                                           bgColor = 'bg-emerald-600 border-t md:border-t-0 md:border-l border-emerald-500';
                                           textColor = 'text-white drop-shadow-md';
-                                          statusText = 'DESCONTADO (BARATO)';
+                                          statusText = 'OPORTUNIDADE (DESCONTADA)';
                                           confetti = '🎊 🎉 🎊';
-                                        } else if (percDiff > 15) {
+                                        } else if (upside <= -15) {
                                           bgColor = 'bg-brand-danger border-t md:border-t-0 md:border-l border-brand-danger/80';
                                           textColor = 'text-white drop-shadow-md';
-                                          statusText = 'CARO (ÁGIO ALTO)';
-                                        } else if (percDiff > 0 && percDiff <= 15) {
+                                          statusText = 'CARA (ÁGIO ALTO)';
+                                        } else if (upside > 0 && upside < 15) {
                                           bgColor = 'bg-brand-warning border-t md:border-t-0 md:border-l border-brand-warning/80';
                                           textColor = 'text-yellow-950 drop-shadow-sm';
-                                          statusText = 'LEVEMENTE CARO';
+                                          statusText = 'MARGEM CURTA (DESCONTO PEQUENO)';
+                                        } else if (upside < 0 && upside > -15) {
+                                          bgColor = 'bg-brand-warning border-t md:border-t-0 md:border-l border-brand-warning/80';
+                                          textColor = 'text-yellow-950 drop-shadow-sm';
+                                          statusText = 'LEVEMENTE CARA (ÁGIO PEQUENO)';
                                         }
 
                                         return (
                                           <div className={`flex-1 p-8 flex flex-col items-center justify-center text-center transition-all duration-500 ${bgColor}`}>
                                             {confetti && <div className="text-3xl animate-bounce mb-3">{confetti}</div>}
-                                            <span className={`text-xl font-black uppercase tracking-wider mb-2 ${textColor}`}>
+                                            <span className={`text-lg font-black uppercase tracking-wider mb-2 ${textColor}`}>
                                               {statusText}
                                             </span>
                                             <span className={`text-4xl font-black font-mono ${textColor}`}>
-                                              {percDiff > 0 ? '+' : ''}{percDiff.toFixed(2)}%
+                                              {upside > 0 ? '+' : ''}{upside.toFixed(2)}%
+                                            </span>
+                                            <span className={`text-[10px] font-bold uppercase mt-1 opacity-70 ${textColor}`}>
+                                              {upside > 0 ? 'Potencial de Valorização' : 'Risco de Queda'}
                                             </span>
                                           </div>
                                         );
@@ -957,49 +964,56 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                               </div>
 
                               {(() => {
-                                const currentPriceNum = parseFloat(currentPriceInput);
-                                if (!isNaN(currentPriceNum) && currentPriceNum > 0) {
-                                  const percDiff = ((currentPriceNum - calc.p0) / calc.p0) * 100;
-                                  const isCheap = percDiff < 0;
-                                  
-                                  let bgColor = 'bg-dark-card border-t md:border-t-0 md:border-l border-emerald-500/20';
-                                  let textColor = 'text-brand-primary';
-                                  let statusText = 'NO PREÇO JUSTO';
-                                  let confetti = '';
+                                      const currentPriceNum = parseFloat(currentPriceInput);
+                                      if (!isNaN(currentPriceNum) && currentPriceNum > 0) {
+                                        // Upside Potential: quanto a ação pode subir para chegar no preço justo
+                                        const upside = ((calc.p0 - currentPriceNum) / currentPriceNum) * 100;
+                                        
+                                        let bgColor = 'bg-dark-card border-t md:border-t-0 md:border-l border-emerald-500/20';
+                                        let textColor = 'text-brand-primary';
+                                        let statusText = 'NO PREÇO JUSTO';
+                                        let confetti = '';
 
-                                  if (isCheap) {
-                                    bgColor = 'bg-emerald-600 border-t md:border-t-0 md:border-l border-emerald-500';
-                                    textColor = 'text-white drop-shadow-md';
-                                    statusText = 'DESCONTADO (BARATO)';
-                                    confetti = '🎊 🎉 🎊';
-                                  } else if (percDiff > 15) {
-                                    bgColor = 'bg-brand-danger border-t md:border-t-0 md:border-l border-brand-danger/80';
-                                    textColor = 'text-white drop-shadow-md';
-                                    statusText = 'CARO (ÁGIO ALTO)';
-                                  } else if (percDiff > 0 && percDiff <= 15) {
-                                    bgColor = 'bg-brand-warning border-t md:border-t-0 md:border-l border-brand-warning/80';
-                                    textColor = 'text-yellow-950 drop-shadow-sm';
-                                    statusText = 'LEVEMENTE CARO';
-                                  }
+                                        if (upside >= 15) {
+                                          bgColor = 'bg-emerald-600 border-t md:border-t-0 md:border-l border-emerald-500';
+                                          textColor = 'text-white drop-shadow-md';
+                                          statusText = 'OPORTUNIDADE (DESCONTADA)';
+                                          confetti = '🎊 🎉 🎊';
+                                        } else if (upside <= -15) {
+                                          bgColor = 'bg-brand-danger border-t md:border-t-0 md:border-l border-brand-danger/80';
+                                          textColor = 'text-white drop-shadow-md';
+                                          statusText = 'CARA (ÁGIO ALTO)';
+                                        } else if (upside > 0 && upside < 15) {
+                                          bgColor = 'bg-brand-warning border-t md:border-t-0 md:border-l border-brand-warning/80';
+                                          textColor = 'text-yellow-950 drop-shadow-sm';
+                                          statusText = 'MARGEM CURTA (DESCONTO PEQUENO)';
+                                        } else if (upside < 0 && upside > -15) {
+                                          bgColor = 'bg-brand-warning border-t md:border-t-0 md:border-l border-brand-warning/80';
+                                          textColor = 'text-yellow-950 drop-shadow-sm';
+                                          statusText = 'LEVEMENTE CARA (ÁGIO PEQUENO)';
+                                        }
 
-                                  return (
-                                    <div className={`flex-1 p-8 flex flex-col items-center justify-center text-center transition-all duration-500 ${bgColor}`}>
-                                      {confetti && <div className="text-3xl animate-bounce mb-3">{confetti}</div>}
-                                      <span className={`text-xl font-black uppercase tracking-wider mb-2 ${textColor}`}>
-                                        {statusText}
-                                      </span>
-                                      <span className={`text-4xl font-black font-mono ${textColor}`}>
-                                        {percDiff > 0 ? '+' : ''}{percDiff.toFixed(2)}%
-                                      </span>
-                                    </div>
-                                  );
-                                }
-                                return (
-                                  <div className="flex-1 p-8 flex items-center justify-center text-center bg-dark-bg/40 border-t md:border-t-0 md:border-l border-emerald-500/20">
-                                    <p className="text-sm text-emerald-400/40 italic font-medium">Insira a cotação atual acima para avaliar o status.</p>
-                                  </div>
-                                );
-                              })()}
+                                        return (
+                                          <div className={`flex-1 p-8 flex flex-col items-center justify-center text-center transition-all duration-500 ${bgColor}`}>
+                                            {confetti && <div className="text-3xl animate-bounce mb-3">{confetti}</div>}
+                                            <span className={`text-lg font-black uppercase tracking-wider mb-2 ${textColor}`}>
+                                              {statusText}
+                                            </span>
+                                            <span className={`text-4xl font-black font-mono ${textColor}`}>
+                                              {upside > 0 ? '+' : ''}{upside.toFixed(2)}%
+                                            </span>
+                                            <span className={`text-[10px] font-bold uppercase mt-1 opacity-70 ${textColor}`}>
+                                              {upside > 0 ? 'Potencial de Valorização' : 'Risco de Queda'}
+                                            </span>
+                                          </div>
+                                        );
+                                      }
+                                      return (
+                                        <div className="flex-1 p-8 flex items-center justify-center text-center bg-dark-bg/40 border-t md:border-t-0 md:border-l border-emerald-500/20">
+                                          <p className="text-sm text-emerald-400/40 italic font-medium">Insira a cotação atual acima para avaliar o status.</p>
+                                        </div>
+                                      );
+                                    })()}
                             </div>
                           </div>
                         </div>
