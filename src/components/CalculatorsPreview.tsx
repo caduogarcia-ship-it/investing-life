@@ -776,47 +776,78 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                                   </p>
                                 </div>
 
-                                <div className="flex flex-col md:flex-row items-stretch justify-between p-6 bg-emerald-500/10 border-2 border-emerald-500/20 rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.15)] gap-6 mt-4">
-                                  <div className="flex-1 flex flex-col items-center justify-center text-center border-b md:border-b-0 md:border-r border-emerald-500/20 pb-6 md:pb-0 md:pr-6">
-                                    <span className="text-xs font-black text-emerald-400 uppercase tracking-widest mb-2">
-                                      Preço Justo Final (P₀)
+                                <div className="flex flex-col border-2 border-emerald-500/20 rounded-xl overflow-hidden shadow-[0_0_15px_rgba(16,185,129,0.15)] mt-4">
+                                  {/* PARTE SUPERIOR: COMPARAÇÃO (INPUT) */}
+                                  <div className="bg-emerald-500/10 p-5 border-b border-emerald-500/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+                                    <span className="text-sm font-black text-emerald-400 uppercase tracking-widest text-center sm:text-left">
+                                      Comparação com Cotação de Mercado
                                     </span>
-                                    <span className="text-5xl font-black text-emerald-400 font-mono">
-                                      {formatCurrency(vpSum)}
-                                    </span>
-                                  </div>
-                                  <div className="flex-1 flex flex-col items-center justify-center text-center">
-                                    <span className="text-[10px] font-black text-emerald-400/80 uppercase tracking-widest mb-3">
-                                      Comparação com Cotação Atual
-                                    </span>
-                                    <div className="flex items-center justify-center bg-dark-bg/60 border border-emerald-500/30 focus-within:border-emerald-400 rounded-lg px-3 py-1.5 w-full max-w-[180px] transition-colors mb-3">
-                                      <span className="text-emerald-400/70 text-xs font-mono mr-2">{currencySymbol}</span>
+                                    <div className="flex items-center justify-center bg-dark-bg/80 border border-emerald-500/30 focus-within:border-emerald-400 rounded-lg px-4 py-2 w-full sm:max-w-[220px] transition-colors">
+                                      <span className="text-emerald-400/70 text-lg font-mono mr-2">{currencySymbol}</span>
                                       <input 
                                         type="number" step="0.01" min="0" 
                                         value={currentPriceInput}
                                         onChange={(e) => setCurrentPriceInput(e.target.value)}
                                         placeholder="Preço Atual"
-                                        className="w-full bg-transparent text-center font-mono text-sm outline-none border-none p-0 focus:ring-0 focus:outline-none text-emerald-400 placeholder:text-emerald-400/30"
+                                        className="w-full bg-transparent text-center font-mono text-lg font-bold outline-none border-none p-0 focus:ring-0 focus:outline-none text-emerald-400 placeholder:text-emerald-400/30"
                                       />
                                     </div>
+                                  </div>
+
+                                  {/* PARTE INFERIOR: RESULTADOS (P0 e STATUS) */}
+                                  <div className="flex flex-col md:flex-row items-stretch">
+                                    <div className="flex-1 p-8 flex flex-col items-center justify-center text-center bg-emerald-500/5">
+                                      <span className="text-xs font-black text-emerald-400/80 uppercase tracking-widest mb-2">
+                                        Preço Justo Final Calculado (P₀)
+                                      </span>
+                                      <span className="text-5xl font-black text-emerald-400 font-mono drop-shadow-sm">
+                                        {formatCurrency(vpSum)}
+                                      </span>
+                                    </div>
+
                                     {(() => {
                                       const currentPriceNum = parseFloat(currentPriceInput);
                                       if (!isNaN(currentPriceNum) && currentPriceNum > 0) {
-                                        const isCheap = currentPriceNum < vpSum;
-                                        const isExpensive = currentPriceNum > vpSum;
-                                        const difference = Math.abs(((vpSum - currentPriceNum) / currentPriceNum) * 100);
+                                        const percDiff = ((currentPriceNum - vpSum) / vpSum) * 100;
+                                        const isCheap = percDiff < 0;
+                                        
+                                        let bgColor = 'bg-dark-card border-t md:border-t-0 md:border-l border-emerald-500/20';
+                                        let textColor = 'text-brand-primary';
+                                        let statusText = 'NO PREÇO JUSTO';
+                                        let confetti = '';
+
+                                        if (isCheap) {
+                                          bgColor = 'bg-emerald-600 border-t md:border-t-0 md:border-l border-emerald-500';
+                                          textColor = 'text-white drop-shadow-md';
+                                          statusText = 'DESCONTADO (BARATO)';
+                                          confetti = '🎊 🎉 🎊';
+                                        } else if (percDiff > 15) {
+                                          bgColor = 'bg-brand-danger border-t md:border-t-0 md:border-l border-brand-danger/80';
+                                          textColor = 'text-white drop-shadow-md';
+                                          statusText = 'CARO (ÁGIO ALTO)';
+                                        } else if (percDiff > 0 && percDiff <= 15) {
+                                          bgColor = 'bg-brand-warning border-t md:border-t-0 md:border-l border-brand-warning/80';
+                                          textColor = 'text-yellow-950 drop-shadow-sm';
+                                          statusText = 'LEVEMENTE CARO';
+                                        }
+
                                         return (
-                                          <div className={`px-4 py-2 rounded-lg border w-full max-w-[220px] ${isCheap ? 'bg-emerald-500/20 border-emerald-500/40' : isExpensive ? 'bg-brand-danger/20 border-brand-danger/40' : 'bg-brand-primary/20 border-brand-primary/40'}`}>
-                                            <p className={`text-[9px] font-black uppercase tracking-wider ${isCheap ? 'text-emerald-300' : isExpensive ? 'text-brand-danger' : 'text-brand-primary'}`}>
-                                              {isCheap ? '🟢 BARATO (DESCONTO)' : isExpensive ? '🔴 CARO (ÁGIO)' : '⚪ NO PREÇO'}
-                                            </p>
-                                            <p className={`text-sm font-bold mt-1 ${isCheap ? 'text-emerald-400' : isExpensive ? 'text-brand-danger' : 'text-brand-primary'} font-mono`}>
-                                              {isCheap ? '+' : isExpensive ? '-' : ''}{difference.toFixed(2)}%
-                                            </p>
+                                          <div className={`flex-1 p-8 flex flex-col items-center justify-center text-center transition-all duration-500 ${bgColor}`}>
+                                            {confetti && <div className="text-3xl animate-bounce mb-3">{confetti}</div>}
+                                            <span className={`text-xl font-black uppercase tracking-wider mb-2 ${textColor}`}>
+                                              {statusText}
+                                            </span>
+                                            <span className={`text-4xl font-black font-mono ${textColor}`}>
+                                              {percDiff > 0 ? '+' : ''}{percDiff.toFixed(2)}%
+                                            </span>
                                           </div>
                                         );
                                       }
-                                      return <p className="text-[10px] text-emerald-400/50 italic">Insira o preço p/ comparar</p>;
+                                      return (
+                                        <div className="flex-1 p-8 flex items-center justify-center text-center bg-dark-bg/40 border-t md:border-t-0 md:border-l border-emerald-500/20">
+                                          <p className="text-sm text-emerald-400/40 italic font-medium">Insira a cotação atual acima para avaliar o status.</p>
+                                        </div>
+                                      );
                                     })()}
                                   </div>
                                 </div>
@@ -896,47 +927,78 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                             </p>
                           </div>
 
-                          <div className="flex flex-col md:flex-row items-stretch justify-between p-6 bg-emerald-500/10 border-2 border-emerald-500/20 rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.15)] gap-6 mt-4">
-                            <div className="flex-1 flex flex-col items-center justify-center text-center border-b md:border-b-0 md:border-r border-emerald-500/20 pb-6 md:pb-0 md:pr-6">
-                              <span className="text-xs font-black text-emerald-400 uppercase tracking-widest mb-2">
-                                Preço Justo Final (P₀)
+                          <div className="flex flex-col border-2 border-emerald-500/20 rounded-xl overflow-hidden shadow-[0_0_15px_rgba(16,185,129,0.15)] mt-4">
+                            {/* PARTE SUPERIOR: COMPARAÇÃO (INPUT) */}
+                            <div className="bg-emerald-500/10 p-5 border-b border-emerald-500/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+                              <span className="text-sm font-black text-emerald-400 uppercase tracking-widest text-center sm:text-left">
+                                Comparação com Cotação de Mercado
                               </span>
-                              <span className="text-5xl font-black text-emerald-400 font-mono">
-                                {formatCurrency(calc.p0)}
-                              </span>
-                            </div>
-                            <div className="flex-1 flex flex-col items-center justify-center text-center">
-                              <span className="text-[10px] font-black text-emerald-400/80 uppercase tracking-widest mb-3">
-                                Comparação com Cotação Atual
-                              </span>
-                              <div className="flex items-center justify-center bg-dark-bg/60 border border-emerald-500/30 focus-within:border-emerald-400 rounded-lg px-3 py-1.5 w-full max-w-[180px] transition-colors mb-3">
-                                <span className="text-emerald-400/70 text-xs font-mono mr-2">{currencySymbol}</span>
+                              <div className="flex items-center justify-center bg-dark-bg/80 border border-emerald-500/30 focus-within:border-emerald-400 rounded-lg px-4 py-2 w-full sm:max-w-[220px] transition-colors">
+                                <span className="text-emerald-400/70 text-lg font-mono mr-2">{currencySymbol}</span>
                                 <input 
                                   type="number" step="0.01" min="0" 
                                   value={currentPriceInput}
                                   onChange={(e) => setCurrentPriceInput(e.target.value)}
                                   placeholder="Preço Atual"
-                                  className="w-full bg-transparent text-center font-mono text-sm outline-none border-none p-0 focus:ring-0 focus:outline-none text-emerald-400 placeholder:text-emerald-400/30"
+                                  className="w-full bg-transparent text-center font-mono text-lg font-bold outline-none border-none p-0 focus:ring-0 focus:outline-none text-emerald-400 placeholder:text-emerald-400/30"
                                 />
                               </div>
+                            </div>
+
+                            {/* PARTE INFERIOR: RESULTADOS (P0 e STATUS) */}
+                            <div className="flex flex-col md:flex-row items-stretch">
+                              <div className="flex-1 p-8 flex flex-col items-center justify-center text-center bg-emerald-500/5">
+                                <span className="text-xs font-black text-emerald-400/80 uppercase tracking-widest mb-2">
+                                  Preço Justo Final Calculado (P₀)
+                                </span>
+                                <span className="text-5xl font-black text-emerald-400 font-mono drop-shadow-sm">
+                                  {formatCurrency(calc.p0)}
+                                </span>
+                              </div>
+
                               {(() => {
                                 const currentPriceNum = parseFloat(currentPriceInput);
                                 if (!isNaN(currentPriceNum) && currentPriceNum > 0) {
-                                  const isCheap = currentPriceNum < calc.p0;
-                                  const isExpensive = currentPriceNum > calc.p0;
-                                  const difference = Math.abs(((calc.p0 - currentPriceNum) / currentPriceNum) * 100);
+                                  const percDiff = ((currentPriceNum - calc.p0) / calc.p0) * 100;
+                                  const isCheap = percDiff < 0;
+                                  
+                                  let bgColor = 'bg-dark-card border-t md:border-t-0 md:border-l border-emerald-500/20';
+                                  let textColor = 'text-brand-primary';
+                                  let statusText = 'NO PREÇO JUSTO';
+                                  let confetti = '';
+
+                                  if (isCheap) {
+                                    bgColor = 'bg-emerald-600 border-t md:border-t-0 md:border-l border-emerald-500';
+                                    textColor = 'text-white drop-shadow-md';
+                                    statusText = 'DESCONTADO (BARATO)';
+                                    confetti = '🎊 🎉 🎊';
+                                  } else if (percDiff > 15) {
+                                    bgColor = 'bg-brand-danger border-t md:border-t-0 md:border-l border-brand-danger/80';
+                                    textColor = 'text-white drop-shadow-md';
+                                    statusText = 'CARO (ÁGIO ALTO)';
+                                  } else if (percDiff > 0 && percDiff <= 15) {
+                                    bgColor = 'bg-brand-warning border-t md:border-t-0 md:border-l border-brand-warning/80';
+                                    textColor = 'text-yellow-950 drop-shadow-sm';
+                                    statusText = 'LEVEMENTE CARO';
+                                  }
+
                                   return (
-                                    <div className={`px-4 py-2 rounded-lg border w-full max-w-[220px] ${isCheap ? 'bg-emerald-500/20 border-emerald-500/40' : isExpensive ? 'bg-brand-danger/20 border-brand-danger/40' : 'bg-brand-primary/20 border-brand-primary/40'}`}>
-                                      <p className={`text-[9px] font-black uppercase tracking-wider ${isCheap ? 'text-emerald-300' : isExpensive ? 'text-brand-danger' : 'text-brand-primary'}`}>
-                                        {isCheap ? '🟢 BARATO (DESCONTO)' : isExpensive ? '🔴 CARO (ÁGIO)' : '⚪ NO PREÇO'}
-                                      </p>
-                                      <p className={`text-sm font-bold mt-1 ${isCheap ? 'text-emerald-400' : isExpensive ? 'text-brand-danger' : 'text-brand-primary'} font-mono`}>
-                                        {isCheap ? '+' : isExpensive ? '-' : ''}{difference.toFixed(2)}%
-                                      </p>
+                                    <div className={`flex-1 p-8 flex flex-col items-center justify-center text-center transition-all duration-500 ${bgColor}`}>
+                                      {confetti && <div className="text-3xl animate-bounce mb-3">{confetti}</div>}
+                                      <span className={`text-xl font-black uppercase tracking-wider mb-2 ${textColor}`}>
+                                        {statusText}
+                                      </span>
+                                      <span className={`text-4xl font-black font-mono ${textColor}`}>
+                                        {percDiff > 0 ? '+' : ''}{percDiff.toFixed(2)}%
+                                      </span>
                                     </div>
                                   );
                                 }
-                                return <p className="text-[10px] text-emerald-400/50 italic">Insira o preço p/ comparar</p>;
+                                return (
+                                  <div className="flex-1 p-8 flex items-center justify-center text-center bg-dark-bg/40 border-t md:border-t-0 md:border-l border-emerald-500/20">
+                                    <p className="text-sm text-emerald-400/40 italic font-medium">Insira a cotação atual acima para avaliar o status.</p>
+                                  </div>
+                                );
                               })()}
                             </div>
                           </div>
