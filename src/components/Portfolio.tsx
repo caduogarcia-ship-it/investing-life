@@ -4,7 +4,7 @@ import { Plus, Trash2, TrendingUp, TrendingDown, Briefcase, PlusCircle, ArrowUpR
 import { ALL_B3_TICKERS, fetchStockData, searchTickers, getTickerCategory, getTickerStrategy, getTickerSector, fetchUSDBRL } from '../services/api';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis } from 'recharts';
 
-import { Client, PortfolioItem } from '../types/crm';
+import type { Client, PortfolioItem } from '../types/crm';
 
 interface PortfolioProps {
   onSelectTicker: (symbol: string) => void;

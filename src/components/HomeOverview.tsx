@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Bookmark, Briefcase, Trash2, TrendingUp, TrendingDown, Eye, Plus, Loader2, Award, ArrowUpRight, ArrowDownRight, X, HelpCircle, Search, LineChart, Calculator } from 'lucide-react';
 import { fetchStockData, fetchMarketMoves } from '../services/api';
 import type { MarketMove } from '../services/api';
-import type { PortfolioItem } from './Portfolio';
+import type { PortfolioItem } from '../types/crm';
 
 interface HomeOverviewProps {
   watchlist: string[];

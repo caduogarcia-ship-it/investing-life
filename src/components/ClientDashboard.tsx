@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Plus, Users, Briefcase, MapPin, Target, Trash2 } from 'lucide-react';
-import { Client } from '../types/crm';
+import type { Client } from '../types/crm';
 
 interface ClientDashboardProps {
   clients: Client[];

@@ -23,11 +23,12 @@ import { AlertCircle, FolderHeart, Compass, ArrowRight } from 'lucide-react';
 import { Login } from './components/Login';
 import { HomeOverview } from './components/HomeOverview';
 import { AddAssetModal } from './components/AddAssetModal';
-import type { PortfolioItem } from './components/Portfolio';
-import { Client } from './types/crm';
+
+import type { Client } from './types/crm';
 import { CalculatorsPreview } from './components/CalculatorsPreview';
 import { AdminHub } from './components/AdminHub';
 import { TesouroDireto } from './components/TesouroDireto';
+import { ClientDashboard } from './components/ClientDashboard';
 import { supabase, loadUserData, saveUserData, ADMIN_EMAIL } from './services/supabase';
 
 export default function App() {
@@ -81,7 +82,7 @@ export default function App() {
           const userData = await loadUserData(session.user.id);
           if (userData) {
             if (Array.isArray(userData.portfolio) && userData.portfolio.length > 0) {
-              setPortfolio(userData.portfolio);
+              // setPortfolio(userData.portfolio);
             }
             if (Array.isArray(userData.watchlist) && userData.watchlist.length > 0) {
               setWatchlist(userData.watchlist);
@@ -106,7 +107,7 @@ export default function App() {
         setIsLoggedIn(false);
         setCurrentUserEmail('');
         setCurrentUserId('');
-        setPortfolio([]);
+        // setPortfolio([]);
         setWatchlist(['PETR4', 'VALE3', 'WEGE3', 'CURY3', 'TEND3', 'ITUB4']);
       }
     });
@@ -121,15 +122,15 @@ export default function App() {
     if (!currentUserId || !currentUserEmail || currentUserEmail === 'test@investinglife.com') return;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
-      saveUserData(currentUserId, currentUserEmail, portfolio, watchlist);
+      saveUserData(currentUserId, currentUserEmail, [], watchlist);
     }, 1500);
-  }, [currentUserId, currentUserEmail, portfolio, watchlist]);
+  }, [currentUserId, currentUserEmail, watchlist]);
 
   useEffect(() => {
     if (isLoggedIn && currentUserId) {
       syncToCloud();
     }
-  }, [portfolio, watchlist, isLoggedIn, currentUserId, syncToCloud]);
+  }, [watchlist, isLoggedIn, currentUserId, syncToCloud]);
 
   const isAdmin = currentUserEmail === ADMIN_EMAIL;
 
@@ -154,57 +155,7 @@ export default function App() {
     });
 
     if (type === 'portfolio' && qty && avgPrice) {
-      try {
-        const data = await fetchStockData(cleanSym);
-        const curPrice = data.regularMarketPrice;
-        const longName = data.longName || cleanSym;
-
-        setPortfolio(prev => {
-          const existingIdx = prev.findIndex(item => item.symbol === cleanSym);
-          let updated = [];
-          if (existingIdx > -1) {
-            const existing = prev[existingIdx];
-            const newQty = existing.quantity + qty;
-            const newAvg = ((existing.quantity * existing.averagePrice) + (qty * avgPrice)) / newQty;
-            
-            updated = [...prev];
-            updated[existingIdx] = {
-              ...existing,
-              quantity: newQty,
-              averagePrice: Number(newAvg.toFixed(2)),
-              currentPrice: curPrice,
-            };
-          } else {
-            updated = [
-              ...prev,
-              {
-                symbol: cleanSym,
-                quantity: qty,
-                averagePrice: avgPrice,
-                currentPrice: curPrice,
-                longName,
-              }
-            ];
-          }
-          return updated;
-        });
-      } catch (err) {
-        console.warn('Failed to fetch price details for added portfolio asset', err);
-        setPortfolio(prev => {
-          const existingIdx = prev.findIndex(item => item.symbol === cleanSym);
-          if (existingIdx > -1) return prev;
-          return [
-            ...prev,
-            {
-              symbol: cleanSym,
-              quantity: qty,
-              averagePrice: avgPrice,
-              currentPrice: avgPrice,
-              longName: cleanSym,
-            }
-          ];
-        });
-      }
+      console.warn('Add to portfolio via quick action is disabled in CRM mode');
     }
   };
 
@@ -225,7 +176,7 @@ export default function App() {
         const userData = await loadUserData(session.user.id);
         if (userData) {
           if (Array.isArray(userData.portfolio) && userData.portfolio.length > 0) {
-            setPortfolio(userData.portfolio);
+            // setPortfolio(userData.portfolio);
           }
           if (Array.isArray(userData.watchlist) && userData.watchlist.length > 0) {
             setWatchlist(userData.watchlist);
@@ -246,7 +197,7 @@ export default function App() {
     setIsLoggedIn(false);
     setCurrentUserEmail('');
     setCurrentUserId('');
-    setPortfolio([]);
+    // setPortfolio([]);
     setWatchlist(['PETR4', 'VALE3', 'WEGE3', 'CURY3', 'TEND3', 'ITUB4']);
   };
 
@@ -426,7 +377,7 @@ export default function App() {
         {activeTab === 'analise' && !showDetail ? (
           <HomeOverview 
             watchlist={watchlist}
-            portfolio={[]} // Removed legacy global portfolio dependency
+            portfolio={clients.flatMap(c => c.portfolio || [])}
             onSelectTicker={(sym) => {
               setTicker(sym);
               setShowDetail(true);
@@ -631,9 +582,9 @@ export default function App() {
             <p className="text-xs text-dark-textSecondary">Use a barra de pesquisa acima para analisar uma ação da B3.</p>
           </div>
         )}
-        </div>
           </div>
-        </main>
+        </div>
+      </main>
       </div>
 
       {/* API Settings Modal */}
