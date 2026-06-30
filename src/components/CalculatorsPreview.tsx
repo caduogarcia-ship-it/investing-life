@@ -776,13 +776,49 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                                   </p>
                                 </div>
 
-                                <div className="flex flex-col items-center justify-center p-6 bg-emerald-500/10 border-2 border-emerald-500/20 rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.15)] text-center gap-2 mt-4">
-                                  <span className="text-xs font-black text-emerald-400 uppercase tracking-widest">
-                                    Preço Justo Final (P₀)
-                                  </span>
-                                  <span className="text-4xl font-black text-emerald-400 font-mono">
-                                    {formatCurrency(vpSum)}
-                                  </span>
+                                <div className="flex flex-col md:flex-row items-stretch justify-between p-6 bg-emerald-500/10 border-2 border-emerald-500/20 rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.15)] gap-6 mt-4">
+                                  <div className="flex-1 flex flex-col items-center justify-center text-center border-b md:border-b-0 md:border-r border-emerald-500/20 pb-6 md:pb-0 md:pr-6">
+                                    <span className="text-xs font-black text-emerald-400 uppercase tracking-widest mb-2">
+                                      Preço Justo Final (P₀)
+                                    </span>
+                                    <span className="text-5xl font-black text-emerald-400 font-mono">
+                                      {formatCurrency(vpSum)}
+                                    </span>
+                                  </div>
+                                  <div className="flex-1 flex flex-col items-center justify-center text-center">
+                                    <span className="text-[10px] font-black text-emerald-400/80 uppercase tracking-widest mb-3">
+                                      Comparação com Cotação Atual
+                                    </span>
+                                    <div className="flex items-center justify-center bg-dark-bg/60 border border-emerald-500/30 focus-within:border-emerald-400 rounded-lg px-3 py-1.5 w-full max-w-[180px] transition-colors mb-3">
+                                      <span className="text-emerald-400/70 text-xs font-mono mr-2">{currencySymbol}</span>
+                                      <input 
+                                        type="number" step="0.01" min="0" 
+                                        value={currentPriceInput}
+                                        onChange={(e) => setCurrentPriceInput(e.target.value)}
+                                        placeholder="Preço Atual"
+                                        className="w-full bg-transparent text-center font-mono text-sm outline-none border-none p-0 focus:ring-0 focus:outline-none text-emerald-400 placeholder:text-emerald-400/30"
+                                      />
+                                    </div>
+                                    {(() => {
+                                      const currentPriceNum = parseFloat(currentPriceInput);
+                                      if (!isNaN(currentPriceNum) && currentPriceNum > 0) {
+                                        const isCheap = currentPriceNum < vpSum;
+                                        const isExpensive = currentPriceNum > vpSum;
+                                        const difference = Math.abs(((vpSum - currentPriceNum) / currentPriceNum) * 100);
+                                        return (
+                                          <div className={`px-4 py-2 rounded-lg border w-full max-w-[220px] ${isCheap ? 'bg-emerald-500/20 border-emerald-500/40' : isExpensive ? 'bg-brand-danger/20 border-brand-danger/40' : 'bg-brand-primary/20 border-brand-primary/40'}`}>
+                                            <p className={`text-[9px] font-black uppercase tracking-wider ${isCheap ? 'text-emerald-300' : isExpensive ? 'text-brand-danger' : 'text-brand-primary'}`}>
+                                              {isCheap ? '🟢 BARATO (DESCONTO)' : isExpensive ? '🔴 CARO (ÁGIO)' : '⚪ NO PREÇO'}
+                                            </p>
+                                            <p className={`text-sm font-bold mt-1 ${isCheap ? 'text-emerald-400' : isExpensive ? 'text-brand-danger' : 'text-brand-primary'} font-mono`}>
+                                              {isCheap ? '+' : isExpensive ? '-' : ''}{difference.toFixed(2)}%
+                                            </p>
+                                          </div>
+                                        );
+                                      }
+                                      return <p className="text-[10px] text-emerald-400/50 italic">Insira o preço p/ comparar</p>;
+                                    })()}
+                                  </div>
                                 </div>
                               </>
                             );
@@ -860,13 +896,49 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                             </p>
                           </div>
 
-                          <div className="flex flex-col items-center justify-center p-6 bg-emerald-500/10 border-2 border-emerald-500/20 rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.15)] text-center gap-2 mt-4">
-                            <span className="text-xs font-black text-emerald-400 uppercase tracking-widest">
-                              Preço Justo Final (P₀)
-                            </span>
-                            <span className="text-4xl font-black text-emerald-400 font-mono">
-                              {formatCurrency(calc.p0)}
-                            </span>
+                          <div className="flex flex-col md:flex-row items-stretch justify-between p-6 bg-emerald-500/10 border-2 border-emerald-500/20 rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.15)] gap-6 mt-4">
+                            <div className="flex-1 flex flex-col items-center justify-center text-center border-b md:border-b-0 md:border-r border-emerald-500/20 pb-6 md:pb-0 md:pr-6">
+                              <span className="text-xs font-black text-emerald-400 uppercase tracking-widest mb-2">
+                                Preço Justo Final (P₀)
+                              </span>
+                              <span className="text-5xl font-black text-emerald-400 font-mono">
+                                {formatCurrency(calc.p0)}
+                              </span>
+                            </div>
+                            <div className="flex-1 flex flex-col items-center justify-center text-center">
+                              <span className="text-[10px] font-black text-emerald-400/80 uppercase tracking-widest mb-3">
+                                Comparação com Cotação Atual
+                              </span>
+                              <div className="flex items-center justify-center bg-dark-bg/60 border border-emerald-500/30 focus-within:border-emerald-400 rounded-lg px-3 py-1.5 w-full max-w-[180px] transition-colors mb-3">
+                                <span className="text-emerald-400/70 text-xs font-mono mr-2">{currencySymbol}</span>
+                                <input 
+                                  type="number" step="0.01" min="0" 
+                                  value={currentPriceInput}
+                                  onChange={(e) => setCurrentPriceInput(e.target.value)}
+                                  placeholder="Preço Atual"
+                                  className="w-full bg-transparent text-center font-mono text-sm outline-none border-none p-0 focus:ring-0 focus:outline-none text-emerald-400 placeholder:text-emerald-400/30"
+                                />
+                              </div>
+                              {(() => {
+                                const currentPriceNum = parseFloat(currentPriceInput);
+                                if (!isNaN(currentPriceNum) && currentPriceNum > 0) {
+                                  const isCheap = currentPriceNum < calc.p0;
+                                  const isExpensive = currentPriceNum > calc.p0;
+                                  const difference = Math.abs(((calc.p0 - currentPriceNum) / currentPriceNum) * 100);
+                                  return (
+                                    <div className={`px-4 py-2 rounded-lg border w-full max-w-[220px] ${isCheap ? 'bg-emerald-500/20 border-emerald-500/40' : isExpensive ? 'bg-brand-danger/20 border-brand-danger/40' : 'bg-brand-primary/20 border-brand-primary/40'}`}>
+                                      <p className={`text-[9px] font-black uppercase tracking-wider ${isCheap ? 'text-emerald-300' : isExpensive ? 'text-brand-danger' : 'text-brand-primary'}`}>
+                                        {isCheap ? '🟢 BARATO (DESCONTO)' : isExpensive ? '🔴 CARO (ÁGIO)' : '⚪ NO PREÇO'}
+                                      </p>
+                                      <p className={`text-sm font-bold mt-1 ${isCheap ? 'text-emerald-400' : isExpensive ? 'text-brand-danger' : 'text-brand-primary'} font-mono`}>
+                                        {isCheap ? '+' : isExpensive ? '-' : ''}{difference.toFixed(2)}%
+                                      </p>
+                                    </div>
+                                  );
+                                }
+                                return <p className="text-[10px] text-emerald-400/50 italic">Insira o preço p/ comparar</p>;
+                              })()}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1019,56 +1091,19 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                 <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 via-brand-primary to-brand-purple opacity-70 group-hover:opacity-100 transition-opacity duration-500" />
                 <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 via-brand-primary to-brand-purple blur-md opacity-30 group-hover:opacity-60 transition-opacity duration-500" />
                 
-                <div className="relative bg-dark-card w-full h-full rounded-[14px] p-6 flex flex-col items-center text-center justify-center gap-4">
+                <div className="relative bg-dark-card w-full h-full rounded-[14px] p-6 flex flex-col items-center text-center justify-center gap-3">
                   <h3 className="text-sm font-black text-dark-textSecondary uppercase tracking-wider" style={{ fontFamily: 'Outfit, sans-serif' }}>
                     Preço Justo da Ação (P₀)
                   </h3>
                   
-                  <div className="flex items-baseline justify-center gap-2">
+                  <div className="flex items-baseline gap-2">
                     <span className="text-xl font-bold text-dark-textSecondary/60">{currencySymbol}</span>
                     <span className="text-5xl font-black font-mono text-transparent bg-clip-text bg-gradient-to-br from-emerald-300 to-emerald-500 drop-shadow-sm">
                       {calc.p0.toFixed(2)}
                     </span>
                   </div>
-
-                  <div className="w-full max-w-sm mx-auto mt-2 p-5 bg-dark-bg/60 border border-dark-border/80 rounded-xl space-y-4 shadow-sm">
-                    <div className="flex flex-col items-center gap-2">
-                      <label className="text-xs font-bold text-dark-textSecondary uppercase tracking-wider">Cotação Atual do Ativo (Para Comparação)</label>
-                      <div className="flex items-center justify-center bg-dark-bg border border-dark-border/60 focus-within:border-brand-purple rounded-lg px-4 py-2 w-40 transition-colors">
-                        <span className="text-dark-textSecondary text-sm font-mono mr-2">{currencySymbol}</span>
-                        <input 
-                          type="number" step="0.01" min="0" 
-                          value={currentPriceInput}
-                          onChange={(e) => setCurrentPriceInput(e.target.value)}
-                          placeholder="Ex: 25.50"
-                          className="w-full bg-transparent text-center font-mono text-sm outline-none border-none p-0 focus:ring-0 focus:outline-none text-dark-textPrimary placeholder:text-dark-textSecondary/40"
-                        />
-                      </div>
-                    </div>
-
-                    {(() => {
-                      const currentPriceNum = parseFloat(currentPriceInput);
-                      if (!isNaN(currentPriceNum) && currentPriceNum > 0 && calc.isValid) {
-                        const isCheap = currentPriceNum < calc.p0;
-                        const isExpensive = currentPriceNum > calc.p0;
-                        const difference = Math.abs(((calc.p0 - currentPriceNum) / currentPriceNum) * 100);
-                        
-                        return (
-                          <div className={`p-4 rounded-lg border animate-fadeIn flex flex-col items-center justify-center ${isCheap ? 'bg-emerald-500/10 border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]' : isExpensive ? 'bg-brand-danger/10 border-brand-danger/20 shadow-[0_0_15px_rgba(239,68,68,0.1)]' : 'bg-brand-primary/10 border-brand-primary/20'}`}>
-                            <p className={`text-xs font-black uppercase tracking-wider flex items-center gap-2 ${isCheap ? 'text-emerald-400' : isExpensive ? 'text-brand-danger' : 'text-brand-primary'}`}>
-                              {isCheap ? '🟢 BARATO (DESCONTO)' : isExpensive ? '🔴 CARO (ÁGIO)' : '⚪ NO PREÇO JUSTO'}
-                            </p>
-                            <p className="text-base font-bold mt-2 text-dark-textPrimary font-mono">
-                              Margem de Segurança: <span className={isCheap ? 'text-emerald-400' : isExpensive ? 'text-brand-danger' : ''}>{isCheap ? '+' : isExpensive ? '-' : ''}{difference.toFixed(2)}%</span>
-                            </p>
-                          </div>
-                        );
-                      }
-                      return null;
-                    })()}
-                  </div>
                   
-                  <div className="text-2xs text-dark-textSecondary font-medium mt-2 bg-dark-bg/80 px-3 py-1.5 rounded-lg border border-dark-border inline-block">
+                  <div className="text-2xs text-dark-textSecondary font-medium mt-2 bg-dark-bg/80 px-3 py-1.5 rounded-lg border border-dark-border">
                     {valuationMode === 'GORDON' ? 'P₀ = D₁ / (k - g)' : 'P₀ = VP(Estágio 1) + VP(Perpetuidade)'}
                   </div>
                 </div>
