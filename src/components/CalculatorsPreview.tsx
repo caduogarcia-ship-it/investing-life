@@ -817,8 +817,8 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                                         let confetti = '';
 
                                         if (upside >= 15) {
-                                          bgColor = 'bg-emerald-600 border-t md:border-t-0 md:border-l border-emerald-500';
-                                          textColor = 'text-white drop-shadow-md';
+                                          bgColor = 'bg-[radial-gradient(circle,_rgba(16,185,129,0.35)_0%,_transparent_100%)] border-t md:border-t-0 md:border-l border-emerald-500/30';
+                                          textColor = 'text-emerald-400 drop-shadow-sm';
                                           statusText = 'OPORTUNIDADE (DESCONTADA)';
                                           confetti = '🎊 🎉 🎊';
                                         } else if (upside <= -15) {
