@@ -822,8 +822,8 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                                           statusText = 'OPORTUNIDADE (DESCONTADA)';
                                           confetti = '🎊 🎉 🎊';
                                         } else if (upside <= -15) {
-                                          bgColor = 'bg-brand-danger border-t md:border-t-0 md:border-l border-brand-danger/80';
-                                          textColor = 'text-white drop-shadow-md';
+                                          bgColor = 'bg-[radial-gradient(circle,_rgba(136,19,55,0.4)_0%,_transparent_100%)] border-t md:border-t-0 md:border-l border-rose-900/40';
+                                          textColor = 'text-rose-400 drop-shadow-sm';
                                           statusText = 'CARA (ÁGIO ALTO)';
                                         } else if (upside > 0 && upside < 15) {
                                           bgColor = 'bg-[radial-gradient(circle,_rgba(234,179,8,0.25)_0%,_transparent_100%)] border-t md:border-t-0 md:border-l border-yellow-500/20';
@@ -980,8 +980,8 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                                           statusText = 'OPORTUNIDADE (DESCONTADA)';
                                           confetti = '🎊 🎉 🎊';
                                         } else if (upside <= -15) {
-                                          bgColor = 'bg-brand-danger border-t md:border-t-0 md:border-l border-brand-danger/80';
-                                          textColor = 'text-white drop-shadow-md';
+                                          bgColor = 'bg-[radial-gradient(circle,_rgba(136,19,55,0.4)_0%,_transparent_100%)] border-t md:border-t-0 md:border-l border-rose-900/40';
+                                          textColor = 'text-rose-400 drop-shadow-sm';
                                           statusText = 'CARA (ÁGIO ALTO)';
                                         } else if (upside > 0 && upside < 15) {
                                           bgColor = 'bg-[radial-gradient(circle,_rgba(234,179,8,0.25)_0%,_transparent_100%)] border-t md:border-t-0 md:border-l border-yellow-500/20';
