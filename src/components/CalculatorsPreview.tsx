@@ -826,12 +826,12 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                                           textColor = 'text-white drop-shadow-md';
                                           statusText = 'CARA (ÁGIO ALTO)';
                                         } else if (upside > 0 && upside < 15) {
-                                          bgColor = 'bg-brand-warning border-t md:border-t-0 md:border-l border-brand-warning/80';
-                                          textColor = 'text-yellow-950 drop-shadow-sm';
+                                          bgColor = 'bg-[radial-gradient(circle,_rgba(234,179,8,0.25)_0%,_transparent_100%)] border-t md:border-t-0 md:border-l border-yellow-500/20';
+                                          textColor = 'text-yellow-500 drop-shadow-sm';
                                           statusText = 'MARGEM CURTA (DESCONTO PEQUENO)';
                                         } else if (upside < 0 && upside > -15) {
-                                          bgColor = 'bg-brand-warning border-t md:border-t-0 md:border-l border-brand-warning/80';
-                                          textColor = 'text-yellow-950 drop-shadow-sm';
+                                          bgColor = 'bg-[radial-gradient(circle,_rgba(234,179,8,0.25)_0%,_transparent_100%)] border-t md:border-t-0 md:border-l border-yellow-500/20';
+                                          textColor = 'text-yellow-500 drop-shadow-sm';
                                           statusText = 'LEVEMENTE CARA (ÁGIO PEQUENO)';
                                         }
 
@@ -984,12 +984,12 @@ export const CalculatorsPreview: React.FC<CalculatorsPreviewProps> = ({ stockDat
                                           textColor = 'text-white drop-shadow-md';
                                           statusText = 'CARA (ÁGIO ALTO)';
                                         } else if (upside > 0 && upside < 15) {
-                                          bgColor = 'bg-brand-warning border-t md:border-t-0 md:border-l border-brand-warning/80';
-                                          textColor = 'text-yellow-950 drop-shadow-sm';
+                                          bgColor = 'bg-[radial-gradient(circle,_rgba(234,179,8,0.25)_0%,_transparent_100%)] border-t md:border-t-0 md:border-l border-yellow-500/20';
+                                          textColor = 'text-yellow-500 drop-shadow-sm';
                                           statusText = 'MARGEM CURTA (DESCONTO PEQUENO)';
                                         } else if (upside < 0 && upside > -15) {
-                                          bgColor = 'bg-brand-warning border-t md:border-t-0 md:border-l border-brand-warning/80';
-                                          textColor = 'text-yellow-950 drop-shadow-sm';
+                                          bgColor = 'bg-[radial-gradient(circle,_rgba(234,179,8,0.25)_0%,_transparent_100%)] border-t md:border-t-0 md:border-l border-yellow-500/20';
+                                          textColor = 'text-yellow-500 drop-shadow-sm';
                                           statusText = 'LEVEMENTE CARA (ÁGIO PEQUENO)';
                                         }
 
