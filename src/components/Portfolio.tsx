@@ -38,6 +38,7 @@ export const Portfolio: React.FC<PortfolioProps> = ({ onSelectTicker, client, on
   const [activeSectorIndex, setActiveSectorIndex] = useState<number | null>(null);
   const [activeStrategyIndex, setActiveStrategyIndex] = useState<number | null>(null);
   const [activeMicroIndex, setActiveMicroIndex] = useState<number | null>(null);
+  const [expandedSymbol, setExpandedSymbol] = useState<string | null>(null);
   
   // Form states
   const [searchQuery, setSearchQuery] = useState('');
@@ -413,92 +414,111 @@ export const Portfolio: React.FC<PortfolioProps> = ({ onSelectTicker, client, on
               {loading && <span className="text-4xs text-brand-primary animate-pulse uppercase tracking-wider font-bold">Atualizando Cotações...</span>}
             </div>
 
-            {/* Assets Table */}
-            {portfolio.length > 0 ? (
-              <div className="overflow-x-auto select-none">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-dark-border/40 text-4xs font-bold text-dark-textSecondary uppercase tracking-wider">
-                      <th className="pb-3.5 pl-2">Ativo</th>
-                      <th className="pb-3.5">Qtd</th>
-                      <th className="pb-3.5">P. Médio</th>
-                      <th className="pb-3.5">Cotação</th>
-                      <th className="pb-3.5">Custo</th>
-                      <th className="pb-3.5">Total</th>
-                      <th className="pb-3.5">Rentabilidade</th>
-                      <th className="pb-3.5 pr-2 text-right">Ação</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-dark-border/30 text-xs font-medium">
-                    {portfolio.map((item) => {
-                      const rawCost = item.quantity * item.averagePrice;
-                      const rawValue = item.quantity * item.currentPrice;
-                      const isForeign = item.location === 'Exterior';
-                      const cost = isForeign ? rawCost * usdRate : rawCost;
-                      const value = isForeign ? rawValue * usdRate : rawValue;
-                      const pnl = value - cost;
-                      const pnlPercent = cost > 0 ? (pnl / cost) * 100 : 0;
-                      
-                      const formatCurrency = (val: number, isUSD: boolean = false) => 
-                        isUSD ? `US$ ${val.toFixed(2).replace('.', ',')}` : `R$ ${val.toFixed(2).replace('.', ',')}`;
 
-                      return (
-                        <tr key={item.symbol} className="hover:bg-dark-cardHover/30 transition-colors group">
-                          {/* Symbol & Name */}
-                          <td className="py-4 pl-2">
-                            <button
-                              onClick={() => onSelectTicker(item.symbol)}
-                              title="Analisar Ativo"
-                              className="font-mono font-black text-dark-textPrimary hover:text-brand-primary transition-all flex items-center gap-1.5 cursor-pointer text-sm"
-                            >
+            {/* Assets Cards List (Redesign) */}
+            {portfolio.length > 0 ? (
+              <div className="space-y-3 mt-4 select-none">
+                {portfolio.map((item) => {
+                  const rawCost = item.quantity * item.averagePrice;
+                  const rawValue = item.quantity * item.currentPrice;
+                  const isForeign = item.location === 'Exterior';
+                  const cost = isForeign ? rawCost * usdRate : rawCost;
+                  const value = isForeign ? rawValue * usdRate : rawValue;
+                  const pnl = value - cost;
+                  const pnlPercent = cost > 0 ? (pnl / cost) * 100 : 0;
+                  
+                  const formatCurrency = (val: number, isUSD: boolean = false) => 
+                    isUSD ? `US$ ${val.toFixed(2).replace('.', ',')}` : `R$ ${val.toFixed(2).replace('.', ',')}`;
+
+                  const isExpanded = expandedSymbol === item.symbol;
+
+                  return (
+                    <div 
+                      key={item.symbol} 
+                      className={`bg-dark-bg/40 border ${isExpanded ? 'border-brand-primary/50 shadow-[0_0_20px_rgba(99,102,241,0.15)]' : 'border-dark-border/60 hover:border-dark-border'} rounded-2xl overflow-hidden transition-all duration-300 group`}
+                    >
+                      {/* Main Summary Row */}
+                      <div 
+                        className="p-4 cursor-pointer flex flex-wrap sm:flex-nowrap items-center justify-between gap-4"
+                        onClick={() => setExpandedSymbol(isExpanded ? null : item.symbol)}
+                      >
+                        <div className="flex items-center gap-4 min-w-[200px]">
+                          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 flex items-center justify-center font-black text-indigo-400 font-mono shadow-inner shrink-0">
+                            {item.symbol.substring(0,2)}
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-black text-dark-textPrimary font-mono group-hover:text-brand-primary transition-colors flex items-center gap-2">
                               {item.symbol}
-                              <ArrowUpRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity text-brand-primary" />
-                            </button>
-                            <span className="text-4xs text-dark-textSecondary block max-w-[130px] truncate">{item.longName}</span>
-                          </td>
-                          {/* Quantity */}
-                          <td className="py-4 font-mono font-bold text-dark-textPrimary">{item.quantity}</td>
-                          {/* Average Price */}
-                          <td className="py-4 font-mono text-dark-textSecondary text-xs">
-                            {formatCurrency(item.averagePrice, isForeign)}
-                            {isForeign && <span className="block text-3xs text-dark-textSecondary/50 mt-0.5">≅ {formatCurrency(item.averagePrice * usdRate)}</span>}
-                          </td>
-                          {/* Current Price */}
-                          <td className="py-4 font-mono text-dark-textPrimary text-xs">
-                            {formatCurrency(item.currentPrice, isForeign)}
-                            {isForeign && <span className="block text-3xs text-dark-textSecondary/50 mt-0.5">≅ {formatCurrency(item.currentPrice * usdRate)}</span>}
-                          </td>
-                          {/* Total Cost */}
-                          <td className="py-4 font-mono text-dark-textSecondary text-xs">
-                            {isForeign && <span className="block text-3xs text-dark-textSecondary/50 mb-0.5">{formatCurrency(rawCost, true)}</span>}
-                            {formatCurrency(cost)}
-                          </td>
-                          {/* Total Value */}
-                          <td className="py-4 font-mono font-bold text-dark-textPrimary text-xs">
-                            {isForeign && <span className="block text-3xs text-brand-primary/50 mb-0.5">{formatCurrency(rawValue, true)}</span>}
-                            {formatCurrency(value)}
-                          </td>
-                          {/* PNL */}
-                          <td className="py-4">
-                            <span className={`font-mono font-bold ${pnl >= 0 ? 'text-brand-success' : 'text-brand-danger'}`}>
+                              <span className="text-[8px] px-1.5 py-0.5 rounded flex items-center justify-center bg-dark-card border border-dark-border/60 text-dark-textSecondary font-sans font-bold uppercase tracking-widest">
+                                {item.macroCategory || 'Variável'}
+                              </span>
+                            </h4>
+                            <p className="text-[10px] text-dark-textSecondary truncate max-w-[150px] sm:max-w-[250px] font-medium mt-0.5">
+                              {item.longName}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-1 items-center justify-end gap-5 sm:gap-8">
+                          <div className="text-right hidden sm:block">
+                            <p className="text-3xs text-dark-textSecondary font-bold uppercase tracking-wider mb-0.5">Patrimônio</p>
+                            <p className="text-[13px] font-black text-dark-textPrimary font-mono">{formatCurrency(value)}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-3xs text-dark-textSecondary font-bold uppercase tracking-wider mb-0.5">Retorno Liquido</p>
+                            <p className={`text-[13px] font-black font-mono ${pnl >= 0 ? 'text-brand-success' : 'text-brand-danger'}`}>
                               {pnl >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}%
-                            </span>
-                          </td>
-                          {/* Actions */}
-                          <td className="py-4 pr-2 text-right">
-                            <button
-                              onClick={() => handleDeleteItem(item.symbol)}
-                              className="p-1.8 text-dark-textSecondary hover:text-brand-danger hover:bg-rose-950/15 rounded-lg border border-transparent hover:border-brand-danger/25 transition-all cursor-pointer"
-                              title="Remover Ativo"
+                            </p>
+                          </div>
+                          <div className="pl-3 border-l border-dark-border/50 flex items-center justify-center shrink-0">
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); onSelectTicker(item.symbol); }}
+                              className="p-2 text-dark-textSecondary hover:text-white hover:bg-brand-primary rounded-xl transition-all shadow-md shadow-transparent hover:shadow-brand-primary/30 cursor-pointer"
+                              title="Análise Profunda do Ativo"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <ArrowUpRight className="w-4 h-4" />
                             </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Expanded Drill-down Details */}
+                      {isExpanded && (
+                        <div className="px-5 pb-5 pt-4 border-t border-dark-border/40 bg-gradient-to-b from-dark-bg/50 to-dark-card/50 grid grid-cols-2 sm:grid-cols-5 gap-5 animate-fadeIn">
+                          <div className="space-y-1">
+                            <span className="text-[9px] text-dark-textSecondary font-bold uppercase tracking-wider flex items-center gap-1">Quantidade</span>
+                            <p className="text-sm font-bold text-dark-textPrimary font-mono">{item.quantity} <span className="text-[10px] font-sans text-dark-textSecondary font-normal">cotas</span></p>
+                          </div>
+                          <div className="space-y-1">
+                            <span className="text-[9px] text-dark-textSecondary font-bold uppercase tracking-wider">Preço Médio</span>
+                            <p className="text-sm font-bold text-dark-textPrimary font-mono">{formatCurrency(item.averagePrice, isForeign)}</p>
+                          </div>
+                          <div className="space-y-1">
+                            <span className="text-[9px] text-dark-textSecondary font-bold uppercase tracking-wider">Cotação Hoje</span>
+                            <p className="text-sm font-bold text-dark-textPrimary font-mono">{formatCurrency(item.currentPrice, isForeign)}</p>
+                          </div>
+                          <div className="space-y-1">
+                            <span className="text-[9px] text-dark-textSecondary font-bold uppercase tracking-wider">Tese/Estratégia</span>
+                            <p className="text-xs font-bold text-brand-purple tracking-tight">{item.microCategory || 'N/D'}</p>
+                          </div>
+                          <div className="space-y-1">
+                            <span className="text-[9px] text-dark-textSecondary font-bold uppercase tracking-wider">Custo Total</span>
+                            <p className="text-sm font-bold text-dark-textSecondary font-mono">{formatCurrency(cost)}</p>
+                          </div>
+                          
+                          <div className="col-span-2 sm:col-span-5 pt-3 mt-1 border-t border-dark-border/30 flex justify-end">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleDeleteItem(item.symbol); }}
+                              className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-brand-danger hover:text-white hover:bg-brand-danger rounded-xl transition-colors border border-brand-danger/30 shadow-lg shadow-transparent hover:shadow-brand-danger/20 cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" /> Remover Ativo
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <div className="py-12 border border-dashed border-dark-border rounded-xl text-center space-y-3">
