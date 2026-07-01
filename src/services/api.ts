@@ -1752,6 +1752,20 @@ export function getSimilarTickers(query: string): B3Ticker[] {
 // Fetch stock details - Unified Sourcing (Yahoo Finance + Investidor10)
 export async function fetchStockData(symbol: string): Promise<StockData> {
   const cleanSymbol = symbol.toUpperCase().replace('.SA', '').trim();
+  const CACHE_KEY = `b3_stock_cache_${cleanSymbol}`;
+  const CACHE_TTL = 60 * 60 * 1000; // 1 hora de cache (evita 429)
+
+  try {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Date.now() - parsed.timestamp < CACHE_TTL) {
+        return parsed.data;
+      }
+    }
+  } catch (e) {
+    console.warn('Cache read error', e);
+  }
 
   // Load defaults mock (fallbacks) if needed
   const mockBase = DEFAULT_MOCK_DATA[cleanSymbol] || {
@@ -1906,6 +1920,15 @@ export async function fetchStockData(symbol: string): Promise<StockData> {
     history
   };
 
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({
+      timestamp: Date.now(),
+      data: finalStockData
+    }));
+  } catch (e) {
+    console.warn('Cache save error', e);
+  }
+
   return finalStockData;
 }
 
@@ -2032,6 +2055,21 @@ export async function fetchCandleChartData(
   timeframe: CandleTimeframe = 'daily'
 ): Promise<CandleDataPoint[]> {
   const cleanSymbol = symbol.toUpperCase().replace('.SA', '').trim();
+  const CACHE_KEY = `b3_candle_cache_${cleanSymbol}_${timeframe}`;
+  const CACHE_TTL = 60 * 60 * 1000;
+
+  try {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Date.now() - parsed.timestamp < CACHE_TTL) {
+        return parsed.data;
+      }
+    }
+  } catch (e) {
+    console.warn('Candle cache read error', e);
+  }
+
   const brapiToken = import.meta.env.VITE_BRAPI_TOKEN || '';
 
   // Map timeframe to Brapi API parameters (extended ranges)
@@ -2065,6 +2103,15 @@ export async function fetchCandleChartData(
 
     // Generate fallback data if Brapi returns empty
     if (history.length === 0) throw new Error('Empty history from Brapi');
+
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify({
+        timestamp: Date.now(),
+        data: history
+      }));
+    } catch (e) {
+      console.warn('Candle cache save error', e);
+    }
 
     return history;
   } catch (err) {
@@ -2161,6 +2208,21 @@ function generateMockDividendEvents(symbol: string, years: number[]): DividendEv
 // Fetch dividend history — Investidor10 (primary) → Brapi (fallback) → Mock
 export async function fetchDividendHistory(symbol: string): Promise<DividendHistoryResult> {
   const cleanSymbol = symbol.toUpperCase().replace('.SA', '').trim();
+  const CACHE_KEY = `b3_dividend_cache_${cleanSymbol}`;
+  const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
+  try {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Date.now() - parsed.timestamp < CACHE_TTL) {
+        return parsed.data;
+      }
+    }
+  } catch (e) {
+    console.warn('Dividend cache read error', e);
+  }
+
   const brapiToken = import.meta.env.VITE_BRAPI_TOKEN || '';
 
   const currentYear = new Date().getFullYear();
@@ -2372,13 +2434,26 @@ export async function fetchDividendHistory(symbol: string): Promise<DividendHist
     if (mockBase?.dy) dy = mockBase.dy;
   }
 
-  return {
+  const stockData = {
     symbol: cleanSymbol,
     longName,
     events,
     currentPrice,
     dy: Number(dy.toFixed(3)),
+    strategy: DEFAULT_MOCK_DATA[cleanSymbol]?.strategy,
+    thesis: DEFAULT_MOCK_DATA[cleanSymbol]?.thesis
   };
+
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({
+      timestamp: Date.now(),
+      data: stockData
+    }));
+  } catch (e) {
+    console.warn('Cache save error', e);
+  }
+
+  return stockData;
 }
 
 export interface MarketMove {
