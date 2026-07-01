@@ -1,5 +1,5 @@
 // src/services/api.ts
-
+import { getFundamentalForTicker } from '../data/fundamentalsDb';
 export interface B3Ticker {
   symbol: string;
   name: string;
@@ -1884,6 +1884,17 @@ export async function fetchStockData(symbol: string): Promise<StockData> {
   // Merge LocalStorage overrides
   const userOverrides = getUserOverrides()[cleanSymbol] || {};
 
+  // Fetch local DB trimestral
+  const localDb = getFundamentalForTicker(cleanSymbol);
+
+  // Calcula PL e PVP dinâmico usando o DB local se disponível
+  let dbPl: number | undefined;
+  let dbPvp: number | undefined;
+  if (localDb && regularMarketPrice > 0) {
+    if (localDb.lpa > 0) dbPl = regularMarketPrice / localDb.lpa;
+    if (localDb.vpa > 0) dbPvp = regularMarketPrice / localDb.vpa;
+  }
+
   const finalStockData: StockData = {
     symbol: cleanSymbol,
     shortName: cleanSymbol,
@@ -1898,18 +1909,18 @@ export async function fetchStockData(symbol: string): Promise<StockData> {
     regularMarketVolume: vol,
     logourl: logo,
     
-    // Fundamentalist Indicators (Investidor10 -> User Overrides -> Mocks -> Standard Fallbacks)
-    pl: Number((userOverrides.pl ?? investidor10Data?.pl ?? mockBase.pl ?? 10.0).toFixed(3)),
-    pvp: Number((userOverrides.pvp ?? investidor10Data?.pvp ?? mockBase.pvp ?? 1.5).toFixed(3)),
-    dy: Number((userOverrides.dy ?? investidor10Data?.dy ?? mockBase.dy ?? 4.0).toFixed(3)),
-    roe: Number((userOverrides.roe ?? investidor10Data?.roe ?? mockBase.roe ?? 12.0).toFixed(3)),
-    margemLiquida: Number((userOverrides.margemLiquida ?? investidor10Data?.margemLiquida ?? mockBase.margemLiquida ?? 10.0).toFixed(3)),
+    // Fundamentalist Indicators (User Overrides -> Local DB -> Investidor10 -> Mocks -> Standard Fallbacks)
+    pl: Number((userOverrides.pl ?? dbPl ?? localDb?.pl ?? investidor10Data?.pl ?? mockBase.pl ?? 10.0).toFixed(3)),
+    pvp: Number((userOverrides.pvp ?? dbPvp ?? localDb?.pvp ?? investidor10Data?.pvp ?? mockBase.pvp ?? 1.5).toFixed(3)),
+    dy: Number((userOverrides.dy ?? localDb?.dy ?? investidor10Data?.dy ?? mockBase.dy ?? 4.0).toFixed(3)),
+    roe: Number((userOverrides.roe ?? localDb?.roe ?? investidor10Data?.roe ?? mockBase.roe ?? 12.0).toFixed(3)),
+    margemLiquida: Number((userOverrides.margemLiquida ?? localDb?.margemLiquida ?? investidor10Data?.margemLiquida ?? mockBase.margemLiquida ?? 10.0).toFixed(3)),
     
     // Risk & Valuation
     volatility: calculatedVol,
     riskLevel: userOverrides.riskLevel ?? (calculatedVol < 15 ? 'Baixo' : calculatedVol > 30 ? 'Alto' : mockBase.riskLevel ?? 'Médio'),
-    lpa: Number((userOverrides.lpa ?? investidor10Data?.lpa ?? mockBase.lpa ?? 1.0).toFixed(3)),
-    vpa: Number((userOverrides.vpa ?? investidor10Data?.vpa ?? mockBase.vpa ?? 10.0).toFixed(3)),
+    lpa: Number((userOverrides.lpa ?? localDb?.lpa ?? investidor10Data?.lpa ?? mockBase.lpa ?? 1.0).toFixed(3)),
+    vpa: Number((userOverrides.vpa ?? localDb?.vpa ?? investidor10Data?.vpa ?? mockBase.vpa ?? 10.0).toFixed(3)),
     targetPrice: Number((userOverrides.targetPrice ?? mockBase.targetPrice ?? regularMarketPrice * 1.2).toFixed(3)),
     fairPriceManual: userOverrides.fairPriceManual,
     

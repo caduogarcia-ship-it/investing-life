@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Users, Wallet, Eye, RefreshCw, Search, ChevronDown, ChevronUp } from 'lucide-react';
+import { Shield, Users, Wallet, Eye, RefreshCw, Search, ChevronDown, ChevronUp, Database } from 'lucide-react';
 import { fetchAllUsersData, ADMIN_EMAIL } from '../services/supabase';
 import type { UserDataRow } from '../services/supabase';
+import { AdminFundamentals } from './AdminFundamentals';
 
 interface AdminHubProps {
   currentEmail: string;
@@ -12,6 +13,7 @@ export const AdminHub: React.FC<AdminHubProps> = ({ currentEmail }) => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
+  const [isFundamentalsDbOpen, setIsFundamentalsDbOpen] = useState(false);
 
   const isAdmin = currentEmail === ADMIN_EMAIL;
 
@@ -85,17 +87,29 @@ export const AdminHub: React.FC<AdminHubProps> = ({ currentEmail }) => {
             </div>
           </div>
 
-          <button
-            onClick={loadUsers}
-            disabled={loading}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-dark-textSecondary hover:text-dark-textPrimary transition-all cursor-pointer select-none active-scale"
-            style={{ background: 'rgba(9,13,22,0.5)', border: '1px solid rgba(31,41,55,0.8)' }}
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Atualizar
-          </button>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              onClick={() => setIsFundamentalsDbOpen(true)}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-dark-textPrimary transition-all cursor-pointer select-none active-scale shadow-lg shadow-brand-primary/10"
+              style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.1))', border: '1px solid rgba(99,102,241,0.3)' }}
+            >
+              <Database className="w-4 h-4 text-brand-primary" />
+              Banco Local (B3)
+            </button>
+            <button
+              onClick={loadUsers}
+              disabled={loading}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-dark-textSecondary hover:text-dark-textPrimary transition-all cursor-pointer select-none active-scale"
+              style={{ background: 'rgba(9,13,22,0.5)', border: '1px solid rgba(31,41,55,0.8)' }}
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              Atualizar CRM
+            </button>
+          </div>
         </div>
       </div>
+
+      <AdminFundamentals isOpen={isFundamentalsDbOpen} onClose={() => setIsFundamentalsDbOpen(false)} />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
