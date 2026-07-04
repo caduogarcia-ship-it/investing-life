@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   LineChart, Wallet, CandlestickChart, DollarSign, Calculator, 
   Landmark, Trophy, Star, Shield, Settings, LogOut, ChevronLeft, 
-  ChevronRight, BarChart2
+  ChevronRight, BarChart2, ChevronDown, ChevronUp, Briefcase
 } from 'lucide-react';
 
 export type TabType = 'analise' | 'carteira' | 'candles' | 'dividendos' | 'rankings' | 'recomendadas' | 'calculos' | 'tesouro' | 'admin';
@@ -30,6 +30,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
     return true;
   });
+  
+  // Renda Variável Accordion State
+  const [isRVOpen, setIsRVOpen] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -45,20 +48,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   if (!isLoggedIn) return null;
 
-  const tabs = [
-    { id: 'analise', label: 'Análise de Ativo', icon: LineChart },
-    { id: 'carteira', label: 'Minha Carteira', icon: Wallet },
-    { id: 'candles', label: 'Análise Gráfica', icon: CandlestickChart },
-    { id: 'dividendos', label: 'Dividendos', icon: DollarSign },
-    { id: 'calculos', label: 'Cálculos', icon: Calculator },
-    { id: 'tesouro', label: 'Tesouro', icon: Landmark },
+  const mainTabs = [
+    { id: 'carteira', label: 'Carteira (CRM)', icon: Wallet },
+    { id: 'tesouro', label: 'Tesouro Direto', icon: Landmark },
     { id: 'rankings', label: 'Rankings', icon: Trophy },
     { id: 'recomendadas', label: 'Recomendações', icon: Star },
   ];
 
+  const rvTabs = [
+    { id: 'analise', label: 'Análise de Ativo', icon: LineChart },
+    { id: 'candles', label: 'Análise Gráfica', icon: CandlestickChart },
+    { id: 'dividendos', label: 'Dividendos', icon: DollarSign },
+    { id: 'calculos', label: 'Cálculos', icon: Calculator },
+  ];
+
   if (isAdmin) {
-    tabs.push({ id: 'admin', label: 'Admin', icon: Shield });
+    mainTabs.push({ id: 'admin', label: 'Admin Hub', icon: Shield });
   }
+
+  // Auto-open accordion if an RV tab is active
+  useEffect(() => {
+    if (rvTabs.some(tab => tab.id === activeTab)) {
+      setIsRVOpen(true);
+    }
+  }, [activeTab]);
 
   return (
     <div 
@@ -88,8 +101,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Navigation Links */}
-      <div className="flex-1 overflow-y-auto py-6 px-3 space-y-1.5 no-scrollbar">
-        {tabs.map((tab) => {
+      <div className="flex-1 overflow-y-auto py-6 px-3 space-y-2 no-scrollbar">
+        {/* Main Tabs */}
+        {mainTabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
           
@@ -117,6 +131,51 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           );
         })}
+
+        {/* Renda Variável Accordion */}
+        <div className="pt-2 border-t border-dark-border/30">
+          <button
+            onClick={() => {
+              if (!isExpanded) setIsExpanded(true);
+              setIsRVOpen(!isRVOpen);
+            }}
+            title={!isExpanded ? 'Renda Variável' : ''}
+            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 cursor-pointer hover:bg-dark-bg/50 text-dark-textSecondary hover:text-white font-semibold group ${rvTabs.some(t => t.id === activeTab) ? 'text-brand-primary' : ''}`}
+          >
+            <div className={`flex items-center ${isExpanded ? 'justify-start' : 'justify-center w-full'}`}>
+              <Briefcase className={`w-5 h-5 shrink-0 ${isExpanded ? 'mr-3' : ''} group-hover:scale-110 transition-transform`} />
+              {isExpanded && <span className="text-sm truncate">Renda Variável</span>}
+            </div>
+            {isExpanded && (
+              isRVOpen ? <ChevronUp className="w-4 h-4 shrink-0 opacity-70" /> : <ChevronDown className="w-4 h-4 shrink-0 opacity-70" />
+            )}
+          </button>
+
+          {/* Accordion Content */}
+          {isExpanded && isRVOpen && (
+            <div className="mt-1 ml-4 pl-3 border-l-2 border-dark-border/40 space-y-1 animate-fadeIn">
+              {rvTabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as TabType)}
+                    className={`w-full flex items-center justify-start px-3 py-2 rounded-lg transition-all duration-300 cursor-pointer ${
+                      isActive 
+                        ? 'bg-brand-primary/10 text-brand-primary font-bold' 
+                        : 'text-dark-textSecondary hover:text-white hover:bg-dark-bg/50 font-medium text-sm'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4 shrink-0 mr-2.5" />
+                    <span className="text-xs truncate">{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Bottom Actions (Settings & Logout) */}

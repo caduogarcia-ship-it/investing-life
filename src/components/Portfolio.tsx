@@ -1,7 +1,8 @@
 // src/components/Portfolio.tsx
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Trash2, TrendingUp, TrendingDown, Briefcase, PlusCircle, ArrowUpRight, DollarSign } from 'lucide-react';
+import { Plus, Trash2, TrendingUp, TrendingDown, Briefcase, PlusCircle, ArrowUpRight, DollarSign, Bot } from 'lucide-react';
 import { ALL_B3_TICKERS, fetchStockData, searchTickers, getTickerCategory, getTickerStrategy, getTickerSector, fetchUSDBRL } from '../services/api';
+import { RobotAdvisorModal } from './RobotAdvisorModal';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis } from 'recharts';
 
 import type { Client, PortfolioItem } from '../types/crm';
@@ -39,6 +40,7 @@ export const Portfolio: React.FC<PortfolioProps> = ({ onSelectTicker, client, on
   const [activeStrategyIndex, setActiveStrategyIndex] = useState<number | null>(null);
   const [activeMicroIndex, setActiveMicroIndex] = useState<number | null>(null);
   const [expandedSymbol, setExpandedSymbol] = useState<string | null>(null);
+  const [isRobotAdvisorOpen, setIsRobotAdvisorOpen] = useState(false);
   
   // Form states
   const [searchQuery, setSearchQuery] = useState('');
@@ -530,9 +532,19 @@ export const Portfolio: React.FC<PortfolioProps> = ({ onSelectTicker, client, on
 
           {/* Form to Add Asset */}
           <form onSubmit={handleAddItem} className="pt-6 border-t border-dark-border/40 space-y-4">
-            <h4 className="text-xs font-bold text-dark-textPrimary uppercase tracking-wider flex items-center gap-1.5">
-              <PlusCircle className="w-4 h-4 text-brand-primary" /> Adicionar Ativo à Carteira
-            </h4>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <h4 className="text-xs font-bold text-dark-textPrimary uppercase tracking-wider flex items-center gap-1.5">
+                <PlusCircle className="w-4 h-4 text-brand-primary" /> Adicionar Ativo à Carteira
+              </h4>
+              <button
+                type="button"
+                onClick={() => setIsRobotAdvisorOpen(true)}
+                className="flex items-center justify-center w-full sm:w-auto gap-2 bg-gradient-to-r from-brand-primary/20 to-brand-purple/20 hover:from-brand-primary/30 hover:to-brand-purple/30 border border-brand-primary/30 px-4 py-2.5 rounded-xl text-xs font-bold text-brand-primary transition-all shadow-lg active-scale group cursor-pointer"
+              >
+                <Bot className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                Consultar Robô Advisor
+              </button>
+            </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               
@@ -1116,9 +1128,13 @@ export const Portfolio: React.FC<PortfolioProps> = ({ onSelectTicker, client, on
             })}
           </div>
         </div>
-
       </div>
-
+      
+      {/* Robot Advisor Modal */}
+      <RobotAdvisorModal 
+        isOpen={isRobotAdvisorOpen}
+        onClose={() => setIsRobotAdvisorOpen(false)}
+      />
     </div>
   );
 };
