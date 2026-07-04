@@ -29,6 +29,7 @@ import { CalculatorsPreview } from './components/CalculatorsPreview';
 import { AdminHub } from './components/AdminHub';
 import { TesouroDireto } from './components/TesouroDireto';
 import { ClientDashboard } from './components/ClientDashboard';
+import { FixedIncomeCalculator } from './components/FixedIncomeCalculator';
 import { supabase, loadUserData, saveUserData, ADMIN_EMAIL } from './services/supabase';
 
 export default function App() {
@@ -423,6 +424,8 @@ export default function App() {
           />
         ) : activeTab === 'calculos' ? (
           <CalculatorsPreview stockData={stockData} />
+        ) : activeTab === 'calculos_rf' ? (
+          <FixedIncomeCalculator />
         ) : activeTab === 'tesouro' ? (
           <TesouroDireto />
         ) : activeTab === 'rankings' ? (

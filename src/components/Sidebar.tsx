@@ -5,7 +5,7 @@ import {
   ChevronRight, BarChart2, ChevronDown, ChevronUp, Briefcase
 } from 'lucide-react';
 
-export type TabType = 'analise' | 'carteira' | 'candles' | 'dividendos' | 'rankings' | 'recomendadas' | 'calculos' | 'tesouro' | 'admin';
+export type TabType = 'analise' | 'carteira' | 'candles' | 'dividendos' | 'rankings' | 'recomendadas' | 'calculos' | 'tesouro' | 'calculos_rf' | 'admin';
 
 interface SidebarProps {
   activeTab: TabType;
@@ -33,6 +33,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   
   // Renda Variável Accordion State
   const [isRVOpen, setIsRVOpen] = useState(false);
+  // Renda Fixa Accordion State
+  const [isRFOpen, setIsRFOpen] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -50,7 +52,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const mainTabs = [
     { id: 'carteira', label: 'Carteira (CRM)', icon: Wallet },
-    { id: 'tesouro', label: 'Tesouro Direto', icon: Landmark },
     { id: 'rankings', label: 'Rankings', icon: Trophy },
     { id: 'recomendadas', label: 'Recomendações', icon: Star },
   ];
@@ -62,14 +63,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'calculos', label: 'Cálculos', icon: Calculator },
   ];
 
+  const rfTabs = [
+    { id: 'tesouro', label: 'Tesouro Direto', icon: Landmark },
+    { id: 'calculos_rf', label: 'Cálculo Renda Fixa', icon: Calculator },
+  ];
+
   if (isAdmin) {
     mainTabs.push({ id: 'admin', label: 'Admin Hub', icon: Shield });
   }
 
-  // Auto-open accordion if an RV tab is active
+  // Auto-open accordion if an RV/RF tab is active
   useEffect(() => {
     if (rvTabs.some(tab => tab.id === activeTab)) {
       setIsRVOpen(true);
+    }
+    if (rfTabs.some(tab => tab.id === activeTab)) {
+      setIsRFOpen(true);
     }
   }, [activeTab]);
 
@@ -165,6 +174,51 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     className={`w-full flex items-center justify-start px-3 py-2 rounded-lg transition-all duration-300 cursor-pointer ${
                       isActive 
                         ? 'bg-brand-primary/10 text-brand-primary font-bold' 
+                        : 'text-dark-textSecondary hover:text-white hover:bg-dark-bg/50 font-medium text-sm'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4 shrink-0 mr-2.5" />
+                    <span className="text-xs truncate">{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Renda Fixa Accordion */}
+        <div className="pt-2 border-t border-dark-border/30">
+          <button
+            onClick={() => {
+              if (!isExpanded) setIsExpanded(true);
+              setIsRFOpen(!isRFOpen);
+            }}
+            title={!isExpanded ? 'Renda Fixa' : ''}
+            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 cursor-pointer hover:bg-dark-bg/50 text-dark-textSecondary hover:text-white font-semibold group ${rfTabs.some(t => t.id === activeTab) ? 'text-brand-primary' : ''}`}
+          >
+            <div className={`flex items-center ${isExpanded ? 'justify-start' : 'justify-center w-full'}`}>
+              <Landmark className={`w-5 h-5 shrink-0 ${isExpanded ? 'mr-3' : ''} group-hover:scale-110 transition-transform`} />
+              {isExpanded && <span className="text-sm truncate">Renda Fixa</span>}
+            </div>
+            {isExpanded && (
+              isRFOpen ? <ChevronUp className="w-4 h-4 shrink-0 opacity-70" /> : <ChevronDown className="w-4 h-4 shrink-0 opacity-70" />
+            )}
+          </button>
+
+          {/* Accordion Content */}
+          {isExpanded && isRFOpen && (
+            <div className="mt-1 ml-4 pl-3 border-l-2 border-dark-border/40 space-y-1 animate-fadeIn">
+              {rfTabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as TabType)}
+                    className={`w-full flex items-center justify-start px-3 py-2 rounded-lg transition-all duration-300 cursor-pointer ${
+                      isActive 
+                        ? 'bg-emerald-400/10 text-emerald-400 font-bold' 
                         : 'text-dark-textSecondary hover:text-white hover:bg-dark-bg/50 font-medium text-sm'
                     }`}
                   >
