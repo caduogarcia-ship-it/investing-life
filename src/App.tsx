@@ -1,5 +1,5 @@
 // src/App.tsx
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { Header } from './components/Header';
 import { StockSummary } from './components/StockSummary';
 import { StockChart } from './components/StockChart';
@@ -11,27 +11,37 @@ import { SettingsModal } from './components/SettingsModal';
 import { Footer } from './components/Footer';
 import { Sidebar } from './components/Sidebar';
 import type { TabType } from './components/Sidebar';
-import { Portfolio } from './components/Portfolio';
-import { CandleAnalysis } from './components/CandleAnalysis';
-import { DividendMap } from './components/DividendMap';
-import { Rankings } from './components/Rankings';
-import { RecommendedPortfolios } from './components/RecommendedPortfolios';
 import { QuickCompare } from './components/QuickCompare';
 import { fetchStockData, getSimilarTickers } from './services/api';
 import type { StockData, B3Ticker } from './services/api';
 import { AlertCircle, FolderHeart, Compass, ArrowRight } from 'lucide-react';
 import { Login } from './components/Login';
-import { HomeOverview } from './components/HomeOverview';
 import { AddAssetModal } from './components/AddAssetModal';
 
 import type { Client } from './types/crm';
-import { CalculatorsPreview } from './components/CalculatorsPreview';
-import { AdminHub } from './components/AdminHub';
-import { TesouroDireto } from './components/TesouroDireto';
-import { ClientDashboard } from './components/ClientDashboard';
-import { FixedIncomeCalculator } from './components/FixedIncomeCalculator';
 import { BottomNavigation } from './presentation/navigation/BottomNavigation';
 import { supabase, loadUserData, saveUserData, ADMIN_EMAIL } from './services/supabase';
+
+const CalculatorsPreview = React.lazy(() => import('./components/CalculatorsPreview').then(m => ({ default: m.CalculatorsPreview })));
+const Rankings = React.lazy(() => import('./components/Rankings').then(m => ({ default: m.Rankings })));
+const DividendMap = React.lazy(() => import('./components/DividendMap').then(m => ({ default: m.DividendMap })));
+const Portfolio = React.lazy(() => import('./components/Portfolio').then(m => ({ default: m.Portfolio })));
+const CandleAnalysis = React.lazy(() => import('./components/CandleAnalysis').then(m => ({ default: m.CandleAnalysis })));
+const FixedIncomeCalculator = React.lazy(() => import('./components/FixedIncomeCalculator').then(m => ({ default: m.FixedIncomeCalculator })));
+const TesouroDireto = React.lazy(() => import('./components/TesouroDireto').then(m => ({ default: m.TesouroDireto })));
+const AdminHub = React.lazy(() => import('./components/AdminHub').then(m => ({ default: m.AdminHub })));
+const RecommendedPortfolios = React.lazy(() => import('./components/RecommendedPortfolios').then(m => ({ default: m.RecommendedPortfolios })));
+const HomeOverview = React.lazy(() => import('./components/HomeOverview').then(m => ({ default: m.HomeOverview })));
+const ClientDashboard = React.lazy(() => import('./components/ClientDashboard').then(m => ({ default: m.ClientDashboard })));
+
+const LoadingFallback = () => (
+  <div className="flex-1 flex items-center justify-center p-8">
+    <div className="flex flex-col items-center gap-4">
+      <div className="w-10 h-10 border-3 border-brand-primary/30 border-t-brand-primary rounded-full animate-spin" />
+      <p className="text-sm text-dark-textSecondary font-medium animate-pulse">Carregando módulo...</p>
+    </div>
+  </div>
+);
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
@@ -377,78 +387,100 @@ export default function App() {
         {/* Conditional Tab Rendering */}
         <div key={activeTab} className="animate-fadeIn">
         {activeTab === 'analise' && !showDetail ? (
-          <HomeOverview 
-            watchlist={watchlist}
-            portfolio={clients.flatMap(c => c.portfolio || [])}
-            onSelectTicker={(sym) => {
-              setTicker(sym);
-              setShowDetail(true);
-            }}
-            onRemoveWatchlist={(sym) => {
-              setWatchlist(prev => prev.filter(s => s !== sym));
-            }}
-            onRemovePortfolio={() => {}}
-            onOpenAddModal={() => setIsAddModalOpen(true)}
-          />
+          <Suspense fallback={<LoadingFallback />}>
+            <HomeOverview 
+              watchlist={watchlist}
+              portfolio={clients.flatMap(c => c.portfolio || [])}
+              onSelectTicker={(sym) => {
+                setTicker(sym);
+                setShowDetail(true);
+              }}
+              onRemoveWatchlist={(sym) => {
+                setWatchlist(prev => prev.filter(s => s !== sym));
+              }}
+              onRemovePortfolio={() => {}}
+              onOpenAddModal={() => setIsAddModalOpen(true)}
+            />
+          </Suspense>
         ) : activeTab === 'carteira' ? (
           activeClientId ? (
-            <Portfolio 
+            <Suspense fallback={<LoadingFallback />}>
+              <Portfolio 
+                onSelectTicker={(sym) => {
+                  setTicker(sym);
+                  setShowDetail(true);
+                  setActiveTab('analise');
+                }}
+                client={clients.find(c => c.id === activeClientId)!}
+                onUpdateClient={(updated) => {
+                  const newClients = clients.map(c => c.id === updated.id ? updated : c);
+                  setClients(newClients);
+                  localStorage.setItem('b3_analise_clients', JSON.stringify(newClients));
+                }}
+                onBackToDashboard={() => setActiveClientId(null)}
+              />
+            </Suspense>
+          ) : (
+            <Suspense fallback={<LoadingFallback />}>
+              <ClientDashboard 
+                clients={clients}
+                setClients={setClients}
+                onSelectClient={setActiveClientId}
+              />
+            </Suspense>
+          )
+        ) : activeTab === 'dividendos' ? (
+          <Suspense fallback={<LoadingFallback />}>
+            <DividendMap 
+              portfolio={[]}
+
               onSelectTicker={(sym) => {
                 setTicker(sym);
                 setShowDetail(true);
                 setActiveTab('analise');
               }}
-              client={clients.find(c => c.id === activeClientId)!}
-              onUpdateClient={(updated) => {
-                const newClients = clients.map(c => c.id === updated.id ? updated : c);
-                setClients(newClients);
-                localStorage.setItem('b3_analise_clients', JSON.stringify(newClients));
-              }}
-              onBackToDashboard={() => setActiveClientId(null)}
             />
-          ) : (
-            <ClientDashboard 
-              clients={clients}
-              setClients={setClients}
-              onSelectClient={setActiveClientId}
-            />
-          )
-        ) : activeTab === 'dividendos' ? (
-          <DividendMap 
-            portfolio={[]}
-
-            onSelectTicker={(sym) => {
-              setTicker(sym);
-              setShowDetail(true);
-              setActiveTab('analise');
-            }}
-          />
+          </Suspense>
         ) : activeTab === 'calculos' ? (
-          <CalculatorsPreview stockData={stockData} />
+          <Suspense fallback={<LoadingFallback />}>
+            <CalculatorsPreview stockData={stockData} />
+          </Suspense>
         ) : activeTab === 'calculos_rf' ? (
-          <FixedIncomeCalculator />
+          <Suspense fallback={<LoadingFallback />}>
+            <FixedIncomeCalculator />
+          </Suspense>
         ) : activeTab === 'tesouro' ? (
-          <TesouroDireto />
+          <Suspense fallback={<LoadingFallback />}>
+            <TesouroDireto />
+          </Suspense>
         ) : activeTab === 'rankings' ? (
-          <Rankings 
-            onSelectTicker={(sym) => {
-              setTicker(sym);
-              setShowDetail(true);
-              setActiveTab('analise');
-            }}
-          />
+          <Suspense fallback={<LoadingFallback />}>
+            <Rankings 
+              onSelectTicker={(sym) => {
+                setTicker(sym);
+                setShowDetail(true);
+                setActiveTab('analise');
+              }}
+            />
+          </Suspense>
         ) : activeTab === 'recomendadas' ? (
-          <RecommendedPortfolios 
-            onSelectTicker={(sym) => {
-              setTicker(sym);
-              setShowDetail(true);
-              setActiveTab('analise');
-            }}
-          />
+          <Suspense fallback={<LoadingFallback />}>
+            <RecommendedPortfolios 
+              onSelectTicker={(sym) => {
+                setTicker(sym);
+                setShowDetail(true);
+                setActiveTab('analise');
+              }}
+            />
+          </Suspense>
         ) : activeTab === 'admin' && isAdmin ? (
-          <AdminHub currentEmail={currentUserEmail} />
+          <Suspense fallback={<LoadingFallback />}>
+            <AdminHub currentEmail={currentUserEmail} />
+          </Suspense>
         ) : activeTab === 'candles' ? (
-          <CandleAnalysis ticker={ticker} />
+          <Suspense fallback={<LoadingFallback />}>
+            <CandleAnalysis ticker={ticker} />
+          </Suspense>
         ) : loading ? (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-pulse">
             <div className="lg:col-span-4 h-64 bg-dark-card border border-dark-border rounded-xl" />
