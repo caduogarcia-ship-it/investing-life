@@ -77,6 +77,8 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         setMode('login');
       } else if (msg.includes('Email rate limit exceeded')) {
         setError('Muitas tentativas. Aguarde alguns minutos e tente novamente.');
+      } else if (msg.includes('Failed to fetch') || msg.includes('fetch')) {
+        setError('Erro de Conexão: Não foi possível conectar ao servidor (Supabase). Verifique sua conexão com a internet ou se o projeto Supabase está ativo.');
       } else {
         setError(msg);
       }
