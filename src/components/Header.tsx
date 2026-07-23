@@ -238,7 +238,7 @@ export const Header: React.FC<HeaderProps> = ({ onSearch, loading }) => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => setShowSuggestions(true)}
-                className="w-full bg-dark-card border border-dark-border focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/30 outline-none rounded-xl py-2 pl-9 pr-8 text-sm text-dark-textPrimary placeholder-dark-textSecondary/50 transition-all font-mono"
+                className="w-full bg-dark-card border border-dark-border focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/30 outline-none rounded-xl py-2.5 pl-9 pr-8 text-sm text-dark-textPrimary placeholder-dark-textSecondary/50 transition-all font-mono"
                 style={{ fontFamily: 'JetBrains Mono, Fira Code, monospace' }}
               />
               {loading && (

@@ -30,6 +30,7 @@ import { AdminHub } from './components/AdminHub';
 import { TesouroDireto } from './components/TesouroDireto';
 import { ClientDashboard } from './components/ClientDashboard';
 import { FixedIncomeCalculator } from './components/FixedIncomeCalculator';
+import { BottomNavigation } from './presentation/navigation/BottomNavigation';
 import { supabase, loadUserData, saveUserData, ADMIN_EMAIL } from './services/supabase';
 
 export default function App() {
@@ -309,7 +310,7 @@ export default function App() {
         />
       </div>
       
-      <div className="w-full flex flex-col h-full overflow-hidden pl-20">
+      <div className="w-full flex flex-col h-full overflow-hidden pl-0 md:pl-20 pb-16 md:pb-0">
         {/* Header */}
         <div className="print:hidden">
           <Header
@@ -606,6 +607,15 @@ export default function App() {
       {/* Footer */}
       <div className="print:hidden">
         <Footer />
+      </div>
+
+      {/* Mobile Bottom Navigation */}
+      <div className="print:hidden">
+        <BottomNavigation
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          isAdmin={isAdmin}
+        />
       </div>
     </div>
   );

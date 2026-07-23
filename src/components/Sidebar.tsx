@@ -84,7 +84,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <div 
-      className={`h-screen bg-gradient-to-r from-dark-card/95 to-dark-card/20 backdrop-blur-xl border-r border-dark-border/30 flex flex-col transition-all duration-300 ease-in-out select-none relative z-50 shadow-premium ${
+      className={`hidden md:flex h-screen bg-gradient-to-r from-dark-card/95 to-dark-card/20 backdrop-blur-xl border-r border-dark-border/30 flex-col transition-all duration-300 ease-in-out select-none relative z-50 shadow-premium ${
         isExpanded ? 'w-64' : 'w-20'
       }`}
       style={{ fontFamily: 'Outfit, sans-serif' }}
