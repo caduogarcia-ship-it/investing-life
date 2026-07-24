@@ -1,10 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { 
   GitCompare, Plus, X, TrendingUp, TrendingDown, 
-  ShieldAlert, Award, DollarSign, BarChart2, Check, Info, AlertTriangle, ShieldCheck 
+  ShieldAlert, Award, DollarSign, BarChart2, Check, Info, AlertTriangle, ShieldCheck, Target 
 } from 'lucide-react';
 import { 
-  ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, Legend, CartesianGrid 
+  ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, Legend, CartesianGrid,
+  ScatterChart, Scatter, ZAxis, Cell
 } from 'recharts';
 import { ALL_B3_TICKERS, getTickerCategory } from '../services/api';
 
@@ -63,6 +64,7 @@ export const AssetComparator: React.FC = () => {
 
     // Seeded random walk per symbol
     const assetReturns: Record<string, number[]> = {};
+    const assetDrawdowns: Record<string, number[]> = {};
     
     selectedSymbols.forEach((sym) => {
       let seed = 0;
@@ -91,9 +93,19 @@ export const AssetComparator: React.FC = () => {
         returns.push(Number(currentVal.toFixed(2)));
       }
       assetReturns[sym] = returns;
+
+      // Calculate historical drawdown curve at each date point
+      let peak = 0;
+      const drawdowns: number[] = [];
+      returns.forEach((r) => {
+        if (r > peak) peak = r;
+        const dd = r - peak;
+        drawdowns.push(Number(dd.toFixed(2)));
+      });
+      assetDrawdowns[sym] = drawdowns;
     });
 
-    // Format for Recharts
+    // Format performance chart data for Recharts
     const chartData = dates.map((date, idx) => {
       const point: Record<string, any> = { date };
       selectedSymbols.forEach((sym) => {
@@ -102,7 +114,16 @@ export const AssetComparator: React.FC = () => {
       return point;
     });
 
-    // Compute metrics per symbol
+    // Format drawdown curve chart data for Recharts
+    const drawdownChartData = dates.map((date, idx) => {
+      const point: Record<string, any> = { date };
+      selectedSymbols.forEach((sym) => {
+        point[sym] = assetDrawdowns[sym][idx] || 0;
+      });
+      return point;
+    });
+
+    // Compute metrics & scatter plot points per symbol
     const metricsMap = selectedSymbols.map((sym, index) => {
       const returns = assetReturns[sym] || [0];
       const totalReturn = returns[returns.length - 1] || 0;
@@ -171,7 +192,18 @@ export const AssetComparator: React.FC = () => {
       };
     });
 
-    return { chartData, metricsMap };
+    // Format Scatter Plot Data: x = Volatility (%), y = Total Return (%), z = 100 (bubble size)
+    const scatterData = metricsMap.map((m) => ({
+      x: Number(m.volatility.toFixed(2)),
+      y: Number(m.totalReturn.toFixed(2)),
+      z: 120,
+      symbol: m.symbol,
+      color: m.color,
+      category: m.category,
+      sharpe: m.sharpeRatio
+    }));
+
+    return { chartData, drawdownChartData, metricsMap, scatterData };
   }, [selectedSymbols, timeframe, simulationAmount]);
 
   // Search filtered suggestions
@@ -233,7 +265,7 @@ export const AssetComparator: React.FC = () => {
           </h2>
 
           <p className="text-xs lg:text-sm text-dark-textSecondary font-medium leading-relaxed">
-            Compare o histórico de rentabilidade acumulada, volatilidade, risco, Índice Sharpe e Drawdown (queda máxima) entre ações, FIIs, ETFs, BDRs e índices de referência (CDI, Ibovespa, IFIX, IPCA e S&P 500).
+            Compare a rentabilidade acumulada, o gráfico de drawdown (queda histórica), a matriz de dispersão risco x retorno e o Índice Sharpe entre ações, FIIs, ETFs, BDRs e índices (CDI, Ibovespa, IFIX, IPCA e S&P 500).
           </p>
         </div>
 
@@ -358,7 +390,7 @@ export const AssetComparator: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Chart Section */}
+      {/* Main Chart Section 1: Rentabilidade Acumulada */}
       <div className="bg-dark-card border border-dark-border rounded-3xl p-6 lg:p-8 shadow-xl space-y-6">
         
         {/* Controls: Timeframe buttons */}
@@ -366,7 +398,7 @@ export const AssetComparator: React.FC = () => {
           <div className="flex items-center gap-2">
             <BarChart2 className="w-5 h-5 text-brand-primary" />
             <h3 className="text-base font-bold text-dark-textPrimary" style={{ fontFamily: 'Outfit, sans-serif' }}>
-              Rentabilidade Acumulada (%)
+              Gráfico de Rentabilidade Acumulada (%)
             </h3>
           </div>
 
@@ -440,13 +472,157 @@ export const AssetComparator: React.FC = () => {
         </div>
       </div>
 
-      {/* NEW SECTION 1: PAINEL DE MAIOR QUEDA (MAX DRAWDOWN) */}
+      {/* NEW CHART 1: GRÁFICO DE DRAWDOWN AO LONGO DO TEMPO (Underwater Chart) */}
       <div className="bg-dark-card border border-dark-border rounded-3xl p-6 lg:p-8 shadow-xl space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-dark-border/40">
           <div>
             <h3 className="text-base font-bold text-dark-textPrimary flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
               <TrendingDown className="w-5 h-5 text-red-400" />
-              Painel de Maior Queda (Max Drawdown)
+              Gráfico de Drawdown Histórico (Queda % do Topo)
+            </h3>
+            <p className="text-xs text-dark-textSecondary font-medium mt-0.5">
+              Exibe a curva contínua de desvalorização (% em relação ao topo histórico anterior) de cada ativo ao longo do tempo.
+            </p>
+          </div>
+        </div>
+
+        <div className="h-[320px] w-full pt-2">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={comparisonData.drawdownChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
+              <XAxis 
+                dataKey="date" 
+                stroke="#64748b" 
+                fontSize={11} 
+                tickLine={false} 
+                axisLine={{ stroke: '#1f2937' }}
+              />
+              <YAxis 
+                stroke="#64748b" 
+                fontSize={11} 
+                tickLine={false} 
+                axisLine={false} 
+                tickFormatter={(v) => `${v}%`}
+              />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'rgba(17, 24, 39, 0.95)', 
+                  borderColor: '#374151',
+                  borderRadius: '12px',
+                  boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+                  fontSize: '12px',
+                  fontFamily: 'JetBrains Mono, monospace'
+                }}
+                formatter={(val: any) => [`${Number(val).toFixed(2)}%`, 'Queda Histórica (Drawdown)']}
+              />
+              <Legend 
+                verticalAlign="top" 
+                height={36} 
+                formatter={(value) => <span style={{ color: '#94a3b8', fontSize: '12px', fontWeight: 'bold' }}>{value}</span>}
+              />
+              {comparisonData.metricsMap.map((item) => (
+                <Line
+                  key={item.symbol}
+                  type="monotone"
+                  dataKey={item.symbol}
+                  name={item.symbol}
+                  stroke={item.color}
+                  strokeWidth={2}
+                  dot={false}
+                  activeDot={{ r: 5, strokeWidth: 0 }}
+                />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* NEW CHART 2: GRÁFICO DE DISPERSÃO RISCO X RENTABILIDADE (Scatter Plot 2D) */}
+      <div className="bg-dark-card border border-dark-border rounded-3xl p-6 lg:p-8 shadow-xl space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-dark-border/40">
+          <div>
+            <h3 className="text-base font-bold text-dark-textPrimary flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              <Target className="w-5 h-5 text-emerald-400" />
+              Gráfico de Dispersão: Risco (Volatilidade) vs Rentabilidade (%)
+            </h3>
+            <p className="text-xs text-dark-textSecondary font-medium mt-0.5">
+              Quanto mais no topo e à esquerda (Quadrante Superior Esquerdo), maior a eficiência (Mais Retorno com Menos Risco).
+            </p>
+          </div>
+        </div>
+
+        <div className="h-[340px] w-full pt-2">
+          <ResponsiveContainer width="100%" height="100%">
+            <ScatterChart margin={{ top: 20, right: 30, bottom: 20, left: 10 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+              <XAxis 
+                type="number" 
+                dataKey="x" 
+                name="Volatilidade" 
+                unit="%" 
+                stroke="#64748b" 
+                fontSize={11}
+                label={{ value: 'Risco (Volatilidade % a.a.) →', position: 'bottom', offset: 0, fill: '#64748b', fontSize: 11 }}
+              />
+              <YAxis 
+                type="number" 
+                dataKey="y" 
+                name="Rentabilidade" 
+                unit="%" 
+                stroke="#64748b" 
+                fontSize={11}
+                label={{ value: '← Rentabilidade (%)', angle: -90, position: 'insideLeft', fill: '#64748b', fontSize: 11 }}
+              />
+              <ZAxis type="number" dataKey="z" range={[100, 300]} />
+              <Tooltip 
+                cursor={{ strokeDasharray: '3 3' }}
+                content={({ active, payload }) => {
+                  if (active && payload && payload.length) {
+                    const data = payload[0].payload;
+                    return (
+                      <div className="bg-dark-card/95 border border-dark-border p-3 rounded-xl shadow-2xl text-xs font-mono space-y-1">
+                        <div className="font-extrabold text-sm flex items-center gap-2" style={{ color: data.color }}>
+                          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: data.color }} />
+                          {data.symbol}
+                        </div>
+                        <div className="text-emerald-400">Rentabilidade: +{data.y}%</div>
+                        <div className="text-amber-400">Volatilidade: {data.x}%</div>
+                        <div className="text-brand-primary">Sharpe Ratio: {data.sharpe}</div>
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
+              <Scatter name="Ativos" data={comparisonData.scatterData}>
+                {comparisonData.scatterData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} stroke={entry.color} />
+                ))}
+              </Scatter>
+            </ScatterChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Legend Chips for Scatter Plot */}
+        <div className="flex flex-wrap items-center justify-center gap-4 pt-2 border-t border-dark-border/30">
+          {comparisonData.metricsMap.map((item) => (
+            <div key={item.symbol} className="flex items-center gap-2 text-xs font-mono font-bold">
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+              <span className="text-dark-textPrimary">{item.symbol}:</span>
+              <span className="text-emerald-400">+{item.totalReturn.toFixed(1)}%</span>
+              <span className="text-dark-textSecondary">({item.volatility.toFixed(1)}% vol)</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Painel de Maior Queda (Cards Resumo) */}
+      <div className="bg-dark-card border border-dark-border rounded-3xl p-6 lg:p-8 shadow-xl space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-dark-border/40">
+          <div>
+            <h3 className="text-base font-bold text-dark-textPrimary flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              <TrendingDown className="w-5 h-5 text-red-400" />
+              Painel Resumo de Maior Queda (Max Drawdown)
             </h3>
             <p className="text-xs text-dark-textSecondary font-medium mt-0.5">
               Mede o pior momento de desvalorização (pico ao fundo) registrado no período de {timeframe}.
@@ -503,7 +679,7 @@ export const AssetComparator: React.FC = () => {
         </div>
       </div>
 
-      {/* NEW SECTION 2: MATRIZ DE RISCO E RENTABILIDADE (ÍNDICE SHARPE) */}
+      {/* MATRIZ DE RISCO E RENTABILIDADE (ÍNDICE SHARPE CARDS) */}
       <div className="bg-dark-card border border-dark-border rounded-3xl p-6 lg:p-8 shadow-xl space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-dark-border/40">
           <div>
