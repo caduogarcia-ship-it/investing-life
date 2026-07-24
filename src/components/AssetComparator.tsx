@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { 
   GitCompare, Plus, X, TrendingUp, TrendingDown, 
-  ShieldAlert, Award, DollarSign, BarChart2, Check, Info 
+  ShieldAlert, Award, DollarSign, BarChart2, Check, Info, AlertTriangle, ShieldCheck 
 } from 'lucide-react';
 import { 
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, Legend, CartesianGrid 
@@ -132,6 +132,14 @@ export const AssetComparator: React.FC = () => {
       // Sharpe Ratio = (Annualized Return - Risk Free 10.5%) / Volatility
       const riskFree = 10.5;
       const sharpe = vol > 0 ? ((annualizedReturn * 100) - riskFree) / vol : 0;
+      const riskReturnRatio = vol > 0 ? (totalReturn / vol) : 0;
+
+      // Risk Classification
+      let riskLevel: 'Baixo' | 'Médio' | 'Alto' | 'Muito Alto' = 'Médio';
+      if (vol < 5) riskLevel = 'Baixo';
+      else if (vol < 12) riskLevel = 'Médio';
+      else if (vol < 22) riskLevel = 'Alto';
+      else riskLevel = 'Muito Alto';
 
       // Find metadata
       const bm = BENCHMARKS.find(b => b.symbol === sym);
@@ -153,6 +161,8 @@ export const AssetComparator: React.FC = () => {
         annualizedReturnPercent: annualizedReturn * 100,
         volatility: vol,
         sharpeRatio: Number(sharpe.toFixed(2)),
+        riskReturnRatio: Number(riskReturnRatio.toFixed(2)),
+        riskLevel,
         maxDrawdown: -Math.abs(Number(maxDrawdown.toFixed(2))),
         finalSimulatedValue,
         simulatedProfit,
@@ -223,7 +233,7 @@ export const AssetComparator: React.FC = () => {
           </h2>
 
           <p className="text-xs lg:text-sm text-dark-textSecondary font-medium leading-relaxed">
-            Compare o histórico de rentabilidade acumulada, volatilidade, risco e Índice Sharpe entre ações, FIIs, ETFs, BDRs e índices de referência (CDI, Ibovespa, IFIX, IPCA e S&P 500).
+            Compare o histórico de rentabilidade acumulada, volatilidade, risco, Índice Sharpe e Drawdown (queda máxima) entre ações, FIIs, ETFs, BDRs e índices de referência (CDI, Ibovespa, IFIX, IPCA e S&P 500).
           </p>
         </div>
 
@@ -427,6 +437,148 @@ export const AssetComparator: React.FC = () => {
               ))}
             </LineChart>
           </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* NEW SECTION 1: PAINEL DE MAIOR QUEDA (MAX DRAWDOWN) */}
+      <div className="bg-dark-card border border-dark-border rounded-3xl p-6 lg:p-8 shadow-xl space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-dark-border/40">
+          <div>
+            <h3 className="text-base font-bold text-dark-textPrimary flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              <TrendingDown className="w-5 h-5 text-red-400" />
+              Painel de Maior Queda (Max Drawdown)
+            </h3>
+            <p className="text-xs text-dark-textSecondary font-medium mt-0.5">
+              Mede o pior momento de desvalorização (pico ao fundo) registrado no período de {timeframe}.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {comparisonData.metricsMap.map((item) => {
+            const absDrawdown = Math.abs(item.maxDrawdown);
+            const severityColor = absDrawdown < 5 ? '#10b981' : absDrawdown < 15 ? '#f59e0b' : '#ef4444';
+
+            return (
+              <div 
+                key={item.symbol}
+                className="bg-dark-bg/60 border border-dark-border/60 rounded-2xl p-5 space-y-3 relative overflow-hidden"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                    <span className="font-mono font-black text-sm" style={{ color: item.color }}>{item.symbol}</span>
+                  </div>
+                  <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-dark-bg border border-dark-border text-dark-textSecondary font-mono">
+                    {absDrawdown < 5 ? 'Queda Leve' : absDrawdown < 15 ? 'Queda Moderada' : 'Queda Severa'}
+                  </span>
+                </div>
+
+                <div className="space-y-1">
+                  <span className="text-3xs font-bold uppercase tracking-wider text-dark-textSecondary block">Queda Máxima no Período</span>
+                  <div className="text-2xl font-mono font-black text-red-400">
+                    {item.maxDrawdown.toFixed(2)}%
+                  </div>
+                </div>
+
+                {/* Drawdown Progress Bar */}
+                <div className="space-y-1">
+                  <div className="w-full h-2 rounded-full bg-dark-bg border border-dark-border/60 overflow-hidden">
+                    <div 
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{ 
+                        width: `${Math.min(100, absDrawdown * 2.5)}%`, 
+                        backgroundColor: severityColor 
+                      }} 
+                    />
+                  </div>
+                  <div className="flex justify-between text-[9px] text-dark-textSecondary font-mono pt-0.5">
+                    <span>Pico (0%)</span>
+                    <span>Queda Máxima (-40%+)</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* NEW SECTION 2: MATRIZ DE RISCO E RENTABILIDADE (ÍNDICE SHARPE) */}
+      <div className="bg-dark-card border border-dark-border rounded-3xl p-6 lg:p-8 shadow-xl space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-dark-border/40">
+          <div>
+            <h3 className="text-base font-bold text-dark-textPrimary flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              <ShieldCheck className="w-5 h-5 text-brand-primary" />
+              Matriz de Risco vs Rentabilidade & Índice Sharpe
+            </h3>
+            <p className="text-xs text-dark-textSecondary font-medium mt-0.5">
+              Avalia a relação de eficiência: quanto retorno cada ativo entregou por unidade de risco (volatilidade) assumido.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {comparisonData.metricsMap.map((item) => {
+            const isGoodSharpe = item.sharpeRatio >= 0.5;
+            const isExcellentSharpe = item.sharpeRatio >= 1.0;
+
+            return (
+              <div 
+                key={item.symbol}
+                className="bg-dark-bg/60 border border-dark-border/60 rounded-2xl p-5 space-y-4 hover:border-brand-primary/40 transition-all"
+              >
+                <div className="flex items-center justify-between border-b border-dark-border/30 pb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                    <span className="font-mono font-black text-sm" style={{ color: item.color }}>{item.symbol}</span>
+                  </div>
+                  <span className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border ${
+                    item.riskLevel === 'Baixo' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' :
+                    item.riskLevel === 'Médio' ? 'bg-blue-500/10 text-blue-400 border-blue-500/30' :
+                    item.riskLevel === 'Alto' ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' :
+                    'bg-red-500/10 text-red-400 border-red-500/30'
+                  }`}>
+                    Risco {item.riskLevel}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-dark-card/40 p-2.5 rounded-xl border border-dark-border/40 space-y-1">
+                    <span className="text-[9px] font-bold text-dark-textSecondary uppercase tracking-wider block">Volatilidade</span>
+                    <span className="text-sm font-mono font-bold text-amber-400 flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3 shrink-0" />
+                      {item.volatility.toFixed(2)}%
+                    </span>
+                  </div>
+
+                  <div className="bg-dark-card/40 p-2.5 rounded-xl border border-dark-border/40 space-y-1">
+                    <span className="text-[9px] font-bold text-dark-textSecondary uppercase tracking-wider block">Índice Sharpe</span>
+                    <span className={`text-sm font-mono font-black ${
+                      isExcellentSharpe ? 'text-emerald-400' : isGoodSharpe ? 'text-brand-primary' : 'text-amber-400'
+                    }`}>
+                      {item.sharpeRatio.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-dark-border/30 flex items-center justify-between text-3xs font-mono">
+                  <span className="text-dark-textSecondary">Razão Retorno / Risco:</span>
+                  <span className="font-bold text-dark-textPrimary">
+                    {item.riskReturnRatio > 0 ? `+${item.riskReturnRatio}` : item.riskReturnRatio}
+                  </span>
+                </div>
+
+                <div className="text-[10px] text-dark-textSecondary font-medium leading-tight bg-dark-card/20 p-2 rounded-lg border border-dark-border/30">
+                  {isExcellentSharpe 
+                    ? '✨ Excelente eficiência: Alto retorno excedente com risco controlado.' 
+                    : isGoodSharpe 
+                      ? '👍 Boa relação risco x retorno para a categoria.' 
+                      : '⚠️ Retorno moderado para o nível de volatilidade no período.'
+                  }
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
