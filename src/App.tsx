@@ -33,6 +33,7 @@ const AdminHub = React.lazy(() => import('./components/AdminHub').then(m => ({ d
 const RecommendedPortfolios = React.lazy(() => import('./components/RecommendedPortfolios').then(m => ({ default: m.RecommendedPortfolios })));
 const HomeOverview = React.lazy(() => import('./components/HomeOverview').then(m => ({ default: m.HomeOverview })));
 const ClientDashboard = React.lazy(() => import('./components/ClientDashboard').then(m => ({ default: m.ClientDashboard })));
+const AssetComparator = React.lazy(() => import('./components/AssetComparator').then(m => ({ default: m.AssetComparator })));
 
 const LoadingFallback = () => (
   <div className="flex-1 flex items-center justify-center p-8">
@@ -472,6 +473,10 @@ export default function App() {
                 setActiveTab('analise');
               }}
             />
+          </Suspense>
+        ) : activeTab === 'comparador' ? (
+          <Suspense fallback={<LoadingFallback />}>
+            <AssetComparator />
           </Suspense>
         ) : activeTab === 'admin' && isAdmin ? (
           <Suspense fallback={<LoadingFallback />}>

@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { 
   LineChart, Wallet, CandlestickChart, DollarSign, Calculator, 
   Landmark, Trophy, Star, Shield, Settings, LogOut, ChevronLeft, 
-  ChevronRight, BarChart2, ChevronDown, ChevronUp, Briefcase
+  ChevronRight, BarChart2, ChevronDown, ChevronUp, Briefcase, GitCompare
 } from 'lucide-react';
 
-export type TabType = 'analise' | 'carteira' | 'candles' | 'dividendos' | 'rankings' | 'recomendadas' | 'calculos' | 'tesouro' | 'calculos_rf' | 'admin';
+export type TabType = 'analise' | 'carteira' | 'candles' | 'dividendos' | 'rankings' | 'recomendadas' | 'comparador' | 'calculos' | 'tesouro' | 'calculos_rf' | 'admin';
 
 interface SidebarProps {
   activeTab: TabType;
@@ -54,6 +54,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'carteira', label: 'Carteira (CRM)', icon: Wallet },
     { id: 'rankings', label: 'Rankings', icon: Trophy },
     { id: 'recomendadas', label: 'Recomendações', icon: Star },
+    { id: 'comparador', label: 'Comparador de Ativos', icon: GitCompare },
   ];
 
   const rvTabs = [
