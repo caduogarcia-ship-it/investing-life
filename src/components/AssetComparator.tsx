@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import { 
   GitCompare, Plus, X, TrendingUp, TrendingDown, 
-  ShieldAlert, Award, DollarSign, BarChart2, Check, Info, AlertTriangle, ShieldCheck, Target 
+  ShieldAlert, Award, DollarSign, BarChart2, Check, Info, AlertTriangle, ShieldCheck, Target,
+  Layers, Activity
 } from 'lucide-react';
 import { 
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, Legend, CartesianGrid,
-  ScatterChart, Scatter, ZAxis, Cell
+  ScatterChart, Scatter, ZAxis, Cell, AreaChart, Area, ReferenceLine
 } from 'recharts';
 import { ALL_B3_TICKERS, getTickerCategory } from '../services/api';
 
@@ -49,6 +50,7 @@ export const AssetComparator: React.FC = () => {
   const [searchInput, setSearchInput] = useState('');
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [simulationAmount, setSimulationAmount] = useState<number>(10000);
+  const [drawdownMode, setDrawdownMode] = useState<'area' | 'line'>('area');
 
   // Generate synthetic historical returns & metrics seeded by ticker symbol & timeframe for continuous smooth data
   const comparisonData = useMemo(() => {
@@ -94,7 +96,7 @@ export const AssetComparator: React.FC = () => {
       }
       assetReturns[sym] = returns;
 
-      // Calculate historical drawdown curve at each date point
+      // Calculate historical drawdown curve at each date point (% drop from peak)
       let peak = 0;
       const drawdowns: number[] = [];
       returns.forEach((r) => {
@@ -192,7 +194,7 @@ export const AssetComparator: React.FC = () => {
       };
     });
 
-    // Format Scatter Plot Data: x = Volatility (%), y = Total Return (%), z = 100 (bubble size)
+    // Format Scatter Plot Data: x = Volatility (%), y = Total Return (%), z = 120 (bubble size)
     const scatterData = metricsMap.map((m) => ({
       x: Number(m.volatility.toFixed(2)),
       y: Number(m.totalReturn.toFixed(2)),
@@ -203,7 +205,10 @@ export const AssetComparator: React.FC = () => {
       sharpe: m.sharpeRatio
     }));
 
-    return { chartData, drawdownChartData, metricsMap, scatterData };
+    // Find worst drawdown asset overall
+    const worstDrawdownAsset = [...metricsMap].sort((a, b) => a.maxDrawdown - b.maxDrawdown)[0];
+
+    return { chartData, drawdownChartData, metricsMap, scatterData, worstDrawdownAsset };
   }, [selectedSymbols, timeframe, simulationAmount]);
 
   // Search filtered suggestions
@@ -472,72 +477,162 @@ export const AssetComparator: React.FC = () => {
         </div>
       </div>
 
-      {/* NEW CHART 1: GRÁFICO DE DRAWDOWN AO LONGO DO TEMPO (Underwater Chart) */}
+      {/* ENHANCED CHART 1: GRÁFICO DE DRAWDOWN AO LONGO DO TEMPO (Underwater Chart com Modo Área + Linha) */}
       <div className="bg-dark-card border border-dark-border rounded-3xl p-6 lg:p-8 shadow-xl space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-dark-border/40">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-dark-border/40">
           <div>
             <h3 className="text-base font-bold text-dark-textPrimary flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
               <TrendingDown className="w-5 h-5 text-red-400" />
-              Gráfico de Drawdown Histórico (Queda % do Topo)
+              Gráfico Avançado de Drawdown (Curva Subaquática - % do Topo)
             </h3>
             <p className="text-xs text-dark-textSecondary font-medium mt-0.5">
-              Exibe a curva contínua de desvalorização (% em relação ao topo histórico anterior) de cada ativo ao longo do tempo.
+              Exibe a distância percentual exata em relação ao topo histórico anterior (0% indica topo histórico atingido).
             </p>
+          </div>
+
+          {/* Mode Selector & Quick Summary */}
+          <div className="flex items-center gap-3">
+            {comparisonData.worstDrawdownAsset && (
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-red-500/10 border border-red-500/25 rounded-xl text-3xs font-mono font-bold text-red-400">
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                <span>Pior Queda: {comparisonData.worstDrawdownAsset.symbol} ({comparisonData.worstDrawdownAsset.maxDrawdown.toFixed(2)}%)</span>
+              </div>
+            )}
+
+            <div className="flex p-1 bg-dark-bg border border-dark-border rounded-xl">
+              <button
+                onClick={() => setDrawdownMode('area')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
+                  drawdownMode === 'area' ? 'bg-brand-primary text-white shadow-md' : 'text-dark-textSecondary hover:text-white'
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span>Área Sombreada</span>
+              </button>
+              <button
+                onClick={() => setDrawdownMode('line')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
+                  drawdownMode === 'line' ? 'bg-brand-primary text-white shadow-md' : 'text-dark-textSecondary hover:text-white'
+                }`}
+              >
+                <Activity className="w-3.5 h-3.5" />
+                <span>Linhas</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        <div className="h-[320px] w-full pt-2">
+        {/* Enhanced Drawdown Chart with Area/Line options */}
+        <div className="h-[360px] w-full pt-2">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={comparisonData.drawdownChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
-              <XAxis 
-                dataKey="date" 
-                stroke="#64748b" 
-                fontSize={11} 
-                tickLine={false} 
-                axisLine={{ stroke: '#1f2937' }}
-              />
-              <YAxis 
-                stroke="#64748b" 
-                fontSize={11} 
-                tickLine={false} 
-                axisLine={false} 
-                tickFormatter={(v) => `${v}%`}
-              />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'rgba(17, 24, 39, 0.95)', 
-                  borderColor: '#374151',
-                  borderRadius: '12px',
-                  boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
-                  fontSize: '12px',
-                  fontFamily: 'JetBrains Mono, monospace'
-                }}
-                formatter={(val: any) => [`${Number(val).toFixed(2)}%`, 'Queda Histórica (Drawdown)']}
-              />
-              <Legend 
-                verticalAlign="top" 
-                height={36} 
-                formatter={(value) => <span style={{ color: '#94a3b8', fontSize: '12px', fontWeight: 'bold' }}>{value}</span>}
-              />
-              {comparisonData.metricsMap.map((item) => (
-                <Line
-                  key={item.symbol}
-                  type="monotone"
-                  dataKey={item.symbol}
-                  name={item.symbol}
-                  stroke={item.color}
-                  strokeWidth={2}
-                  dot={false}
-                  activeDot={{ r: 5, strokeWidth: 0 }}
+            {drawdownMode === 'area' ? (
+              <AreaChart data={comparisonData.drawdownChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  {comparisonData.metricsMap.map((item) => (
+                    <linearGradient key={`grad-${item.symbol}`} id={`grad-${item.symbol}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={item.color} stopOpacity={0.4} />
+                      <stop offset="95%" stopColor={item.color} stopOpacity={0.02} />
+                    </linearGradient>
+                  ))}
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
+                <XAxis 
+                  dataKey="date" 
+                  stroke="#64748b" 
+                  fontSize={11} 
+                  tickLine={false} 
+                  axisLine={{ stroke: '#1f2937' }}
                 />
-              ))}
-            </LineChart>
+                <YAxis 
+                  stroke="#64748b" 
+                  fontSize={11} 
+                  tickLine={false} 
+                  axisLine={false} 
+                  tickFormatter={(v) => `${v}%`}
+                />
+                <ReferenceLine y={0} stroke="#10b981" strokeDasharray="3 3" label={{ value: 'Topo Histórico (0%)', fill: '#10b981', fontSize: 10, position: 'right' }} />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'rgba(17, 24, 39, 0.95)', 
+                    borderColor: '#374151',
+                    borderRadius: '12px',
+                    boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+                    fontSize: '12px',
+                    fontFamily: 'JetBrains Mono, monospace'
+                  }}
+                  formatter={(val: any) => [`${Number(val).toFixed(2)}%`, 'Queda em Relação ao Topo']}
+                />
+                <Legend 
+                  verticalAlign="top" 
+                  height={36} 
+                  formatter={(value) => <span style={{ color: '#94a3b8', fontSize: '12px', fontWeight: 'bold' }}>{value}</span>}
+                />
+                {comparisonData.metricsMap.map((item) => (
+                  <Area
+                    key={item.symbol}
+                    type="monotone"
+                    dataKey={item.symbol}
+                    name={item.symbol}
+                    stroke={item.color}
+                    fill={`url(#grad-${item.symbol})`}
+                    strokeWidth={2}
+                    activeDot={{ r: 5, strokeWidth: 0 }}
+                  />
+                ))}
+              </AreaChart>
+            ) : (
+              <LineChart data={comparisonData.drawdownChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
+                <XAxis 
+                  dataKey="date" 
+                  stroke="#64748b" 
+                  fontSize={11} 
+                  tickLine={false} 
+                  axisLine={{ stroke: '#1f2937' }}
+                />
+                <YAxis 
+                  stroke="#64748b" 
+                  fontSize={11} 
+                  tickLine={false} 
+                  axisLine={false} 
+                  tickFormatter={(v) => `${v}%`}
+                />
+                <ReferenceLine y={0} stroke="#10b981" strokeDasharray="3 3" label={{ value: 'Topo (0%)', fill: '#10b981', fontSize: 10, position: 'right' }} />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'rgba(17, 24, 39, 0.95)', 
+                    borderColor: '#374151',
+                    borderRadius: '12px',
+                    boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+                    fontSize: '12px',
+                    fontFamily: 'JetBrains Mono, monospace'
+                  }}
+                  formatter={(val: any) => [`${Number(val).toFixed(2)}%`, 'Queda Histórica']}
+                />
+                <Legend 
+                  verticalAlign="top" 
+                  height={36} 
+                  formatter={(value) => <span style={{ color: '#94a3b8', fontSize: '12px', fontWeight: 'bold' }}>{value}</span>}
+                />
+                {comparisonData.metricsMap.map((item) => (
+                  <Line
+                    key={item.symbol}
+                    type="monotone"
+                    dataKey={item.symbol}
+                    name={item.symbol}
+                    stroke={item.color}
+                    strokeWidth={2.5}
+                    dot={false}
+                    activeDot={{ r: 6, strokeWidth: 0 }}
+                  />
+                ))}
+              </LineChart>
+            )}
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* NEW CHART 2: GRÁFICO DE DISPERSÃO RISCO X RENTABILIDADE (Scatter Plot 2D) */}
+      {/* CHART 2: GRÁFICO DE DISPERSÃO RISCO X RENTABILIDADE (Scatter Plot 2D) */}
       <div className="bg-dark-card border border-dark-border rounded-3xl p-6 lg:p-8 shadow-xl space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-dark-border/40">
           <div>
